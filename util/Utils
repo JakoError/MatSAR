@@ -1,0 +1,33 @@
+//
+// Created by JakoError on 2022/7/2.
+//
+#pragma once
+
+#ifndef MATSAR_IGNOREWARNINGUTIL_HPP
+
+#include "IgnoreWarningUtil.hpp"
+
+#endif //MATSAR_IGNOREWARNINGUTIL_HPP
+
+#ifndef MATSAR_UTILS
+#define MATSAR_UTILS
+
+#ifndef MATSAR_VECTORUTIL_HPP
+
+#include "VectorUtil.hpp"
+
+#endif //MATSAR_VECTORUTIL_HPP
+
+#ifndef MATSAR_TYPEUTIL_HPP
+
+#include "TypeUtil.hpp"
+
+#endif //MATSAR_TYPEUTIL_HPP
+
+#ifndef MATSAR_EXCEPTIONUTIL_HPP
+
+#include "ExceptionUtil.hpp"
+
+#endif //MATSAR_EXCEPTIONUTIL_HPP
+
+#endif //MATSAR_UTILS
