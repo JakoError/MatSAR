@@ -53,7 +53,7 @@ namespace MatSAR {
 
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
-            Matrix<dType> r(r_shape, 0.,m.getData());
+            Matrix<dType> r(r_shape, 0., m.getData());
 
             auto iter_r = r.getData(), iter_m = m.getData();
             for (msize_type i = 0; i < unit_num; ++i) {
@@ -92,7 +92,7 @@ namespace MatSAR {
 
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
-            Matrix<dType> r(r_shape, 0.,m.getData());
+            Matrix<dType> r(r_shape, 0., m.getData());
 
             auto iter_r = r.getData(), iter_m = m.getData();
             for (msize_type i = 0; i < unit_num; ++i) {
@@ -114,7 +114,7 @@ namespace MatSAR {
          * @related range函数等价于调用min和max函数
          */
         template<Calculable dType>
-        auto range(const Matrix <dType> &m, msize_type dim = 1) -> tuple<Matrix<dType>, Matrix<dType>> {
+        auto range(const Matrix<dType> &m, msize_type dim = 1) -> tuple<Matrix<dType>, Matrix<dType>> {
             return {min(m, dim), max(m, dim)};
         }
 
@@ -147,7 +147,7 @@ namespace MatSAR {
             auto sort_m = MatSAR::Math::sort(m, dim);
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
-            Matrix<TargetType> r(r_shape, 0.,m.getData());
+            Matrix<TargetType> r(r_shape, 0., m.getData());
 
             auto iter_r = r.getData();
             auto iter_m = sort_m.getData();
@@ -198,8 +198,8 @@ namespace MatSAR {
             if (dim_idx >= m.getDims())
                 return {m};
             if (dim_idx < 0)
-                return sum<TargetType,dType>(m / float_max(m.getSize()), dim);
-            return sum<TargetType,dType>(m / float_max(m.getShape()[dim_idx]), dim);
+                return sum<TargetType, dType>(m / float_max(m.getSize()), dim);
+            return sum<TargetType, dType>(m / float_max(m.getShape()[dim_idx]), dim);
         }
 
         template<RealType RT>
@@ -223,7 +223,7 @@ namespace MatSAR {
             if (dim_idx >= m.getDims()) return {m};
             auto n = m.getSize();
             auto denom = w ? n - 1 : n;
-            return {sum<TargetType,dType>(abs(m - sum<TargetType,dType>(m, dim) / n) ^ 2, dim) / denom};
+            return {sum<TargetType, dType>(abs(m - sum<TargetType, dType>(m, dim) / n) ^ 2, dim) / denom};
         }
 
         template<RealType RT>
@@ -290,8 +290,8 @@ namespace MatSAR {
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            normal_distribution<float_max> normal(mu, sigma);
-            for(auto &i:r)
+            normal_distribution <float_max> normal(mu, sigma);
+            for (auto &i: r)
                 i = normal(gen);
             return r;
         }
@@ -304,15 +304,15 @@ namespace MatSAR {
          * @return 浮点矩阵：正态分布的随机矩阵
          */
         auto normrnd(const Matrix<float_max> &mu, const Matrix<float_max> &sigma,
-                const mshape_type &shape = {1}) -> Matrix<real_max> {
-            auto b_mu = mu.broadcast(shape);
-            auto b_sigma = sigma.broadcast(shape);
+                     const mshape_type &shape = {1}) -> Matrix<real_max> {
+            if (mu.getShape() != shape || sigma.getShape() != shape)
+                throw_shape_exception("mu矩阵或sigma矩阵大小与指定shape不同");
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            for(auto iter = r.begin(),iter_mu = b_mu.begin(),iter_sigma = b_sigma.begin();
-            iter != r.end();++iter,++iter_mu,++iter_sigma){
-                normal_distribution<float_max> normal(*iter_mu, *iter_sigma);
+            for (auto iter = r.begin(), iter_mu = mu.begin(), iter_sigma = sigma.begin();
+                 iter != r.end(); ++iter, ++iter_mu, ++iter_sigma) {
+                normal_distribution <float_max> normal(*iter_mu, *iter_sigma);
                 *iter = normal(gen);
             }
             return r;
@@ -324,7 +324,7 @@ namespace MatSAR {
          */
         template<RealType RT1, RealType RT2>
         auto normstat(RT1 mu, RT2 sigma) -> tuple<real_max, real_max> {
-            return {mu, sigma * sigma};
+            return {mu, mul(sigma,sigma)};
         }
 
         /**
@@ -335,10 +335,149 @@ namespace MatSAR {
         auto normstat(const Matrix<RT1> &mu, const Matrix<RT2> &sigma) -> tuple<Matrix<real_max>, Matrix<real_max>> {
             Matrix<real_max> b_mu(mu);
             Matrix<real_max> b_sigma(sigma);
-            Matrix<real_max>::broadcast(mu,sigma);
-            return {b_mu,b_sigma ^ 2};
+            Matrix<real_max>::broadcast(mu, sigma);
+            return {b_mu, mul(b_sigma,b_sigma)};
+        }
+    }
+    namespace Math {
+        /**
+         * 将矩阵内的所有元素经过二项分布映射
+         * @param m 要求为实数矩阵，若浮点四舍五入
+         * @param n 二项分布的实验次数
+         * @param p 二项分布的发生概率
+         * @return 浮点矩阵：矩阵元素二项分布映射
+         */
+        template<RealType RT>
+        auto binopdf(const Matrix<RT> &m, float64 n, float64 p) -> Matrix<float64> {
+            Matrix<float64> r(m.getShape(), 0.);
+            auto iter_m = m.getData();
+            for (auto &i: r) {
+                if (*iter_m >= 0 || *iter_m <= n)
+                    i = nchoosek<float64>(n, *iter_m) * pow(p, *iter_m) * pow(1 - p, n - *iter_m);
+                iter_m++;
+            }
+            return r;
         }
 
+        /**
+         * 将矩阵内的所有元素经过二项分布映射
+         * @param m 要求为实数矩阵，若浮点四舍五入
+         * @param n matrix 二项分布的实验次数
+         * @param p matrix 二项分布的发生概率
+         * @return 浮点矩阵：矩阵元素二项分布映射
+         */
+        template<RealType RT>
+        auto binopdf(const Matrix<RT> &m, Matrix<float64> n, Matrix<float64> p) -> Matrix<float64> {
+            n = n.broadcast(m.getShape());
+            p = p.broadcast(m.getShape());
+
+            Matrix<float64> r(m.getShape(), 0.);
+            auto iter_m = m.getData();
+            auto iter_n = n.getData();
+            auto iter_p = p.getData();
+            for (auto &i: r) {
+                if (*iter_m >= 0 || *iter_m <= n)
+                    i = nchoosek<float64>(*iter_n, *iter_m) * pow(*iter_p, *iter_m) * pow(1 - *iter_p, *iter_n - *iter_m);
+                iter_m++;
+                iter_n++;
+                iter_p++;
+            }
+            return r;
+        }
+
+        /**
+         * 生成二项分布的随机矩阵
+         * @param mu 二项分布的均值
+         * @param sigma 二项分布的方差
+         * @param shape 目标矩阵的shape
+         * @return 浮点矩阵：二项分布的随机矩阵
+         */
+        auto binornd(float64 n = 1, float64 p = 0.5, const mshape_type &shape = {1}) -> Matrix<real_max> {
+            if(std::round(n)!=n || p < 0 || p > 1)
+                return Matrix<real_max>(shape,NAN);
+            Matrix<real_max> r(shape, 0.);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::binomial_distribution<> bino(static_cast<int>(n), p);
+            for (auto &i: r)
+                i = bino(gen);
+            return r;
+        }
+
+        /**
+         * 生成多个二项分布的随机矩阵
+         * @param mu矩阵 二项分布的均值
+         * @param sigma矩阵 二项分布的方差
+         * @return 浮点矩阵：二项分布的随机矩阵
+         */
+        auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p) -> Matrix<real_max> {
+            if (n.getShape() != p.getShape())
+                throw_shape_exception("n矩阵和p矩阵大小不同");
+            Matrix<real_max> r(n.getShape(), 0.);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            for (auto iter = r.begin(), iter_n = n.begin(),iter_p = p.begin();
+                 iter != r.end(); ++iter, ++iter_n, ++iter_p) {
+                if (std::round(*iter_n)!=*iter_n || *iter_p < 0 || *iter_p > 1)
+                    *iter = NAN;
+                else{
+                    std::binomial_distribution<> bino(static_cast<int>(*iter_n), *iter_p);
+                    *iter = bino(gen);
+                }
+            }
+            return r;
+        }
+
+        /**
+         * 生成多个二项分布的随机矩阵
+         * @param mu矩阵 二项分布的均值
+         * @param sigma矩阵 二项分布的方差
+         * @param shape 目标矩阵的大小
+         * @return 浮点矩阵：二项分布的随机矩阵
+         */
+        auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p,const mshape_type &shape = {1}) -> Matrix<real_max> {
+            if (n.getShape() != shape || p.getShape() != shape)
+                throw_shape_exception("n矩阵或p矩阵与指定矩阵形状大小不同");
+            Matrix<real_max> r(shape, 0.);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            for (auto iter = r.begin(), iter_n = n.begin(),iter_p = p.begin();
+                 iter != r.end(); ++iter, ++iter_n, ++iter_p) {
+                if (std::round(*iter_n)!=*iter_n || *iter_p < 0 || *iter_p > 1)
+                    *iter = NAN;
+                else{
+                    std::binomial_distribution<> bino(static_cast<int>(*iter_n), *iter_p);
+                    *iter = bino(gen);
+                }
+            }
+            return r;
+        }
+
+        /**
+         * 二项分布的均值和方差
+         * @return 浮点矩阵tuple {n*p,n*p*(1-p)}
+         */
+        template<RealType RT1, RealType RT2>
+        auto binostat(RT1 n, RT2 p)-> tuple<real_max, real_max> {
+            //check n/p legal
+            if ((isFloat<RT1>() && std::round(n)!=n) || p < 0 || p > 1)
+                    return {NAN,NAN};
+            auto mu = n * p;
+            return {mu,mu*(1-p)};
+        }
+
+        /**
+         * 二项分布的均值和方差
+         * @return 浮点矩阵tuple {mu,sigma*sigma}
+         */
+        template<RealType RT1, RealType RT2>
+        auto binostat(const Matrix<RT1> &n, const Matrix<RT2> &p) -> tuple<Matrix<real_max>, Matrix<real_max>> {
+            auto mu = mul(n,p);
+            return {mu, mul(mu,1-p)};
+        }
+    }
+
+    namespace Math {
         /**
          * 生成(0,1)均匀分布的随机矩阵
          * @param shape 目标矩阵维度
@@ -349,7 +488,7 @@ namespace MatSAR {
             std::random_device rd;
             std::mt19937 gen(rd());
             std::uniform_real_distribution<real_max> uniform(0, 1);
-            for(auto &i:r)
+            for (auto &i: r)
                 i = uniform(gen);
             return r;
         }
@@ -377,7 +516,7 @@ namespace MatSAR {
             std::random_device rd;
             std::mt19937 gen(rd());
             std::uniform_int_distribution<int64> uniform(imin, imax);
-            for(auto &i:r)
+            for (auto &i: r)
                 i = uniform(gen);
             return r;
         }
