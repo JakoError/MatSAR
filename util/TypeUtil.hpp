@@ -126,7 +126,7 @@ enum CalculableLevel {
 
 namespace MatSAR::Util::TypeUtil {
     template<Calculable dType>
-    static constexpr string getCalculableString() {
+    static auto getCalculableString() -> string {
         ///COMMON_USE
         if (std::is_same<dType, int32>::value)
             return "int32";
@@ -157,7 +157,7 @@ namespace MatSAR::Util::TypeUtil {
     }
 
     template<Calculable dType>
-    static constexpr CalculableLevel getCalculableLevel() {
+    static constexpr auto getCalculableLevel() -> CalculableLevel {
         ///COMMON_USE
         if (std::is_same<dType, int32>::value)
             return int32_level;
@@ -188,7 +188,7 @@ namespace MatSAR::Util::TypeUtil {
     }
 
     template<Calculable dType>
-    static constexpr bool isComplex() {
+    static constexpr auto isComplex() -> bool {
         if (std::is_same<dType, complex64>::value)
             return true;
         if (std::is_same<dType, complex128>::value)
@@ -197,12 +197,12 @@ namespace MatSAR::Util::TypeUtil {
     }
 
     template<Calculable dType>
-    static constexpr bool isReal() {
+    static constexpr auto isReal() -> bool {
         return !isComplex<dType>();
     }
 
     template<Calculable dType>
-    static constexpr bool isFloat() {
+    static constexpr auto isFloat() -> bool {
         if (std::is_same<dType, float32>::value)
             return true;
         if (std::is_same<dType, float64>::value)
@@ -211,7 +211,7 @@ namespace MatSAR::Util::TypeUtil {
     }
 
     template<Calculable dType>
-    static constexpr bool isInt() {
+    static constexpr auto isInt() -> bool {
         if (std::is_same<dType, int8>::value)
             return true;
         if (std::is_same<dType, int16>::value)
@@ -232,7 +232,7 @@ namespace MatSAR::Util::TypeUtil {
     }
 
     template<Calculable T1, Calculable T2>
-    static constexpr bool typeHigher() {
+    static constexpr auto typeHigher() -> bool {
         if (typeid(T1) == typeid(T2))
             return false;
         CalculableLevel level_t1 = getCalculableLevel<T1>();

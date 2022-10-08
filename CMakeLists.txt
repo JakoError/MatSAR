@@ -4,8 +4,8 @@ project(MatSAR)
 set(CMAKE_CXX_STANDARD 20)
 
 set(INC_DIR ./include)
-set(LINK_DIR ./lib)
 include_directories(${INC_DIR})
+set(LINK_DIR ./lib)
 link_directories(${LINK_DIR})
 
 set(MATH_DIR ./math)
@@ -23,8 +23,10 @@ add_executable(pure_test test/pure_test.cpp)
 
 add_executable(broadcast_test test/broadcast_test.cpp)
 add_executable(numberop_test test/numberop_test.cpp)
+
 add_executable(probability_test test/probability_test.cpp)
 target_link_libraries(probability_test libopenblas)
+
 add_executable(linear_algebra_test test/linear_algebra_test.cpp)
 target_link_libraries(linear_algebra_test libopenblas)
 
@@ -45,7 +47,7 @@ add_executable(linear_algebra_test2 test/linear_algebra_test2.cpp)
 target_link_libraries(linear_algebra_test2 libopenblas)
 
 add_executable(probability_test2 test/probability_test2.cpp)
-target_link_libraries(probability_test2 libopenblas)
+target_link_libraries(probability_test2 libopenblas.a)
 
 add_executable(digital_signal_test test/digital_signal_test.cpp)
 target_link_libraries(digital_signal_test libopenblas)

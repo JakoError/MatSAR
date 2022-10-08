@@ -207,7 +207,7 @@ namespace MatSAR {
         template<RealType RT>
         auto reallog(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r) {
+            for (Calculable auto &i: r) {
                 if (i < 0)
                     throw_value_error("reallog需要运算数均大于0");
                 i = std::log(i);
@@ -218,13 +218,14 @@ namespace MatSAR {
         template<ComplexType CT>
         auto reallog([[maybe_unused]]const Matrix<CT> &m) -> Matrix<complex_max> {
             throw_value_error("reallog不支持复数矩阵");
+            return {};
         }
 
 
         template<RealType RT>
         auto log(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::log(i);
             return r;
         }
@@ -232,7 +233,7 @@ namespace MatSAR {
         template<ComplexType CT>
         auto log(const Matrix<CT> &m) -> Matrix<complex_max> {
             Matrix<complex_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::log(i);
             return r;
         }
@@ -240,7 +241,7 @@ namespace MatSAR {
         template<RealType RT>
         auto logm(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::log(i);
             return r;
         }
@@ -248,7 +249,7 @@ namespace MatSAR {
         template<ComplexType CT>
         auto logm(const Matrix<CT> &m) -> Matrix<complex_max> {
             Matrix<complex_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::log(i);
             return r;
         }
@@ -256,7 +257,7 @@ namespace MatSAR {
         template<RealType RT>
         auto ln(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::log(i);
             return r;
         }
@@ -264,7 +265,7 @@ namespace MatSAR {
         template<ComplexType CT>
         auto ln(const Matrix<CT> &m) -> Matrix<complex_max> {
             Matrix<complex_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::log(i);
             return r;
         }
@@ -272,7 +273,7 @@ namespace MatSAR {
         template<RealType RT>
         auto log2(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::log2(i);
             return r;
         }
@@ -280,15 +281,15 @@ namespace MatSAR {
         template<ComplexType CT>
         auto log2(const Matrix<CT> &m) -> Matrix<complex_max> {
             Matrix<complex_max> r(m);
-            for (auto &i: r)
-                i = log2(i);
+            for (Calculable auto &i: r)
+                i = MatSAR::log2(i);
             return r;
         }
 
         template<RealType RT>
         auto log10(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::log10(i);
             return r;
         }
@@ -296,7 +297,7 @@ namespace MatSAR {
         template<ComplexType CT>
         auto log10(const Matrix<CT> &m) -> Matrix<complex_max> {
             Matrix<complex_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = log10(i);
             return r;
         }
@@ -304,7 +305,7 @@ namespace MatSAR {
         template<RealType RT>
         auto exp(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::exp(i);
             return r;
         }
@@ -312,7 +313,7 @@ namespace MatSAR {
         template<ComplexType CT>
         auto exp(const Matrix<CT> &m) -> Matrix<complex_max> {
             Matrix<complex_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::exp(i);
             return r;
         }
@@ -320,7 +321,7 @@ namespace MatSAR {
         template<RealType RT>
         auto exp2(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::exp2(i);
             return r;
         }
@@ -336,7 +337,7 @@ namespace MatSAR {
         template<RealType RT>
         auto expm(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::exp(i);
             return r;
         }
@@ -344,7 +345,7 @@ namespace MatSAR {
         template<ComplexType CT>
         auto expm(const Matrix<CT> &m) -> Matrix<complex_max> {
             Matrix<complex_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::exp(i);
             return r;
         }
@@ -354,7 +355,7 @@ namespace MatSAR {
         template<RealType RT>
         auto gamma(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = MatSAR::gamma(i);
             return r;
         }
@@ -362,7 +363,7 @@ namespace MatSAR {
         template<RealType RT>
         auto gammaln(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = MatSAR::gammaln(i);
             return r;
         }
@@ -388,7 +389,7 @@ namespace MatSAR {
         template<RealType RT>
         auto sqrt(const Matrix<RT> &m) -> Matrix<complex_max> {
             Matrix<complex_max> r((Matrix<real_max>(m)));
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::sqrt(i);
             return r;
         }
@@ -396,7 +397,7 @@ namespace MatSAR {
         template<ComplexType CT>
         auto sqrt(const Matrix<CT> &m) -> Matrix<complex_max> {
             Matrix<complex_max> r(m);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::sqrt(i);
             return r;
         }
@@ -404,9 +405,9 @@ namespace MatSAR {
         template<RealType RT>
         auto realsqrt(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            for (const auto &i: r)
+            for (const Calculable auto &i: r)
                 if (i < 0) throw_value_error("realsqrt运算数中不能包含负数");
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::sqrt(i);
             return r;
         }
@@ -417,6 +418,7 @@ namespace MatSAR {
         template<ComplexType CT>
         auto realsqrt(const Matrix<CT> &m) -> Matrix<complex_max> {
             throw_value_error("realsqrt不支持复数矩阵");
+            return {};
         }
 
         template<Calculable lT, Calculable rT>
@@ -497,7 +499,7 @@ namespace MatSAR {
         template<ComplexType CT>
         auto abs(const Matrix<CT> &m) -> Matrix<float_max> {
             Matrix<float_max> r(m.getShape(), 0.);
-            for (auto &i: r)
+            for (Calculable auto &i: r)
                 i = std::abs(i);
             return r;
         }

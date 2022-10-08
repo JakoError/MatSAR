@@ -5,6 +5,8 @@
 #ifndef MATSAR_LINEARALGEBRA_HPP
 #define MATSAR_LINEARALGEBRA_HPP
 
+#include <cstring>
+
 #ifndef MATSAR_MATRIX_HPP
 
 #include "../Matrix.hpp"

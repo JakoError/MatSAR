@@ -257,6 +257,100 @@ namespace MatSAR {
         if (v < 0) throw_value_error("gammaln: 要求传入值为非负数");
         return std::lgamma(v);
     }
+
+    ///extra base function对基础函数的补充
+    template<ComplexType CT>
+    static auto real(const CT &v) -> float_max {
+        return (float_max) v.real();
+    }
+
+    template<ComplexType CT>
+    static auto image(const CT &v) -> float_max {
+        return (float_max) v.imag();
+    }
+
+    template<RealType RT>
+    static auto real(const RT &v) -> float_max {
+        return (float_max) v;
+    }
+
+    template<RealType RT>
+    static auto image([[maybe_unused]]const RT &v) -> float_max {
+        return 0.;
+    }
+
+//template<RealType RT>
+//static complex128 conj(const RT &v) {
+//    return {(float_max) v, 0};
+//}
+
+    template<ComplexType CT>
+    static auto log2(const CT &v) -> complex128 {
+        return log(v) * static_cast<float_max>(1.442695040888963387004650940070860087871551513671875);
+
+    }
+
+    template<ComplexType CT>
+    static auto log10(const CT &v) -> complex128 {
+        return log(v) * static_cast<float_max>(0.434294481903251761156781185491126962006092071533203125);
+    }
+
+    template<SIntType T1, SIntType T2>
+    static auto rem(const T1 &left, const T2 &right) -> real_max {
+        if (right == 0) return NAN;
+        int_max left_ = left;
+        int_max right_ = right;
+        int_max r = left_ - (left_ / right_) * right_;
+        return real_max(r);
+    }
+
+    template<UIntType T1, UIntType T2>
+    static auto rem(const T1 &left, const T2 &right) -> real_max {
+        if (right == 0) return NAN;
+        int_max left_ = left;
+        int_max right_ = right;
+        int_max r = left_ - (left_ / right_) * right_;
+        return real_max(r);
+    }
+
+    template<FloatType T1, FloatType T2>
+    static auto rem(const T1 &left, const T2 &right) -> float_max {
+        if (right == 0.) return NAN;
+        float_max left_ = left;
+        float_max right_ = right;
+        return left_ - fix(left_ / right_) * right_;
+    }
+
+    template<SIntType T1, SIntType T2>
+    static auto mod(const T1 &left, const T2 &right) -> int_max {
+        if (right == 0) return NAN;
+        int_max left_ = left;
+        int_max right_ = right;
+        int_max r = left_ - (left_ / right_) * right_;
+        return right_ < 0 == r < 0 ? r : r + right_;
+    }
+
+    template<UIntType T1, UIntType T2>
+    static auto mod(const T1 &left, const T2 &right) -> uint_max {
+        if (right == 0) return NAN;
+        uint_max left_ = left;
+        uint_max right_ = right;
+        return left_ - (left_ / right_) * right_;
+    }
+
+    template<FloatType T1, FloatType T2>
+    static auto mod(const T1 &left, const T2 &right) -> float_max {
+        if (right == 0.) return NAN;
+        float_max left_ = left;
+        float_max right_ = right;
+        float_max r = left_ - floor(left_ / right_) * right_;
+        return left_ < 0 == r < 0 ? r : r + right_;
+    }
+
+    template<Calculable T, class targetType>
+    static auto sqrt(const T &v) -> targetType {
+        return std::sqrt(targetType(v));
+    }
 }
 
 /**
@@ -354,101 +448,6 @@ inline static auto operator>(const CT1 &left, const T2 &right) -> bool {
 template<ComplexType CT1, RealType T2>
 inline static auto operator>=(const CT1 &left, const T2 &right) -> bool {
     return std::abs(left) >= right;
-}
-
-
-///extra base function对基础函数的补充
-template<ComplexType CT>
-static auto real(const CT &v) -> float_max {
-    return (float_max) v.real();
-}
-
-template<ComplexType CT>
-static auto image(const CT &v) -> float_max {
-    return (float_max) v.imag();
-}
-
-template<RealType RT>
-static auto real(const RT &v) -> float_max {
-    return (float_max) v;
-}
-
-template<RealType RT>
-static auto image([[maybe_unused]]const RT &v) -> float_max {
-    return 0.;
-}
-
-//template<RealType RT>
-//static complex128 conj(const RT &v) {
-//    return {(float_max) v, 0};
-//}
-
-template<ComplexType CT>
-static auto log2(const CT &v) -> complex128 {
-    return log(v) * static_cast<float_max>(1.442695040888963387004650940070860087871551513671875);
-
-}
-
-template<ComplexType CT>
-static auto log10(const CT &v) -> complex128 {
-    return log(v) * static_cast<float_max>(0.434294481903251761156781185491126962006092071533203125);
-}
-
-template<SIntType T1, SIntType T2>
-static auto rem(const T1 &left, const T2 &right) -> real_max {
-    if (right == 0) return NAN;
-    int_max left_ = left;
-    int_max right_ = right;
-    int_max r = left_ - (left_ / right_) * right_;
-    return real_max(r);
-}
-
-template<UIntType T1, UIntType T2>
-static auto rem(const T1 &left, const T2 &right) -> real_max {
-    if (right == 0) return NAN;
-    int_max left_ = left;
-    int_max right_ = right;
-    int_max r = left_ - (left_ / right_) * right_;
-    return real_max(r);
-}
-
-template<FloatType T1, FloatType T2>
-static auto rem(const T1 &left, const T2 &right) -> float_max {
-    if (right == 0.) return NAN;
-    float_max left_ = left;
-    float_max right_ = right;
-    return left_ - fix(left_ / right_) * right_;
-}
-
-template<SIntType T1, SIntType T2>
-static auto mod(const T1 &left, const T2 &right) -> int_max {
-    if (right == 0) return NAN;
-    int_max left_ = left;
-    int_max right_ = right;
-    int_max r = left_ - (left_ / right_) * right_;
-    return right_ < 0 == r < 0 ? r : r + right_;
-}
-
-template<UIntType T1, UIntType T2>
-static auto mod(const T1 &left, const T2 &right) -> uint_max {
-    if (right == 0) return NAN;
-    uint_max left_ = left;
-    uint_max right_ = right;
-    return left_ - (left_ / right_) * right_;
-}
-
-template<FloatType T1, FloatType T2>
-static auto mod(const T1 &left, const T2 &right) -> float_max {
-    if (right == 0.) return NAN;
-    float_max left_ = left;
-    float_max right_ = right;
-    float_max r = left_ - floor(left_ / right_) * right_;
-    return left_ < 0 == r < 0 ? r : r + right_;
-}
-
-template<Calculable T, class targetType>
-static auto sqrt(const T &v) -> targetType {
-    return std::sqrt(targetType(v));
 }
 
 

@@ -39,8 +39,8 @@ namespace MatSAR::Util::Exception {
 
         explicit ValueError(const char *Message) : Mybase(Message) {}
 
-        [[nodiscard]] auto what() const -> const char * override {
-            return exception::what();
+        [[nodiscard]] auto what() const noexcept -> const char * override {
+            return std::logic_error::what();
         }
     };
 
@@ -55,8 +55,8 @@ namespace MatSAR::Util::Exception {
 
         explicit ShapeException(const char *Message) : Mybase(Message) {}
 
-        [[nodiscard]] auto what() const -> const char * override {
-            return exception::what();
+        [[nodiscard]] auto what() const noexcept-> const char * override {
+            return std::logic_error::what();
         }
     };
 
@@ -71,8 +71,8 @@ namespace MatSAR::Util::Exception {
 
         explicit TypeLossException(const char *Message) : Mybase(Message) {}
 
-        [[nodiscard]] auto what() const -> const char * override {
-            return exception::what();
+        [[nodiscard]] auto what() const noexcept-> const char * override {
+            return std::logic_error::what();
         }
     };
 
@@ -87,8 +87,8 @@ namespace MatSAR::Util::Exception {
 
         explicit BroadcastException(const char *Message) : Mybase(Message) {}
 
-        [[nodiscard]] auto what() const -> const char * override {
-            return exception::what();
+        [[nodiscard]] auto what() const noexcept-> const char * override {
+            return std::logic_error::what();
         }
     };
 
@@ -134,7 +134,7 @@ namespace MatSAR::Util::Exception {
     template<Calculable T1, Calculable T2>
     void throw_type_loss_exception(bool to_exit = false) {
         try {
-            string msg = "convert from \"" + getCalculableString<T1>() + "\" to \"" + getCalculableString<T2>() +
+            string msg = "convert from \"" + MatSAR::Util::TypeUtil::getCalculableString<T1>() + "\" to \"" + MatSAR::Util::TypeUtil::getCalculableString<T2>() +
                          "\" may loss data";
             throw TypeLossException(msg);
         } catch (TypeLossException &e) {
