@@ -28,6 +28,7 @@
 #endif //MATSAR_LINEARALGEBRA_HPP
 
 #include <random>
+#include <algorithm>
 
 namespace MatSAR {
 ///矩阵概率计算函数
@@ -324,7 +325,7 @@ namespace MatSAR {
          */
         template<RealType RT1, RealType RT2>
         auto normstat(RT1 mu, RT2 sigma) -> tuple<real_max, real_max> {
-            return {mu, mul(sigma,sigma)};
+            return {mu, mul(sigma, sigma)};
         }
 
         /**
@@ -336,7 +337,7 @@ namespace MatSAR {
             Matrix<real_max> b_mu(mu);
             Matrix<real_max> b_sigma(sigma);
             Matrix<real_max>::broadcast(mu, sigma);
-            return {b_mu, mul(b_sigma,b_sigma)};
+            return {b_mu, mul(b_sigma, b_sigma)};
         }
     }
     namespace Math {
@@ -377,7 +378,8 @@ namespace MatSAR {
             auto iter_p = p.getData();
             for (auto &i: r) {
                 if (*iter_m >= 0 || *iter_m <= n)
-                    i = nchoosek<float64>(*iter_n, *iter_m) * pow(*iter_p, *iter_m) * pow(1 - *iter_p, *iter_n - *iter_m);
+                    i = nchoosek<float64>(*iter_n, *iter_m) * pow(*iter_p, *iter_m) *
+                        pow(1 - *iter_p, *iter_n - *iter_m);
                 iter_m++;
                 iter_n++;
                 iter_p++;
@@ -393,8 +395,8 @@ namespace MatSAR {
          * @return 浮点矩阵：二项分布的随机矩阵
          */
         auto binornd(float64 n = 1, float64 p = 0.5, const mshape_type &shape = {1}) -> Matrix<real_max> {
-            if(std::round(n)!=n || p < 0 || p > 1)
-                return Matrix<real_max>(shape,NAN);
+            if (std::round(n) != n || p < 0 || p > 1)
+                return Matrix<real_max>(shape, NAN);
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -416,11 +418,11 @@ namespace MatSAR {
             Matrix<real_max> r(n.getShape(), 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            for (auto iter = r.begin(), iter_n = n.begin(),iter_p = p.begin();
+            for (auto iter = r.begin(), iter_n = n.begin(), iter_p = p.begin();
                  iter != r.end(); ++iter, ++iter_n, ++iter_p) {
-                if (std::round(*iter_n)!=*iter_n || *iter_p < 0 || *iter_p > 1)
+                if (std::round(*iter_n) != *iter_n || *iter_p < 0 || *iter_p > 1)
                     *iter = NAN;
-                else{
+                else {
                     std::binomial_distribution<> bino(static_cast<int>(*iter_n), *iter_p);
                     *iter = bino(gen);
                 }
@@ -435,17 +437,18 @@ namespace MatSAR {
          * @param shape 目标矩阵的大小
          * @return 浮点矩阵：二项分布的随机矩阵
          */
-        auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p,const mshape_type &shape = {1}) -> Matrix<real_max> {
+        auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p,
+                     const mshape_type &shape = {1}) -> Matrix<real_max> {
             if (n.getShape() != shape || p.getShape() != shape)
                 throw_shape_exception("n矩阵或p矩阵与指定矩阵形状大小不同");
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            for (auto iter = r.begin(), iter_n = n.begin(),iter_p = p.begin();
+            for (auto iter = r.begin(), iter_n = n.begin(), iter_p = p.begin();
                  iter != r.end(); ++iter, ++iter_n, ++iter_p) {
-                if (std::round(*iter_n)!=*iter_n || *iter_p < 0 || *iter_p > 1)
+                if (std::round(*iter_n) != *iter_n || *iter_p < 0 || *iter_p > 1)
                     *iter = NAN;
-                else{
+                else {
                     std::binomial_distribution<> bino(static_cast<int>(*iter_n), *iter_p);
                     *iter = bino(gen);
                 }
@@ -458,12 +461,12 @@ namespace MatSAR {
          * @return 浮点矩阵tuple {n*p,n*p*(1-p)}
          */
         template<RealType RT1, RealType RT2>
-        auto binostat(RT1 n, RT2 p)-> tuple<real_max, real_max> {
+        auto binostat(RT1 n, RT2 p) -> tuple<real_max, real_max> {
             //check n/p legal
-            if ((isFloat<RT1>() && std::round(n)!=n) || p < 0 || p > 1)
-                    return {NAN,NAN};
+            if ((isFloat<RT1>() && std::round(n) != n) || p < 0 || p > 1)
+                return {NAN, NAN};
             auto mu = n * p;
-            return {mu,mu*(1-p)};
+            return {mu, mu * (1 - p)};
         }
 
         /**
@@ -472,8 +475,76 @@ namespace MatSAR {
          */
         template<RealType RT1, RealType RT2>
         auto binostat(const Matrix<RT1> &n, const Matrix<RT2> &p) -> tuple<Matrix<real_max>, Matrix<real_max>> {
-            auto mu = mul(n,p);
-            return {mu, mul(mu,1-p)};
+            auto mu = mul(n, p);
+            return {mu, mul(mu, 1 - p)};
+        }
+    }
+    namespace Math {
+        //连续均匀分布
+        /**
+         * 求连续均匀分布函数值
+         * @param x 函数传入x值，x值需在[a,b]内
+         * @param a 连续均匀函数左边界值，默认为标准分布0
+         * @param b 连续均匀函数右边界值，默认为标准分布1
+         */
+        auto unifpdf(float64 x, float64 a = 0, float64 b = 1) -> float64 {
+            if (x < a || x > b)
+                return 0;
+            return 1 / (b - a);
+        }
+
+        /**
+         * 求连续均匀分布函数值
+         * @param x 函数传入x值，x值需在[a,b]内
+         * @param a 连续均匀函数左边界值，默认为标准分布0
+         * @param b 连续均匀函数右边界值，默认为标准分布1
+         */
+        auto unifpdf(const Matrix<float64> &x, const Matrix<float64> &a = {0},
+                     const Matrix<float64> &b = {1}) -> Matrix<float64> {
+            bool x_single = x.isSingle();
+            bool a_single = a.isSingle();
+            bool b_single = b.isSingle();
+            if (a.getShape() != b.getShape() || (x.getShape() != a.getShape() && !a_single))
+                throw_shape_exception("unifpdf: a,b两矩阵大小应该相同，并且等于x矩阵大小");
+            mshape_type shape;
+            if (!x.isSingle())
+                shape = x.getShape();
+            else
+                shape = a.getShape();
+            Matrix<float64> r(shape, 0.);
+            auto iter_x = x.begin();
+            auto iter_a = a.begin();
+            auto iter_b = b.begin();
+            for (auto &i: r) {
+                i = unifpdf(*iter_x, *iter_a, *iter_b);
+                if (!x_single)
+                    iter_x++;
+                if (!a_single)
+                    iter_a++;
+                if (!b_single)
+                    iter_b++;
+            }
+            return r;
+        }
+
+        /**
+        * 求连续均匀分布期望与方差
+        * @param a 连续均匀函数左边界值，默认为标准分布0
+        * @param b 连续均匀函数右边界值，默认为标准分布1
+        */
+        auto unifstat(float64 a, float64 b) -> tuple<float64, float64> {
+            return {(a + b) / 2, pow((a - b), 2) / 12};
+        }
+
+        /**
+        * 求连续均匀分布期望与方差
+        * @param a 连续均匀函数左边界值，默认为标准分布0
+        * @param b 连续均匀函数右边界值，默认为标准分布1
+        */
+        auto unifstat(const Matrix<float64> &a, const Matrix<float64> &b) -> tuple<Matrix<float64>, Matrix<float64>> {
+            if (a.getShape() != b.getShape())
+                throw_shape_exception("unifstat: a b两矩阵应该有相同的大小");
+            return {(a + b) / 2, ((a - b) ^ 2) / 12};
         }
     }
 
@@ -568,6 +639,318 @@ namespace MatSAR {
          */
         auto randn(int64 n) -> Matrix<real_max> {
             return randn({n, n});
+        }
+
+        template<Calculable T>
+        class val_idx {
+        public:
+            T val = 0;
+            size_t idx = 0;
+
+            val_idx() = default;
+
+            val_idx(T val, size_t idx) : val(val), idx(idx) {}
+
+            ~val_idx() = default;
+        };
+
+        /**
+         * 生成整数的随机排列
+         * @param n 采样间隔中的整数数量
+         * @return 整数行数组
+         * @hint 使用偏移量算法
+         */
+        template<IntType IT>
+        auto randperm(IT n) -> Matrix<IT> {
+            if (n < 0) throw_value_error("randperm: n 应该为正数");
+            unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
+            auto rand_seq = rand(mshape_type{n});
+            for (IT i = 0; i < n; ++i) {
+                val_idx_seq.get()[i].val = rand_seq(i);
+                val_idx_seq.get()[i].idx = i + 1;
+            }
+            std::sort(&val_idx_seq.get()[0], &val_idx_seq.get()[n],
+                      [](val_idx<real_max> v1, val_idx<real_max> v2) { return v1.val < v2.val; });
+            Matrix<IT> r({n}, 0.);
+            for (IT i = 0; i < n; ++i)
+                r(i) = val_idx_seq.get()[i].idx;
+            return r;
+        }
+
+        /**
+         * 生成整数的随机排列
+         * @param n 采样间隔中的整数数量
+         * @param k 所选整数的数量
+         * @return 整数行数组
+         */
+        template<IntType IT>
+        auto randperm(IT n, IT k) -> Matrix<IT> {
+            if (n < 0) throw_value_error("randperm: n 应该为正数");
+            if (k < 0 || k > n) throw_value_error("randperm: k值应该大于等于0或小于等于n");
+            unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
+            auto rand_seq = rand(mshape_type{n});
+            for (IT i = 0; i < n; ++i) {
+                val_idx_seq.get()[i].val = rand_seq(i);
+                val_idx_seq.get()[i].idx = i + 1;
+            }
+            std::sort(&val_idx_seq.get()[0], &val_idx_seq.get()[n],
+                      [](val_idx<real_max> v1, val_idx<real_max> v2) { return v1.val < v2.val; });
+            Matrix<IT> r({k}, 0.);
+            for (IT i = 0; i < k; ++i)
+                r(i) = val_idx_seq.get()[i].idx;
+            return r;
+        }
+    }
+
+    namespace Math {
+//        //卡方分布
+//        /**
+//         * 求卡方分布函数值
+//         * @param x
+//         * @param nu
+//         */
+//        auto chi2cdf(float64 x, float64 nu) {
+//            std::chi_squared_distribution<float64> chi2(nu);
+//
+//        }
+        /**
+         * 求卡方分布函数值
+         * @param x 函数传入x值
+         * @param nu 卡方分布自由度
+         * @hint std::tgamma function
+         */
+        auto chi2pdf(float64 x, float64 nu) -> float64 {
+            if (x < 0) return 0;
+            if (nu < 0) return NAN;
+            auto v2 = nu / 2;
+            return std::pow(x, v2 - 1) * std::exp(-x / 2) / std::exp2(v2) / std::tgamma(v2);
+        }
+
+        /**
+         * 求卡方分布函数值
+         * @param x 函数传入x值
+         * @param nu 卡方分布自由度
+         * @hint 可使用matlab中find排除法优化算法
+         */
+        auto chi2pdf(const Matrix<float64> &x, const Matrix<float64> &nu) -> Matrix<float64> {
+            if (x.getShape() != nu.getShape() && !x.isSingle() && !nu.isSingle())
+                throw_shape_exception("poisspdf: x 与 nu 维度不同");
+            mshape_type shape = nu.isSingle() ? x.getShape() : nu.getShape();
+            Matrix<float64> r(shape, 0.);
+            auto iter_x = x.begin();
+            auto iter_nu = nu.begin();
+            for (auto &i: r) {
+                i = chi2pdf(*iter_x, *iter_nu);
+                if (!x.isSingle())
+                    iter_x++;
+                if (!nu.isSingle())
+                    iter_nu++;
+            }
+            return r;
+        }
+    }
+    namespace Math {
+        //指数分布
+        /**
+         * 求指数分布函数值
+         * @param x 函数传入x值
+         * @param mu 指数分布平均值
+         */
+        auto exppdf(float64 x, float64 mu = 1) -> float64 {
+            return 1 / mu * std::exp(-x / mu);
+        }
+
+        /**
+         * 求指数分布函数值
+         * @param x 函数传入x值
+         * @param mu 指数分布平均值
+         */
+        auto exppdf(const Matrix<float64> &x, const Matrix<float64> &mu = {1}) -> Matrix<float64> {
+            return 1 / mu * exp(-x / mu);
+        }
+
+        /**
+         * 生成指数分布随机矩阵
+         * @param mu 指数分布平均值
+         * @param shape 目标矩阵的大小
+         */
+        auto exprnd(float64 mu, const mshape_type &shape = {1}) -> Matrix<float64> {
+            Matrix<float64> r(shape, 0.);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::exponential_distribution<float64> exp_dis(mu);
+            for (auto &i: r)
+                i = exp_dis(gen);
+            return r;
+        }
+
+        /**
+         * 指数分布的均值和方差
+         * @return 浮点矩阵tuple {mu,mu*mu}
+         */
+        template<RealType RT>
+        auto expstat(const RT &mu) -> tuple<real_max, real_max> {
+            real_max tmp = mu;
+            return {tmp, tmp * tmp};
+        }
+
+        /**
+         * 指数分布的均值和方差
+         * @return 浮点矩阵tuple {mu,mu*mu}
+         */
+        template<RealType RT>
+        auto expstat(const Matrix<RT> &mu) -> tuple<Matrix<real_max>, Matrix<real_max>> {
+            Matrix<real_max> tmp(mu);
+            return {tmp, tmp ^ 2};
+        }
+    }
+
+    namespace Math {
+        //泊松分布
+        /**
+         * 求泊松分布函数值
+         * @param x 函数传入x值，需要整数值，非整数值泊松分布为0
+         * @param lambda 指数分布lambda值，速率参数，为正数
+         */
+        auto poisspdf(float64 x, float64 lambda) -> float64 {
+            if (x < 0 || x != std::round(x))
+                return 0;
+            if (lambda < 0)
+                return NAN;
+            return pow(lambda, x) / factorial<float64>(x) * std::exp(-lambda);
+        }
+
+        /**
+         * 求泊松分布函数值
+         * @param x 函数传入x值，需要整数值，非整数值泊松分布为0
+         * @param lambda 指数分布lambda值，速率参数，为正数
+         */
+        auto poisspdf(const Matrix<float64> &x, const Matrix<float64> &lambda) -> Matrix<float64> {
+            if (x.getShape() != lambda.getShape() && !x.isSingle() && !lambda.isSingle())
+                throw_shape_exception("poisspdf: x 与 lambda 维度不同");
+            mshape_type shape;
+            if (!x.isSingle())
+                shape = x.getShape();
+            else
+                shape = lambda.getShape();
+            Matrix<float64> r(shape, 0.);
+            auto iter_x = x.begin();
+            auto iter_lambda = lambda.begin();
+            for (auto &i: r) {
+                i = poisspdf(*iter_x, *iter_lambda);
+                if (!x.isSingle())
+                    iter_x++;
+                if (!lambda.isSingle())
+                    iter_lambda++;
+            }
+            return r;
+        }
+
+        /**
+         * 生成泊松分布随机矩阵
+         * @param lambda 指数分布lambda值，速率参数，为正数
+         * @param shape 目标矩阵的大小
+         */
+        auto poissrnd(float64 lambda, const mshape_type &shape = {1}) -> Matrix<float64> {
+            Matrix<float64> r(shape, 0.);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::poisson_distribution<> poisson(lambda);
+            for (auto &i: r)
+                i = poisson(gen);
+            return r;
+        }
+    }
+    namespace Math {
+        //瑞利分布
+        /**
+         * 求瑞利分布函数值
+         * @param x 函数传入x值，需要非负值，负值泊松分布为0
+         * @param b 瑞利分布比例值
+         */
+        auto raylpdf(float64 x, float64 b) -> float64 {
+            if (x < 0) return 0;
+            if (b <= 0) return NAN;
+            auto b2 = b * b;
+            return x / b2 * std::exp(-x * x / 2 / b2);
+        }
+
+        /**
+         * 求瑞利分布函数值
+         * @param x 函数传入x值，需要非负值，负值泊松分布为0
+         * @param b 瑞利分布比例值
+         */
+        auto raylpdf(const Matrix<float64> &x, const Matrix<float64> &b) -> Matrix<float64> {
+            bool x_single = x.isSingle();
+            bool b_single = b.isSingle();
+            if (x.getShape() != b.getShape() && !x_single && !b_single)
+                throw_shape_exception("raylpdf: x 与 b 大小不同");
+            mshape_type shape;
+            if (!x_single)
+                shape = x.getShape();
+            else
+                shape = b.getShape();
+            Matrix<float64> r(shape, 0.);
+            auto iter_x = x.begin();
+            auto iter_b = b.begin();
+            for (auto &i: r) {
+                i = raylpdf(*iter_x, *iter_b);
+                if (!x_single)
+                    iter_x++;
+                if (!b_single)
+                    iter_b++;
+            }
+            return r;
+        }
+    }
+    namespace Math {
+        //韦伯分布
+        /**
+         * 求韦伯分布函数值
+         * @param x 函数传入x值，需要非负值，负值韦伯分布为0
+         * @param lambda 韦伯分布比例参数
+         * @param k 韦伯分布形状参数
+         */
+        auto weibpdf(float64 x, float64 lambda, float64 k) -> float64 {
+            if (x < 0) return 0;
+            if (lambda <= 0 || k <= 0) return NAN;
+            auto lambda_re = 1 / lambda;
+            auto x_lambda_re = x * lambda_re;
+            auto stat1 = std::pow(x_lambda_re, k - 1);
+            return k * lambda_re * stat1 * std::exp(-stat1 * x_lambda_re);
+        }
+
+        /**
+         * 求韦伯分布函数值
+         * @param x 函数传入x值，需要非负值，负值韦伯分布为0
+         * @param lambda 韦伯分布比例参数
+         * @param k 韦伯分布形状参数
+         */
+        auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda,const Matrix<float64> &k) -> Matrix<float64> {
+            bool x_single = x.isSingle();
+            bool lambda_single = lambda.isSingle();
+            bool k_single = k.isSingle();
+            if (lambda.getShape() != k.getShape() || (!lambda_single && x.getShape() != lambda.getShape()))
+                throw_shape_exception("weibpdf: lambda k 两矩阵应该有相同的大小，并且与x大小匹配");
+            mshape_type shape;
+            if (!x_single)
+                shape = x.getShape();
+            else
+                shape = lambda.getShape();
+            Matrix<float64> r(shape, 0.);
+            auto iter_x = x.begin();
+            auto iter_lambda = lambda.begin();
+            auto iter_k = k.begin();
+            for (auto &i: r) {
+                i = weibpdf(*iter_x, *iter_lambda,*iter_k);
+                if (!x_single)
+                    iter_x++;
+                if (!lambda_single)
+                    iter_lambda++;
+                if (!k_single)
+                    iter_k++;
+            }
+            return r;
         }
     }
 }

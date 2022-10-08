@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <iostream>
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <xmemory>
 #include <cstdarg>
@@ -523,8 +524,10 @@ namespace MatSAR {
                                             "B memory for an array with shape " +
                                             MatSAR::Util::VectorUtil::toString(shape) + " and data type "
                      << typeid(dType).name() << endl;
+                debug();
             } catch (const exception &e) {
                 cerr << e.what() << ": " << "Unable to allocate but not bad_alloc" << endl;
+                debug();
             }
             data = last = nullptr;
             return nullptr;
@@ -2105,6 +2108,10 @@ namespace MatSAR {
             return data == nullptr;
         }
 
+        [[nodiscard]] auto isSingle() const -> bool {
+            return getSize() == 1;
+        }
+
         [[nodiscard]] auto isVec() const -> bool {
             return getDims() == 1 || (squeezeHigh().getDims() == 1);
         }
@@ -2223,6 +2230,14 @@ namespace MatSAR {
             return ss.str();
         }
     };
+
+//    template<Calculable dType>
+//    class SparseMatrix : public Matrix<dType>{
+//    private:
+//    protected:
+//        using size_type = msize_type;
+//
+//    };
 }
 namespace MatSAR {
     template<Calculable dType>

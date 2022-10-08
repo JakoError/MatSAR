@@ -50,14 +50,14 @@ namespace MatSAR {
         }
     }
     namespace Math {
-        auto twiddle(int64 N, int64 k) -> complex128 {
+        static auto twiddle(int64 N, int64 k) -> complex128 {
             if (k == 0) return {1, 0};
             auto val = 2 * PI / static_cast<float64>(N);
             return pow(complex128(std::cos(val), -std::sin(val)), k);
         }
 
         template<Calculable dType>
-        void FFT(dType *src, complex128 *dst, msize_type N, dType *work) {
+        static void FFT(dType *src, complex128 *dst, msize_type N, dType *work) {
             if (N <= 0) return;
             if (N == 1) {
                 *dst = *src;

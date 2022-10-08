@@ -131,6 +131,8 @@ namespace MatSAR {
         auto factorial(RT i) -> TargetType {
             if (i < 0)
                 throw_value_error("factorial阶乘不能求负");
+            if (i != std::round(i))
+                throw ValueError("fractorial需要整数");
             TargetType r = 1;
             while (i > 1)
                 r *= i--;
@@ -153,12 +155,16 @@ namespace MatSAR {
 
         template<Calculable TargetType, RealType RT1, RealType RT2>
         auto nchoosek(RT1 n, RT2 k) -> TargetType {
-            n = MatSAR::round(n);
-            k = MatSAR::round(k);
-            if (n < 0 || k < 0)
-                throw_value_error("nchoosek组合不能求负");
-            if (k > n)
-                throw_value_error("nchoosek组合数k不能大于n");
+            if (n != MatSAR::round(n) || k != MatSAR::round(k))
+                return NAN;
+            if (n < 0 || k < 0){
+//                throw_value_error("nchoosek组合不能求负", false);
+                return NAN;
+            }
+            if (k > n){
+//                throw_value_error("nchoosek组合数k不能大于n", false);
+                return NAN;
+            }
             TargetType r = 1;
             for (RT2 i = 0; i < k; ++i)
                 r *= n - i;
@@ -312,6 +318,22 @@ namespace MatSAR {
         }
 
         template<RealType RT>
+        auto exp2(const Matrix<RT> &m) -> Matrix<real_max> {
+            Matrix<real_max> r(m);
+            for (auto &i: r)
+                i = std::exp2(i);
+            return r;
+        }
+
+//        template<ComplexType CT>
+//        auto exp2(const Matrix<CT> &m) -> Matrix<complex_max> {
+//            Matrix<complex_max> r(m);
+//            for (auto &i: r)
+//                i = std::exp2(i);
+//            return r;
+//        }
+
+        template<RealType RT>
         auto expm(const Matrix<RT> &m) -> Matrix<real_max> {
             Matrix<real_max> r(m);
             for (auto &i: r)
@@ -326,6 +348,31 @@ namespace MatSAR {
                 i = std::exp(i);
             return r;
         }
+    }
+    ///gamma
+    namespace Math{
+        template<RealType RT>
+        auto gamma(const Matrix<RT> &m) -> Matrix<real_max> {
+            Matrix<real_max> r(m);
+            for (auto &i: r)
+                i = MatSAR::gamma(i);
+            return r;
+        }
+
+        template<RealType RT>
+        auto gammaln(const Matrix<RT> &m) -> Matrix<real_max> {
+            Matrix<real_max> r(m);
+            for (auto &i: r)
+                i = MatSAR::gammaln(i);
+            return r;
+        }
+//        template<ComplexType CT>
+//        auto gamma(const Matrix<CT> &m) -> Matrix<complex_max> {
+//            Matrix<complex_max> r(m);
+//            for (auto &i: r)
+//                i = std::tgamma(i);
+//            return r;
+//        }
     }
 
     ///mpower sqrt

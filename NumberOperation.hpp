@@ -246,6 +246,17 @@ namespace MatSAR {
         else
             return {n / div, d / div};
     }
+
+    template<RealType RT>
+    inline static auto gamma(const RT &v) -> float_max {
+        return std::tgamma(v);
+    }
+
+    template<RealType RT>
+    inline static auto gammaln(const RT &v) -> float_max {
+        if (v < 0) throw_value_error("gammaln: 要求传入值为非负数");
+        return std::lgamma(v);
+    }
 }
 
 /**
