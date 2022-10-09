@@ -16,14 +16,14 @@
 
 #endif
 
-#define RUNTIME_ERROR_CODE -1
-#define LOGICAL_ERROR_CODE -2
+#define RUNTIME_ERROR_CODE (-1)
+#define LOGICAL_ERROR_CODE (-2)
 //#define PROPERTY_EXCEPTION_CODE -3
-#define OUT_OF_RANGE_CODE -4
-#define VALUE_ERROR_CODE -5
-#define TYPE_LOSS_EXCEPTION_CODE -6
-#define SHAPE_EXCEPTION_CODE -7
-#define BROADCAST_EXCEPTION_CODE -8
+#define OUT_OF_RANGE_CODE (-4)
+#define VALUE_ERROR_CODE (-5)
+#define TYPE_LOSS_EXCEPTION_CODE (-6)
+#define SHAPE_EXCEPTION_CODE (-7)
+#define BROADCAST_EXCEPTION_CODE (-8)
 
 using namespace std;
 
@@ -162,8 +162,8 @@ namespace MatSAR::Util::Exception {
 
     void throw_broadcast_exception(const string &shape_str, const string &target_str, bool to_exit = true) {
         try {
-            throw BroadcastException("broadcast failed 无法将 " + shape_str +
-                                     "广播到" + target_str);
+            throw BroadcastException("broadcast failed: cannot broadcast " + shape_str +
+                                     " to " + target_str);
         } catch (BroadcastException &e) {
             fflush(stdout);
             flush(cerr);

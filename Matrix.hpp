@@ -20,6 +20,7 @@
 
 #define lapack_complex_float std::complex<float>
 #define lapack_complex_double std::complex<double>
+
 #ifndef lapack_int
 #define lapack_int int
 #endif
@@ -823,7 +824,7 @@ namespace MatSAR {
             return shape;
         }
 
-        [[nodiscard]] auto getDims() const -> size_type {
+        [[nodiscard]] auto getDims() const -> shape_type::size_type {
             return shape.size();
         }
 
@@ -1146,11 +1147,8 @@ namespace MatSAR {
             if (m1.isEmpty() || m2.isEmpty())
                 throw_broadcast_exception("矩阵乘法不能接受空矩阵");
 
-            auto shape1 = m1.getShape();
-            auto shape2 = m2.getShape();
-
-            newAxis(shape1,2);
-            newAxis(shape2,2);
+            auto shape1 = newAxis(m1.getShape(),2);
+            auto shape2 = newAxis(m2.getShape(),2);
 
             if (shape1[1] != shape2[0]){
                 if (shape1[1] == 1) shape1[1] = shape2[0];

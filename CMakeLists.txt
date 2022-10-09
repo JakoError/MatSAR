@@ -47,7 +47,7 @@ add_executable(linear_algebra_test2 test/linear_algebra_test2.cpp)
 target_link_libraries(linear_algebra_test2 libopenblas)
 
 add_executable(probability_test2 test/probability_test2.cpp)
-target_link_libraries(probability_test2 libopenblas.a)
+target_link_libraries(probability_test2 libopenblas)
 
 add_executable(digital_signal_test test/digital_signal_test.cpp)
 target_link_libraries(digital_signal_test libopenblas)

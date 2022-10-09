@@ -542,5 +542,76 @@ namespace MatSAR {
             return m.isEmpty();
         }
     }
+
+    ///permute
+    namespace Math {
+        /**
+         * 以dimorder为序交换矩阵各维度
+         * @param m 矩阵
+         * @param dimorder 交换次序数列 hint:这里的mshape_type仅仅只是为了方便,与矩阵维度shape类型没有直接关系
+         * @return 交换维度后的矩阵
+         */
+        template<Calculable dType>
+        auto permute(const Matrix<dType> &m,mshape_type dimorder) -> Matrix<dType>{
+            if (dimorder.size() != m.getDims()){
+                throw_value_error("permute: dimorder需要与矩阵维度有相同的长度");
+                return {};
+            }
+            //获取新矩阵shape
+            vector<bool> pick_check(dimorder.size(),false);
+            auto r_shape{m.getShape()};
+            for (size_t i = 0; i < dimorder.size(); ++i) {
+                if (dimorder[i] <= 0 || dimorder[i] > m.getDims())
+                    throw_value_error("permute: dimorder中的数必须为1-n");
+                dimorder[i] = dimorder[i] - 1;//trans numeric index to array index
+                if (pick_check[dimorder[i]])
+                    throw_value_error("permute: dimorder中的数出现重复");
+                pick_check[dimorder[i]] = false;
+                if (i != dimorder[i])
+                    r_shape[i] = m.getShape()[dimorder[i]];
+            }
+            //新矩阵内容获取
+            //312->231
+            auto idimorder(dimorder);
+            for (size_t i = 0; i < dimorder.size(); ++i) {
+                idimorder[dimorder[i]] = msize_type(i);
+            }
+
+            Matrix<dType> r(r_shape,0.);
+            mshape_type m_picker(m.getDims(),0);
+            mshape_type r_picker(m.getDims(),0);
+
+            for(Calculable auto &i:m){
+                r(r_picker) = i;
+                for (size_t j = 0; j < m_picker.size(); ++j) {
+                    m_picker[j]++;
+                    if (m_picker[j] == m.getShape()[j]){
+                        m_picker[j]=0;
+                        r_picker[idimorder[j]] = m_picker[j];
+                        continue;
+                    }
+                    r_picker[idimorder[j]] = m_picker[j];
+                    break;
+                }
+            }
+            return r;
+        }
+
+        /**
+         * 以dimorder为原序逆交换矩阵各维度
+         * @param m 矩阵
+         * @param dimorder 交换逆次序数列 hint:这里的mshape_type仅仅只是为了方便,与矩阵维度shape类型没有直接关系
+         * @return 交换维度前的矩阵
+         */
+        template<Calculable dType>
+        auto ipermute(const Matrix<dType> &m,mshape_type dimorder) -> Matrix<dType>{
+            auto idimorder(dimorder);
+            for (size_t i = 0; i < dimorder.size(); ++i) {
+                //trans numeric index to array index -1 +1
+                idimorder[dimorder[i]-1] = msize_type(i+1);
+            }
+            return permute(m,idimorder);
+        }
+    }
 }
 #endif //MATSAR_MATRIXOPERATION_HPP
