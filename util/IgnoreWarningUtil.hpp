@@ -6,8 +6,8 @@
 #define MATSAR_IGNOREWARNINGUTIL_HPP
 
 /**
- * warning C4244: “初始化”: 从“const dType”转换到“_Ty”，可能丢失数据
- * 用户进行强转时会出现的报错
+ * warning C4244: 'initialization': conversion from 'const dType' to '_Ty', possible loss of data
+ * Error message when user performs forced type tran
  */
 #pragma warning (disable: 4244 4190)
 

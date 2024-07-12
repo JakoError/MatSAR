@@ -29,7 +29,7 @@ using namespace std;
 
 namespace MatSAR::Util::Exception {
     /**
-     * Êı¾İ²»Æ¥ÅäµÈÎÊÌâ
+     * æ•°æ®ä¸åŒ¹é…ç­‰é—®é¢˜
      */
     class ValueError : logic_error {
     public:
@@ -45,7 +45,7 @@ namespace MatSAR::Util::Exception {
     };
 
     /**
-     * ¾ØÕóshape²»Æ¥Åä»ò³ö´íµÈÎÊÌâ
+     * çŸ©é˜µshapeä¸åŒ¹é…æˆ–å‡ºé”™ç­‰é—®é¢˜
      */
     class ShapeException : logic_error {
     public:
@@ -61,7 +61,7 @@ namespace MatSAR::Util::Exception {
     };
 
     /**
-     * ÒòÊı¾İÀàĞÍ²»Ò»ÖÂ³öÏÖµÄÊı¾İ¶ªÊ§
+     * å› æ•°æ®ç±»å‹ä¸ä¸€è‡´å‡ºç°çš„æ•°æ®ä¸¢å¤±
      */
     class TypeLossException : logic_error {
     public:
@@ -77,7 +77,7 @@ namespace MatSAR::Util::Exception {
     };
 
     /**
-     * ÒòÊı¾İÀàĞÍ²»Ò»ÖÂ³öÏÖµÄÊı¾İ¶ªÊ§
+     * å› æ•°æ®ç±»å‹ä¸ä¸€è‡´å‡ºç°çš„æ•°æ®ä¸¢å¤±
      */
     class BroadcastException : logic_error {
     public:
@@ -204,7 +204,7 @@ namespace MatSAR::Util::Exception {
     }
 
     /**
-     * ÎŞÌõ¼şÍË³ö!
+     * æ— æ¡ä»¶é€€å‡º!
      */
     void throw_runtime_error_exception(const string &msg) {
         try {

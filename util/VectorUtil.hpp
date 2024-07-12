@@ -28,21 +28,33 @@ using std::string;
 
 using namespace MatSAR::Util::Exception;
 
+//#if (__cplusplus < 201703L)
+//
+//// declare in C++17
+//namespace std {
+//    template<class E>
+//    [[nodiscard]] constexpr bool empty(std::initializer_list<E> il) noexcept {
+//        return il.size() == 0;
+//    }
+//}
+//
+//#endif
+
 #define CHECK_LIST_FIX_MAKER(LIST_n, LIST_n_1) \
 template<class dType>\
-constexpr bool checkListFix(LIST_n list_n) {\
-    if(std::empty(list_n)) return true;\
+bool checkListFix(LIST_n list_n) {\
+    if(list_n.size() == 0) return true;\
     size_t size = list_n.begin()->size();\
     for(const LIST_n_1 &list_n_1:list_n)\
         if(checkListFix(list_n_1, size))\
             return false;\
     return true;\
 }\
-/** ºÏ≤È∏√≤„ «≤ª «∂‘”¶size¥Û–°,≤¢«“µ›πÈµÿ≈–∂œƒ⁄≤ø */\
+/** Check if the layer corresponds to size and recursively determine the internal */\
 template<class dType>\
-constexpr bool checkListFix(LIST_n list_n, size_t size) {\
+bool checkListFix(LIST_n list_n, size_t size) {\
     if (size == 0)\
-        return std::empty(list_n);\
+        return list_n.size() == 0;\
     if (list_n.size() != size)\
         return false;\
     return checkListFix(list_n);\
@@ -60,7 +72,7 @@ size_t uninitListCopy(LIST_n list, dType *p) {\
 #define GET_FIX_LIST_SIZE_MAKER(LIST_n) \
 template<class dType>\
 size_t getFixListSize(LIST_n list) {\
-    return std::empty(list) ? 0 : list.size() * getFixListSize(*list.begin());\
+    return list.size()==0 ? 0 : list.size() * getFixListSize(*list.begin());\
 }
 
 #define GET_DIM_SIZE_MAKER(LIST_n) \
@@ -108,17 +120,17 @@ vector<int64> getDimSize(LIST_n list_n) {\
     GET_DIM_SIZE_MAKER(LIST##8)
 
 #define LIST_FUN_MAKER_N \
-namespace MatSAR::Util::VectorUtil {\
+namespace MatSAR{namespace Util{namespace VectorUtil {\
     CHECK_LIST_FIX_MAKER_N\
     UNINIT_LIST_COPY_MAKER_N\
     GET_FIX_LIST_SIZE_MAKER_N\
     GET_DIM_SIZE_MAKER_N \
-    }
+    }}}
 
 
 #define CHECK_VEC_FIX_MAKER(VEC_n, VEC_n_1) \
 template<class dType>\
-constexpr bool checkVecFix(VEC_n vec_n) {\
+bool checkVecFix(VEC_n vec_n) {\
     if(vec_n.empty()) return true;\
     size_t size = vec_n.begin()->size();\
     for(const VEC_n_1 &vec_n_1:vec_n)\
@@ -126,9 +138,9 @@ constexpr bool checkVecFix(VEC_n vec_n) {\
             return false;\
     return true;\
 }\
-/** ºÏ≤È∏√≤„ «≤ª «∂‘”¶size¥Û–°,≤¢«“µ›πÈµÿ≈–∂œƒ⁄≤ø */\
+/** Check if the layer corresponds to size and recursively determine the internal */\
 template<class dType>\
-constexpr bool checkVecFix(VEC_n vec_n, size_t size) {\
+bool checkVecFix(VEC_n vec_n, size_t size) {\
     if (size == 0)\
         return vec_n.empty();\
     if (vec_n.size() != size)\
@@ -196,340 +208,356 @@ vector<int64> getVecDimSize(VEC_n vec_n) {\
     GET_VEC_DIM_SIZE_MAKER(VEC##8)
 
 #define VEC_FUN_MAKER_N \
-namespace MatSAR::Util::VectorUtil {\
+namespace MatSAR{namespace Util{namespace VectorUtil {\
     CHECK_VEC_FIX_MAKER_N\
     VEC_COPY_MAKER_N\
     GET_FIX_VEC_SIZE_MAKER_N\
     GET_VEC_DIM_SIZE_MAKER_N \
-    }
+    }}}
 
 
-namespace MatSAR::Util {
-    namespace VectorUtil {
-        auto Range(int64 start, int64 end, int64 step) -> vector<int64> {
-            if (start >= end - step)
-                return {};
-            vector<int64> r = {start};
-            auto iter = r.rbegin();
-            while (*iter < end - step) {
-                r.push_back(*iter + step);
-                iter = r.rbegin();
+namespace MatSAR {
+    namespace Util {
+        namespace VectorUtil {
+            auto Range(int64 start, int64 end, int64 step) -> vector<int64> {
+                if (start >= end - step)
+                    return {};
+                auto r_size = (end - start) / step;
+                if ((end - start) % step != 0) {
+                    r_size++;
+                }
+                vector<int64> r(r_size);
+                int64 value = start;
+                for (typeof(r_size) i = 0; i < r_size; ++i) {
+                    r[i] = value;
+                    value += step;
+                }
+                return r;
             }
-            return r;
-        }
 
-        auto Range(int64 start, int64 end) -> vector<int64> {
-            return Range(start, end, 1);
-        }
-
-        auto Range(int64 end) -> vector<int64> {
-            return Range(0, end, 1);
-        }
-
-        auto fRange(float64 start, float64 end, float64 step) -> vector<float64> {
-            if (start >= end - step)
-                return {};
-            vector<float64> r = {start};
-            auto iter = r.rbegin();
-            while (*iter <= end - step) {
-                r.push_back(*iter + step);
-                iter = r.rbegin();
+            auto Range(int64 start, int64 end) -> vector<int64> {
+                return Range(start, end, 1);
             }
-            return r;
-        }
 
-        auto fRange(float64 start, float64 end) -> vector<float64> {
-            return fRange(start, end, 1);
-        }
-
-        auto fRange(float64 end) -> vector<float64> {
-            return fRange(0, end, 1);
-        }
-    }
-    namespace VectorUtil {
-        template<class dType>
-        constexpr bool checkListFix(initializer_list<dType> list1) {
-            return true;
-        }
-
-        /** ºÏ≤È∏√≤„ «≤ª «∂‘”¶size¥Û–°,≤¢«“µ›πÈµÿ≈–∂œƒ⁄≤ø */
-        template<class dType>
-        constexpr bool checkListFix(initializer_list<dType> list, size_t size) {
-            return list.size() == size;
-        }
-
-        template<class dType>
-        size_t uninitListCopy(initializer_list<dType> list, dType *p) {
-            std::uninitialized_copy_n(list.begin(), list.size(), p);
-            return list.size();
-        }
-
-        template<class dType>
-        size_t getFixListSize(initializer_list<dType> list) {
-            return list.size();
-        }
-
-        template<class dType>
-        vector<int64> getDimSize(initializer_list<dType> list) {
-            return vector<int64>({(int64) list.size()});
-        }
-
-    }
-
-    namespace VectorUtil {
-        template<class dType>
-        constexpr bool checkVecFix(vector<dType> vec1) {
-            return true;
-        }
-
-        /** ºÏ≤È∏√≤„ «≤ª «∂‘”¶size¥Û–°,≤¢«“µ›πÈµÿ≈–∂œƒ⁄≤ø */
-        template<class dType>
-        constexpr bool checkVecFix(vector<dType> vec, size_t size) {
-            return vec.size() == size;
-        }
-
-        template<class dType>
-        size_t VecCopy(vector<dType> vec, dType *p) {
-            std::uninitialized_copy_n(vec.begin(), vec.size(), p);
-            return vec.size();
-        }
-
-        template<class dType>
-        size_t getFixVecSize(vector<dType> vec) {
-            return vec.size();
-        }
-
-        template<class dType>
-        vector<int64> getVecDimSize(vector<dType> vec) {
-            return vector<int64>({(int64) vec.size()});
-        }
-
-    }
-
-    namespace VectorUtil {
-        template<class T>
-        bool inRange(const vector<T> &v, typename vector<T>::size_type index) {
-            return index >= 0 && index < v.size();
-        }
-
-        template<Calculable T>
-        T (mul)(const vector<T> &v) {
-            T s = 1;
-            for (const int &i: v)
-                s *= i;
-            return s;
-        }
-
-        template<Calculable T>
-        vector<T> abs(const vector<T> &v) {
-            vector<T> r = v;
-            for (auto &i: r)
-                i = std::abs(i);
-            return r;
-        }
-
-        /**
-         * ≤ª∞¸∫¨endŒª÷√µƒ‘™Àÿº¥£∫[begin:end)œ‡≥À
-         */
-        template<Calculable T>
-        T (mul)(const vector<T> &v, typename vector<T>::size_type begin, typename vector<T>::size_type end) {
-            if (!inRange(v, begin))
-                throw_out_of_range_error(
-                        "mul: begin = " + std::to_string(begin) + " out of vector Range = " + std::to_string(v.size()),
-                        true);
-            if (begin == end) return 1;
-
-            if (!inRange(v, end - 1))
-                throw_out_of_range_error(
-                        "mul: end = " + std::to_string(end) + " out of vector Range = " + std::to_string(v.size()),
-                        true);
-            if (begin > end)
-                throw_out_of_range_error(
-                        "mul: begin index should be lower than end index (begin = " + std::to_string(begin) +
-                        " end = " +
-                        std::to_string(end), true);
-            T s = 1;
-            for (auto i = v.begin() + begin; i != v.begin() + end; ++i)
-                s *= *i;
-            return s;
-        }
-
-//    /**
-//     * ≤ª∞¸∫¨endŒª÷√µƒ‘™Àÿº¥£∫[begin:end-1]œ‡≥À
-//     */
-//    template<Calculable T, class ITER1, class ITER2>
-//    T (mul)(ITER1 begin, const ITER2 &end) {
-//        if (begin > end)
-//            throw std::range_error("mul: begin iter should be lower than end iter");
-//        T s = 1;
-//        while (begin != end)
-//            s *= *(begin++);
-//        return s;
-//    }
-
-        template<Calculable T>
-        T (sum)(const vector<T> &v) {
-            T s = 0;
-            for (const int &i: v)
-                s += i;
-            return s;
-        }
-
-        /**
-         * ≤ª∞¸∫¨endŒª÷√µƒ‘™Àÿº¥£∫[begin:end-1]œ‡º”
-         */
-        template<Calculable T>
-        T (sum)(const vector<T> &v, const typename vector<T>::size_type &begin,
-                const typename vector<T>::size_type &end) {
-            if (!inRange(v, begin))
-                throw std::out_of_range(
-                        "sum: begin =" + std::to_string(begin) + " out of vector Range size =" + to_string(v.size()));
-            if (!inRange(v, end - 1))
-                throw std::out_of_range(
-                        "sum: end =" + std::to_string(begin) + " out of vector Range size =" + to_string(v.size()));
-            if (begin > end)
-                throw std::range_error("sum: begin index should be lower than end index");
-            T s = 0;
-            for (auto i = v.begin() + begin; i != v.begin() + end; ++i)
-                s += *i;
-            return s;
-        }
-
-        /**
-         * ≤ª∞¸∫¨endŒª÷√µƒ‘™Àÿº¥£∫[begin:end-1]œ‡º”
-         */
-        template<Calculable T, class ITER1, class ITER2>
-        T (sum)(ITER1 begin, const ITER2 &end) {
-            if (begin > end)
-                throw std::range_error("mul: begin iter should be lower than end iter");
-            T s = 0;
-            while (begin != end)
-                s += *(begin++);
-            return s;
-        }
-
-        template<class T>
-        T (max)(vector<T> v) {
-            if (v.empty()) return 0;
-            T s = v[0];
-            for (const auto &ele: v) {
-                if (ele > s)
-                    s = ele;
+            auto Range(int64 end) -> vector<int64> {
+                return Range(0, end, 1);
             }
-            return s;
-        }
 
-        template<class T, class Pr>
-        T (max)(vector<T> v, Pr pred) {
-            if (v.empty()) return 0;
-            T s = v[0];
-            for (const auto &ele: v) {
-                if (pred(ele, s))
-                    s = ele;
+            auto fRange(float64 start, float64 end, float64 step) -> vector<float64> {
+                if (start >= end - step)
+                    return {};
+                auto r_size = vector<float64>::size_type(std::ceil((end - start) / step));
+                vector<float64> r(r_size);
+                float64 value = start;
+                for (typeof(r_size) i = 0; i < r_size; ++i) {
+                    r[i] = value;
+                    value += step;
+                }
+                return r;
             }
-            return s;
-        }
 
-        template<class T>
-        T (min)(vector<T> v) {
-            if (v.empty()) return 0;
-            T s = v[0];
-            for (const auto &ele: v) {
-                if (ele < s)
-                    s = ele;
+            auto fRange(float64 start, float64 end) -> vector<float64> {
+                return fRange(start, end, 1);
             }
-            return s;
-        }
 
-        template<class T, class Pr>
-        T (min)(vector<T> v, Pr pred) {
-            if (v.empty()) return 0;
-            T s = v[0];
-            for (const auto &ele: v) {
-                if (pred(ele, s))
-                    s = ele;
+            auto fRange(float64 end) -> vector<float64> {
+                return fRange(0, end, 1);
             }
-            return s;
         }
 
-        template<Calculable T>
-        void alignNum(vector<T> &vec, int64 length, T num = 0) {
-            if (length < 0 || length == vec.size())
-                return;
-            auto size = vec.size();
-            for (int64 i = 0; i < length - size; ++i)
-                vec.push_back(num);
-            vec.erase(vec.begin() + length, vec.end());
+        namespace VectorUtil {
+            template<class dType>
+            constexpr auto checkListFix([[maybe_unused]] initializer_list<dType> list1) -> bool {
+                return true;
+            }
+
+            /** Ê£ÄÊü•ËØ•Â±ÇÊòØ‰∏çÊòØÂØπÂ∫îsizeÂ§ßÂ∞è,Âπ∂‰∏îÈÄíÂΩíÂú∞Âà§Êñ≠ÂÜÖÈÉ® */
+            template<class dType>
+            auto checkListFix(initializer_list<dType> list, size_t size) -> bool {
+                return list.size() == size;
+            }
+
+            template<class dType>
+            auto uninitListCopy(initializer_list<dType> list, dType *p) -> size_t {
+                std::uninitialized_copy_n(list.begin(), list.size(), p);
+                return list.size();
+            }
+
+            template<class dType>
+            auto getFixListSize(initializer_list<dType> list) -> size_t {
+                return list.size();
+            }
+
+            template<class dType>
+            auto getDimSize(initializer_list<dType> list) -> vector<int64> {
+                return vector<int64>({(int64) list.size()});
+            }
+
         }
 
+        namespace VectorUtil {
+            template<class dType>
+            constexpr auto checkVecFix([[maybe_unused]] vector<dType> vec1) -> bool {
+                return true;
+            }
 
-        /**
-         *
-         * @tparam T
-         * @param vec
-         * @param targetShape
-         * @param num
-         */
-        template<Calculable T>
-        void alignNum2d(vector<vector<T>> &vec, vector<int> targetShape = {-1, -1}, T num = 0) {
-            for (int i = 0; i < 2 - targetShape.size(); ++i)
-                targetShape.push_back(-1);
+            /** Ê£ÄÊü•ËØ•Â±ÇÊòØ‰∏çÊòØÂØπÂ∫îsizeÂ§ßÂ∞è,Âπ∂‰∏îÈÄíÂΩíÂú∞Âà§Êñ≠ÂÜÖÈÉ® */
+            template<class dType>
+            auto checkVecFix(vector<dType> vec, size_t size) -> bool {
+                return vec.size() == size;
+            }
 
-            //handle dim1
-            if (targetShape[0] < 0) {
-                auto fun = [](vector<T> v) { return v.size(); };
-                vector<typename vector<T>::size_type> sizes;
-                for (auto &v: vec)
-                    sizes.push_back(fun(v));
-                auto max_size = targetShape[0] = max(sizes);
-                vector<T> nums(max_size, num);
-                for (typename vector<T>::size_type i = 0; i < vec.size(); ++i)
-                    vec.at(i).insert(vec.at(i).end(), nums.begin(), nums.begin() + (max_size - sizes[i]));
-            } else {
-                for (auto &v: vec) {
-                    for (int i = 0; i < targetShape[0] - (int) v.size(); ++i)
-                        v.push_back(num);
-                    v.erase(v.begin() + targetShape[0], v.end());
+            template<class dType>
+            auto VecCopy(vector<dType> vec, dType *p) -> size_t {
+                std::uninitialized_copy_n(vec.begin(), vec.size(), p);
+                return vec.size();
+            }
+
+            template<class dType>
+            auto getFixVecSize(vector<dType> vec) -> size_t {
+                return vec.size();
+            }
+
+            template<class dType>
+            auto getVecDimSize(vector<dType> vec) -> vector<int64> {
+                return vector<int64>({(int64) vec.size()});
+            }
+
+        }
+
+        namespace VectorUtil {
+            template<class T>
+            auto inRange(const vector<T> &v, typename vector<T>::size_type index) -> bool {
+                return index >= 0 && index < v.size();
+            }
+
+            template<typename T>
+            auto (mul)(const vector<T> &v) -> T {
+                T s = 1;
+                for (const auto &i: v)
+                    s *= i;
+                return s;
+            }
+
+            template<typename T>
+            auto abs(const vector<T> &v) -> vector<T> {
+                vector<T> r = v;
+                for (const auto &i: r)
+                    i = std::abs(i);
+                return r;
+            }
+
+            /**
+             * times from [begin:end)
+             */
+            template<typename T>
+            auto
+            (mul)(const vector<T> &v,
+                  const typename vector<T>::size_type begin, const typename vector<T>::size_type end) -> T {
+                if (!inRange(v, begin))
+                    throw_out_of_range_error(
+                            "mul: begin = " + std::to_string(begin) + " out of vector Range = " +
+                            std::to_string(v.size()),
+                            true);
+                if (!inRange(v, end - 1))
+                    throw_out_of_range_error(
+                            "mul: end = " + std::to_string(end) + " out of vector Range = " + std::to_string(v.size()),
+                            true);
+                if (begin > end)
+                    throw_out_of_range_error(
+                            "mul: begin index should be lower than end index (begin = " + std::to_string(begin) +
+                            " end = " +
+                            std::to_string(end), true);
+                T s = 1;
+                for (auto i = v.begin() + begin; i != v.begin() + end; ++i)
+                    s *= *i;
+                return s;
+            }
+
+            //    /**
+            //     * ‰∏çÂåÖÂê´end‰ΩçÁΩÆÁöÑÂÖÉÁ¥†Âç≥Ôºö[begin:end-1]Áõ∏‰πò
+            //     */
+            //    template<Calculable T, class ITER1, class ITER2>
+            //    T (mul)(ITER1 begin, const ITER2 &end) {
+            //        if (begin > end)
+            //            throw std::range_error("mul: begin iter should be lower than end iter");
+            //        T s = 1;
+            //        while (begin != end)
+            //            s *= *(begin++);
+            //        return s;
+            //    }
+
+            template<typename T>
+            auto (sum)(const vector<T> &v) -> T {
+                T s = 0;
+                for (const auto &i: v)
+                    s += i;
+                return s;
+            }
+
+            /**
+             * sum from [begin:end-1]
+             */
+            template<typename T>
+            auto
+            (sum)(const vector<T> &v,
+                  const typename vector<T>::size_type begin, const typename vector<T>::size_type end) -> T {
+                if (!inRange(v, begin))
+                    throw_out_of_range_error(
+                            "sum: begin =" + std::to_string(begin) + " out of vector Range size =" +
+                            to_string(v.size()), true);
+                if (!inRange(v, end - 1))
+                    throw_out_of_range_error(
+                            "sum: end =" + std::to_string(begin) + " out of vector Range size =" + to_string(v.size()),
+                            true);
+                if (begin > end)
+                    throw_out_of_range_error(
+                            "sum: begin index should be lower than end index (begin = " + std::to_string(begin) +
+                            " end = " +
+                            std::to_string(end), true);
+                T s = 0;
+                for (auto i = v.begin() + begin; i != v.begin() + end; ++i)
+                    s += *i;
+                return s;
+            }
+
+//            /**
+//             * sum from [begin:end-1]
+//             */
+//            template<Calculable T, class ITER1, class ITER2>
+//            auto (sum)(ITER1 begin, const ITER2 &end) -> T {
+//                if (begin > end)
+//                    throw std::range_error("sum: begin iter should be lower than end iter");
+//                T s = 0;
+//                while (begin != end)
+//                    s += *(begin++);
+//                return s;
+//            }
+
+            template<class T>
+            auto (max)(const vector<T> &v) -> T {
+                if (v.empty()) return 0;
+                T s = v[0];
+                for (const auto &ele: v) {
+                    if (ele > s)
+                        s = ele;
+                }
+                return s;
+            }
+
+            template<class T, class Pr>
+            auto (max)(const vector<T> &v, Pr pred) -> T {
+                if (v.empty()) return 0;
+                T s = v[0];
+                for (const auto &ele: v) {
+                    if (pred(ele, s))
+                        s = ele;
+                }
+                return s;
+            }
+
+            template<class T>
+            auto (min)(const vector<T> &v) -> T {
+                if (v.empty()) return 0;
+                T s = v[0];
+                for (const auto &ele: v) {
+                    if (ele < s)
+                        s = ele;
+                }
+                return s;
+            }
+
+            template<class T, class Pr>
+            auto (min)(const vector<T> &v, Pr pred) -> T {
+                if (v.empty()) return 0;
+                T s = v[0];
+                for (const auto &ele: v) {
+                    if (pred(ele, s))
+                        s = ele;
+                }
+                return s;
+            }
+
+            /**
+             * alin the vector according to the length.
+             * @param vec &vector with reference
+             * @param length target length, add num if less, remove if more
+             * @param num default number to add
+             */
+            template<typename T>
+            void alignNum(vector<T> &vec, const typename vector<T>::size_type length, const T num = T()) {
+                if (length < 0 || length == vec.size())
+                    return;
+                if (vec.size() > length) {
+                    vec.erase(vec.begin() + length, vec.end());
+                } else {
+                    vec.insert(vec.end(), length - vec.size(), num);
                 }
             }
-            //handel dim2
-            if (targetShape[1] >= 0) {
-                if (vec.size() > targetShape[1])
-                    vec.erase(vec.begin() + targetShape[1], vec.end());
-                else
-                    for (int i = 0; i < targetShape[1] - vec.size(); ++i)
-                        vec.push_back(vector<T>(targetShape[0], num));
+
+
+            /**
+             * aline 2dim vector
+             * @param vec 2dim vector
+             * @param targetShape target 2d shape, add num if less, remove if more
+             * @param num default number to add
+             */
+            template<Calculable T>
+            void alignNum2d(vector<vector<T>> &vec, vector<int64> targetShape = {-1, -1}, T num = T()) {
+                for (int i = 0; i < 2 - targetShape.size(); ++i)
+                    targetShape.push_back(-1);
+
+                //handle dim1
+                if (targetShape[0] < 0) {
+                    for (vector<T> &v: vec) {
+                        targetShape[0] = std::max(targetShape[0], v.size());
+                    }
+                }
+                for (auto &v: vec) {
+                    MatSAR::Util::VectorUtil::alignNum(v, targetShape[0], num);
+                }
+                //handel dim2
+                if (targetShape[1] >= 0) {
+                    if (vec.size() > targetShape[1]) {
+                        vec.erase(vec.begin() + targetShape[1], vec.end());
+                    } else {
+//                        for (int i = 0; i < targetShape[1] - vec.size(); ++i) {
+//                            vec.emplace_back({targetShape[0], num});
+//                        }
+                        vec.insert(vec.end(), targetShape[1] - vec.size(), vector<T>(targetShape[0], num));
+                    }
+                }
             }
-        }
 
-        template<Calculable T>
-        void alignZero2d(vector<vector<T>> &vec, vector<int> targetShape = {-1, -1}) { alignNum2d(vec, targetShape); }
-
-        /**
-         * C++ style vector
-         */
-        template<class T>
-        string to_string(const vector<T> &v, const string &segment = ", ") {
-            stringstream ss;
-            ss << "{";
-            auto iter = v.begin();
-            while (iter != v.end()) {
-                ss << *iter;
-                if (++iter != v.end())
-                    ss << segment;
+            /**
+             * C++ style to_string
+             */
+            template<class T>
+            auto to_string(const vector<T> &v, const string &segment = ", ",
+                           const string &left_bracket = "{", const string &right_bracket = "}") -> string {
+                stringstream ss;
+                ss << left_bracket;
+                auto iter = v.begin();
+                while (iter != v.end()) {
+                    ss << *iter;
+                    if (++iter != v.end()) {
+                        ss << segment;
+                    }
+                }
+                ss << right_bracket;
+                return ss.str();
             }
-            ss << "}";
-            return ss.str();
-        }
 
-        /**
-         * C++ style vector
-         */
-        template<class T>
-        string toString(const vector<T> &v, const string &segment = ", ") {
-            return to_string(v, segment);
-        }
+            /**
+             * Java style toString
+             */
+            template<class T>
+            inline static auto toString(const vector<T> &v, const string &segment = ", ",
+                                        const string &left_bracket = "{", const string &right_bracket = "}") -> string {
+                return to_string(v, segment, left_bracket, right_bracket);
+            }
 
+        }
     }
 }
 
