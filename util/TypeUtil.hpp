@@ -170,65 +170,64 @@ namespace MatSAR {
     };
 
 
-
 #if (__cplusplus >= 202002L)
 
-//    template<typename dType>
-//    concept Calculable = std::is_same<dType, int8>::value ||
-//                         std::is_same<dType, int16>::value ||
-//                         std::is_same<dType, int32>::value ||
-//                         std::is_same<dType, int64>::value ||
-//                         std::is_same<dType, uint8>::value ||
-//                         std::is_same<dType, uint16>::value ||
-//                         std::is_same<dType, uint32>::value ||
-//                         std::is_same<dType, uint64>::value ||
-//                         std::is_same<dType, float32>::value ||
-//                         std::is_same<dType, float64>::value ||
-//                         std::is_same<dType, complex64>::value ||
-//                         std::is_same<dType, complex128>::value;
-//
-//
-//    template<typename dType>
-//    concept IntType = std::is_same<dType, int8>::value ||
-//                      std::is_same<dType, int16>::value ||
-//                      std::is_same<dType, int32>::value ||
-//                      std::is_same<dType, int64>::value ||
-//                      std::is_same<dType, uint8>::value ||
-//                      std::is_same<dType, uint16>::value ||
-//                      std::is_same<dType, uint32>::value ||
-//                      std::is_same<dType, uint64>::value;
-//
-//    template<typename dType>
-//    concept SIntType = std::is_same<dType, int8>::value ||
-//                       std::is_same<dType, int16>::value ||
-//                       std::is_same<dType, int32>::value ||
-//                       std::is_same<dType, int64>::value;
-//
-//    template<typename dType>
-//    concept UIntType = std::is_same<dType, uint8>::value ||
-//                       std::is_same<dType, uint16>::value ||
-//                       std::is_same<dType, uint32>::value ||
-//                       std::is_same<dType, uint64>::value;
-//
-//    template<typename dType>
-//    concept FloatType = std::is_same<dType, float32>::value ||
-//                        std::is_same<dType, float64>::value;
-//
-//    template<typename dType>
-//    concept RealType = std::is_same<dType, int8>::value ||
-//                       std::is_same<dType, int16>::value ||
-//                       std::is_same<dType, int32>::value ||
-//                       std::is_same<dType, int64>::value ||
-//                       std::is_same<dType, uint8>::value ||
-//                       std::is_same<dType, uint16>::value ||
-//                       std::is_same<dType, uint32>::value ||
-//                       std::is_same<dType, uint64>::value ||
-//                       std::is_same<dType, float32>::value ||
-//                       std::is_same<dType, float64>::value;
-//
-//    template<typename dType>
-//    concept ComplexType = std::is_same<dType, complex64>::value ||
-//                          std::is_same<dType, complex128>::value;
+    //    template<typename dType>
+    //    concept Calculable = std::is_same<dType, int8>::value ||
+    //                         std::is_same<dType, int16>::value ||
+    //                         std::is_same<dType, int32>::value ||
+    //                         std::is_same<dType, int64>::value ||
+    //                         std::is_same<dType, uint8>::value ||
+    //                         std::is_same<dType, uint16>::value ||
+    //                         std::is_same<dType, uint32>::value ||
+    //                         std::is_same<dType, uint64>::value ||
+    //                         std::is_same<dType, float32>::value ||
+    //                         std::is_same<dType, float64>::value ||
+    //                         std::is_same<dType, complex64>::value ||
+    //                         std::is_same<dType, complex128>::value;
+    //
+    //
+    //    template<typename dType>
+    //    concept IntType = std::is_same<dType, int8>::value ||
+    //                      std::is_same<dType, int16>::value ||
+    //                      std::is_same<dType, int32>::value ||
+    //                      std::is_same<dType, int64>::value ||
+    //                      std::is_same<dType, uint8>::value ||
+    //                      std::is_same<dType, uint16>::value ||
+    //                      std::is_same<dType, uint32>::value ||
+    //                      std::is_same<dType, uint64>::value;
+    //
+    //    template<typename dType>
+    //    concept SIntType = std::is_same<dType, int8>::value ||
+    //                       std::is_same<dType, int16>::value ||
+    //                       std::is_same<dType, int32>::value ||
+    //                       std::is_same<dType, int64>::value;
+    //
+    //    template<typename dType>
+    //    concept UIntType = std::is_same<dType, uint8>::value ||
+    //                       std::is_same<dType, uint16>::value ||
+    //                       std::is_same<dType, uint32>::value ||
+    //                       std::is_same<dType, uint64>::value;
+    //
+    //    template<typename dType>
+    //    concept FloatType = std::is_same<dType, float32>::value ||
+    //                        std::is_same<dType, float64>::value;
+    //
+    //    template<typename dType>
+    //    concept RealType = std::is_same<dType, int8>::value ||
+    //                       std::is_same<dType, int16>::value ||
+    //                       std::is_same<dType, int32>::value ||
+    //                       std::is_same<dType, int64>::value ||
+    //                       std::is_same<dType, uint8>::value ||
+    //                       std::is_same<dType, uint16>::value ||
+    //                       std::is_same<dType, uint32>::value ||
+    //                       std::is_same<dType, uint64>::value ||
+    //                       std::is_same<dType, float32>::value ||
+    //                       std::is_same<dType, float64>::value;
+    //
+    //    template<typename dType>
+    //    concept ComplexType = std::is_same<dType, complex64>::value ||
+    //                          std::is_same<dType, complex128>::value;
 
     template<typename dType>
     concept Calculable = calculable_type<dType>::value;
@@ -251,29 +250,29 @@ namespace MatSAR {
     template<typename dType>
     concept ComplexType = complex_type<dType>::value;
 
-    #define CheckType(dType, Type)
+#define CheckType(dType, Type)
 
 #else
 
-    # define Calculable typename
-    # define IntType typename
-    # define SIntType typename
-    # define UIntType typename
-    # define FloatType typename
-    # define RealType typename
-    # define ComplexType typename
+# define Calculable typename
+# define IntType typename
+# define SIntType typename
+# define UIntType typename
+# define FloatType typename
+# define RealType typename
+# define ComplexType typename
 
-    #define CheckType(dType, Type) ,class = typename std::enable_if<MatSAR::Type<dType>::value>::type
+#define CheckType(dType, Type) ,class = typename std::enable_if<MatSAR::Type<dType>::value>::type
 
 #endif
 
-    #define CheckCalculable(dType) CheckType(dType, calculable_type)
-    #define CheckInt(dType) CheckType(dType, int_type)
-    #define CheckSInt(dType) CheckType(dType, sint_type)
-    #define CheckUInt(dType) CheckType(dType, uint_type)
-    #define CheckFloat(dType) CheckType(dType, float_type)
-    #define CheckReal(dType) CheckType(dType, real_type)
-    #define CheckComplex(dType) CheckType(dType, complex_type)
+#define CheckCalculable(dType) CheckType(dType, calculable_type)
+#define CheckInt(dType) CheckType(dType, int_type)
+#define CheckSInt(dType) CheckType(dType, sint_type)
+#define CheckUInt(dType) CheckType(dType, uint_type)
+#define CheckFloat(dType) CheckType(dType, float_type)
+#define CheckReal(dType) CheckType(dType, real_type)
+#define CheckComplex(dType) CheckType(dType, complex_type)
 
     enum CalculableLevel {
         unknown = -1,
@@ -285,7 +284,117 @@ namespace MatSAR {
         complex64_level, complex128_level
     };
 
+    class None {
+    };
 
+    None none = None();
+
+    template<typename dType>
+    class Container {
+    private:
+        bool none_flag = true;
+        dType value = dType();
+    public:
+        Container() : none_flag(true), value(dType()) {}
+
+        Container(const None &n) : none_flag(true), value(dType()) {}
+
+        Container(const dType &v) : none_flag(false), value(v) {}
+
+        template<class T>
+        Container(const std::vector<T> &v): none_flag(false) {
+            this->value = dType(v.size());
+            for (typename std::vector<T>::size_type i = 0; i < v.size(); ++i) {
+                this->value[i] = v[i];
+            }
+        }
+
+        template<class T>
+        Container(const std::initializer_list<T> &v): none_flag(false) {
+            this->value = dType(v.size());
+            for (typename std::initializer_list<T>::size_type i = 0; i < v.size(); ++i) {
+                this->value[i] = *(v.begin() + i);
+            }
+        }
+
+//        template<class T>
+//        explicit Container(const T &v): none_flag(false), value(v) {}
+
+        inline constexpr bool operator==(const Container &rhs) const {
+            return (none_flag && rhs.none_flag) || (!none_flag && !rhs.none_flag && value == rhs.value);
+        }
+
+        inline constexpr bool operator==(const None &n) const {
+            return none_flag;
+        }
+
+        template<class T>
+        inline constexpr bool operator==(const T &rhs) const {
+            return !none_flag && value == rhs;
+        }
+
+        template<class T>
+        inline constexpr bool operator!=(const T &rhs) const {
+            return !this->operator==(rhs);
+        }
+
+        inline constexpr operator dType() const {
+            return value;
+        }
+
+//        template<class T>
+//        inline constexpr explicit operator T() const {
+//            return static_cast<T>(value);
+//        }
+
+        inline constexpr const dType &data() const {
+            return value;
+        }
+
+        auto operator=(const None &n) -> Container<dType> & {
+            this->none_flag = true;
+            this->value = dType();
+            return *this;
+        }
+
+        auto operator=(const dType &v) -> Container<dType> & {
+            this->none_flag = false;
+            this->value = v;
+            return *this;
+        }
+
+//        template<class T>
+//        auto operator=(const T &other) -> Container<dType> & {
+//            this->none_flag = false;
+//            this->value = static_cast<dType>(other);
+//            return *this;
+//        }
+
+        template<class T>
+        auto operator=(const std::initializer_list<T> &v) -> Container<dType> & {
+            this->none_flag = false;
+            this->value = dType(v.size());
+            for (typename std::initializer_list<T>::size_type i = 0; i < v.size(); ++i) {
+                this->value[i] = *(v.begin() + i);
+            }
+            return *this;
+        }
+
+        template<class T>
+        auto operator=(const std::vector<T> &v) -> Container<dType> & {
+            this->none_flag = false;
+            this->value = dType(v.size());
+            for (typename std::vector<T>::size_type i = 0; i < v.size(); ++i) {
+                this->value[i] = v[i];
+            }
+            return *this;
+        }
+
+        template<class T>
+        auto operator[](const T &arg) const -> decltype(value[std::declval<T>()]) {
+            return value[arg];
+        }
+    };
 }
 
 #define LIST1 initializer_list<dType>

@@ -219,15 +219,40 @@ namespace MatSAR{namespace Util{namespace VectorUtil {\
 namespace MatSAR {
     namespace Util {
         namespace VectorUtil {
-            auto Range(int64 start, int64 end, int64 step) -> vector<int64> {
+//            auto Range(int64 start, int64 end, int64 step) -> vector<int64> {
+//                if (start >= end - step)
+//                    return {};
+//                auto r_size = (end - start) / step;
+//                if ((end - start) % step != 0) {
+//                    r_size++;
+//                }
+//                vector<int64> r(r_size);
+//                int64 value = start;
+//                for (typeof(r_size) i = 0; i < r_size; ++i) {
+//                    r[i] = value;
+//                    value += step;
+//                }
+//                return r;
+//            }
+//
+//            auto Range(int64 start, int64 end) -> vector<int64> {
+//                return Range(start, end, 1);
+//            }
+//
+//            auto Range(int64 end) -> vector<int64> {
+//                return Range(0, end, 1);
+//            }
+
+            template<IntType IT=int64 CheckInt(IT)>
+            auto Range(const IT &start, const IT &end, const IT &step) -> vector<IT> {
                 if (start >= end - step)
                     return {};
                 auto r_size = (end - start) / step;
                 if ((end - start) % step != 0) {
                     r_size++;
                 }
-                vector<int64> r(r_size);
-                int64 value = start;
+                vector<IT> r(r_size);
+                IT value = start;
                 for (typeof(r_size) i = 0; i < r_size; ++i) {
                     r[i] = value;
                     value += step;
@@ -235,12 +260,14 @@ namespace MatSAR {
                 return r;
             }
 
-            auto Range(int64 start, int64 end) -> vector<int64> {
-                return Range(start, end, 1);
+            template<IntType IT=int64 CheckInt(IT)>
+            auto Range(const IT &start, const IT &end) -> vector<IT> {
+                return Range(start, end, IT(1));
             }
 
-            auto Range(int64 end) -> vector<int64> {
-                return Range(0, end, 1);
+            template<IntType IT=int64 CheckInt(IT)>
+            auto Range(const IT &end) -> vector<IT> {
+                return Range(IT(0), end, IT(1));
             }
 
             auto fRange(float64 start, float64 end, float64 step) -> vector<float64> {
@@ -327,6 +354,21 @@ namespace MatSAR {
 
         namespace VectorUtil {
             template<class T>
+            auto cut(const vector<T> &v,
+                     typename vector<T>::size_type begin,
+                     typename vector<T>::size_type end) -> vector<T> {
+                return vector<T>(v.begin() + begin, v.begin() + end);
+            }
+
+            template<class T>
+            auto cut(const vector<T> &v,
+                     typename vector<T>::size_type begin) -> vector<T> {
+                return vector<T>(v.begin() + begin, v.end());
+            }
+        }
+
+        namespace VectorUtil {
+            template<class T>
             auto inRange(const vector<T> &v, typename vector<T>::size_type index) -> bool {
                 return index >= 0 && index < v.size();
             }
@@ -342,7 +384,7 @@ namespace MatSAR {
             template<typename T>
             auto abs(const vector<T> &v) -> vector<T> {
                 vector<T> r = v;
-                for (const auto &i: r)
+                for (auto &i: r)
                     i = std::abs(i);
                 return r;
             }
@@ -359,6 +401,8 @@ namespace MatSAR {
                             "mul: begin = " + std::to_string(begin) + " out of vector Range = " +
                             std::to_string(v.size()),
                             true);
+                if (begin == end) return 1;
+
                 if (!inRange(v, end - 1))
                     throw_out_of_range_error(
                             "mul: end = " + std::to_string(end) + " out of vector Range = " + std::to_string(v.size()),
@@ -485,7 +529,7 @@ namespace MatSAR {
              * @param num default number to add
              */
             template<typename T>
-            void alignNum(vector<T> &vec, const typename vector<T>::size_type length, const T num = T()) {
+            void alignNum(vector<T> &vec, const int64 length, const T num = T()) {
                 if (length < 0 || length == vec.size())
                     return;
                 if (vec.size() > length) {

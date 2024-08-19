@@ -30,4 +30,10 @@
 
 #endif //MATSAR_EXCEPTIONUTIL_HPP
 
+#ifndef MATSAR_VALUEUTIL_H
+
+#include "ValueUtil.hpp"
+
+#endif //MATSAR_VALUEUTIL_H
+
 #endif //MATSAR_UTILS
