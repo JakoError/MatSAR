@@ -11,686 +11,305 @@
 
 #endif //MATSAR_MATRIX_HPP
 
-namespace MatSAR::Math {
-
-    template<RealType RT>
-    auto sin(const RT &v) -> real_max {
-        return std::sin(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto sin(const CT &v) -> complex_max {
-        return std::sin(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto sinh(const RT &v) -> real_max {
-        return std::sinh(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto sinh(const CT &v) -> complex_max {
-        return std::sinh(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto asin(const RT &v) -> real_max {
-        return std::asin(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto asin(const CT &v) -> complex_max {
-        return std::asin(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto asinh(const RT &v) -> real_max {
-        return std::asinh(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto asinh(const CT &v) -> complex_max {
-        return std::asinh(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto sin(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = sin(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto sin(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = sin(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto sinh(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = sinh(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto sinh(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = sinh(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto asin(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = asin(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto asin(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = asin(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto asinh(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = asinh(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto asinh(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = asinh(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto cos(const RT &v) -> real_max {
-        return std::cos(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto cos(const CT &v) -> complex_max {
-        return std::cos(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto cosh(const RT &v) -> real_max {
-        return std::cosh(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto cosh(const CT &v) -> complex_max {
-        return std::cosh(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto acos(const RT &v) -> real_max {
-        return std::acos(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto acos(const CT &v) -> complex_max {
-        return std::acos(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto acosh(const RT &v) -> real_max {
-        return std::acosh(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto acosh(const CT &v) -> complex_max {
-        return std::acosh(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto cos(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = cos(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto cos(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = cos(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto cosh(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = cosh(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto cosh(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = cosh(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto acos(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = acos(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto acos(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = acos(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto acosh(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = acosh(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto acosh(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = acosh(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto tan(const RT &v) -> real_max {
-        return std::tan(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto tan(const CT &v) -> complex_max {
-        return std::tan(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto tanh(const RT &v) -> real_max {
-        return std::tanh(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto tanh(const CT &v) -> complex_max {
-        return std::tanh(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto atan(const RT &v) -> real_max {
-        return std::atan(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto atan(const CT &v) -> complex_max {
-        return std::atan(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto atanh(const RT &v) -> real_max {
-        return std::atanh(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto atanh(const CT &v) -> complex_max {
-        return std::atanh(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto tan(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = tan(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto tan(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = tan(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto tanh(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = tanh(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto tanh(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = tanh(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto atan(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = atan(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto atan(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = atan(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto atanh(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = atanh(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto atanh(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = atanh(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto cot(const RT &v) -> real_max {
-        return 1. / std::tan(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto cot(const CT &v) -> complex_max {
-        return 1. / std::tan(static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto coth(const RT &v) -> real_max {
-        return 1. / std::tanh(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto coth(const CT &v) -> complex_max {
-        return 1. / std::tanh(static_cast<complex_max>(v));
-    }
-
-    ///atan2
-    template<RealType RT>
-    auto acot(const RT &v) -> real_max {
-        return std::atan2(1., static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto acot(const CT &v) -> complex_max {
-        return std::atan(1. / static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto acoth(const RT &v) -> real_max {
-        return std::atanh(1. / static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto acoth(const CT &v) -> complex_max {
-        return std::atanh(1. / static_cast<complex_max>(v));
-    }
-
-    template<RealType RT>
-    auto cot(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = cot(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto cot(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = cot(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto coth(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = coth(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto coth(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = coth(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto acot(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = acot(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto acot(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = acot(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto acoth(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = acoth(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto acoth(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = acoth(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto sec(const RT &v) -> real_max {
-        return 1. / std::cos(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto sec(const CT &v) -> complex_max {
-        return 1. / std::cos(static_cast<real_max>(v));
-    }
-
-    template<RealType RT>
-    auto sech(const RT &v) -> real_max {
-        return 1. / std::cosh(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto sech(const CT &v) -> complex_max {
-        return 1. / std::cosh(static_cast<real_max>(v));
-    }
-
-    template<RealType RT>
-    auto asec(const RT &v) -> real_max {
-        return std::acos(1. / static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto asec(const CT &v) -> complex_max {
-        return std::acos(1. / static_cast<real_max>(v));
-    }
-
-    template<RealType RT>
-    auto asech(const RT &v) -> real_max {
-        return std::acosh(1. / static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto asech(const CT &v) -> complex_max {
-        return std::acosh(1. / static_cast<real_max>(v));
-    }
-
-    template<RealType RT>
-    auto sec(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = sec(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto sec(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = sec(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto sech(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = sech(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto sech(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = sech(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto asec(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = asec(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto asec(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = asec(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto asech(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = asech(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto asech(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = asech(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto csc(const RT &v) -> real_max {
-        return 1. / std::sin(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto csc(const CT &v) -> complex_max {
-        return 1. / std::sin(static_cast<real_max>(v));
-    }
-
-    template<RealType RT>
-    auto csch(const RT &v) -> real_max {
-        return 1. / std::sinh(static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto csch(const CT &v) -> complex_max {
-        return 1. / std::sinh(static_cast<real_max>(v));
-    }
-
-    template<RealType RT>
-    auto acsc(const RT &v) -> real_max {
-        return std::asin(1. / static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto acsc(const CT &v) -> complex_max {
-        return std::asin(1. / static_cast<real_max>(v));
-    }
-
-    template<RealType RT>
-    auto acsch(const RT &v) -> real_max {
-        return std::asinh(1. / static_cast<real_max>(v));
-    }
-
-    template<ComplexType CT>
-    auto acsch(const CT &v) -> complex_max {
-        return std::asinh(1. / static_cast<real_max>(v));
-    }
-
-    template<RealType RT>
-    auto csc(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = csc(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto csc(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = csc(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto csch(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = csch(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto csch(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = csch(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto acsc(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = acsc(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto acsc(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = acsc(i);
-        return r;
-    }
-
-    template<RealType RT>
-    auto acsch(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = acsch(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto acsch(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = acsch(i);
-        return r;
-    }
-
-
-    template<RealType RT>
-    auto atan2(const RT &v) -> real_max {
-        return std::atan2(static_cast<real_max>(v), 1.);
-    }
-
-    template<ComplexType CT>
-    auto atan2(const CT &v) -> complex_max {
-        return std::atan2(static_cast<real_max>(v), 1.);
-    }
-
-    template<RealType RT>
-    auto atan2(const Matrix<RT> &m) -> Matrix<real_max> {
-        Matrix<real_max> r(m);
-        for (auto &i: r)
-            i = atan2(i);
-        return r;
-    }
-
-    template<ComplexType CT>
-    auto atan2(const Matrix<CT> &m) -> Matrix<complex_max> {
-        Matrix<complex_max> r(m);
-        for (auto &i: r)
-            i = atan2(i);
-        return r;
-    }
-
-    template<RealType RT1, RealType RT2>
-    auto atan2(const RT1 &y, const RT2 &x) -> real_max {
-        return std::atan2(static_cast<real_max>(y), static_cast<real_max>(x));
-    }
-
-    template<RealType RT1, RealType RT2>
-    auto atan2(const Matrix<RT1> &Y, const Matrix<RT1> &X) -> Matrix<real_max> {
-        if (Y.getShape() == X.getShape()) {
-            Matrix<real_max> r(Y.getShape(), 0.);
-            auto iter_y = Y.getData();
-            auto iter_x = X.getData();
-            for (auto &i: r)
-                i = atan2(*iter_y++, *iter_x++);
-            return r;
-        } else {
-            Matrix<real_max> b_Y(Y);
-            Matrix<real_max> b_X(X);
-            Matrix<real_max>::broadcast(b_Y, b_X);
-            Matrix<real_max> r(b_Y.getShape(), 0.);
-            auto iter_y = b_Y.getData();
-            auto iter_x = b_X.getData();
-            for (auto &i: r)
-                i = atan2(*iter_y++, *iter_x++);
+// require universal matrix functions
+#ifndef MATSAR_UNIVERSALFUNCTIONS_HPP
+
+#include "UniversalFunctions.hpp"
+
+#endif //MATSAR_UNIVERSALFUNCTIONS_HPP
+
+namespace MatSAR {
+    namespace Math {
+        template<typename T>
+        auto Sin(const T &v) -> decltype(std::sin(v + 0.)) {
+            return std::sin(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Sinh(const T &v) -> decltype(std::sinh(v + 0.)) {
+            return std::sinh(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Asin(const T &v) -> decltype(std::asin(v + 0.)) {
+            return std::asin(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Asinh(const T &v) -> decltype(std::asinh(v + 0.)) {
+            return std::asinh(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        inline auto sin(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Sin<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Sin<T>);
+        }
+
+        template<typename T>
+        inline auto sinh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Sinh<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Sinh<T>);
+        }
+
+        template<typename T>
+        inline auto asin(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Asin<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Asin<T>);
+        }
+
+        template<typename T>
+        inline auto asinh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Asinh<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Asinh<T>);
+        }
+    }
+
+    namespace Math {
+        template<typename T>
+        auto Cos(const T &v) -> decltype(std::cos(v + 0.)) {
+            return std::cos(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Cosh(const T &v) -> decltype(std::cosh(v + 0.)) {
+            return std::cosh(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Acos(const T &v) -> decltype(std::acos(v + 0.)) {
+            return std::acos(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Acosh(const T &v) -> decltype(std::acosh(v + 0.)) {
+            return std::acosh(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        inline auto cos(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Cos<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Cos<T>);
+        }
+
+        template<typename T>
+        inline auto cosh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Cosh<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Cosh<T>);
+        }
+
+        template<typename T>
+        inline auto acos(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acos<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Acos<T>);
+        }
+
+        template<typename T>
+        inline auto acosh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acosh<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Acosh<T>);
+        }
+    }
+
+    namespace Math {
+        template<typename T>
+        auto Tan(const T &v) -> decltype(std::tan(v + 0.)) {
+            return std::tan(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Tanh(const T &v) -> decltype(std::tanh(v + 0.)) {
+            return std::tanh(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Atan(const T &v) -> decltype(std::atan(v + 0.)) {
+            return std::atan(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Atanh(const T &v) -> decltype(std::atanh(v + 0.)) {
+            return std::atanh(static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        inline auto tan(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Tan<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Tan<T>);
+        }
+
+        template<typename T>
+        inline auto tanh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Tanh<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Tanh<T>);
+        }
+
+        template<typename T>
+        inline auto atan(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Atan<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Atan<T>);
+        }
+
+        template<typename T>
+        inline auto atanh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Atanh<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Atanh<T>);
+        }
+    }
+
+    namespace Math {
+        template<typename T>
+        auto Cot(const T &v) -> decltype(1. / MatSAR::Math::Tan(v)) {
+            return 1. / MatSAR::Math::Tan(v);
+        }
+
+        template<typename T>
+        auto Coth(const T &v) -> decltype(1. / MatSAR::Math::Tanh(v)) {
+            return 1. / MatSAR::Math::Tanh(v);
+        }
+
+//        template<typename T>
+//        auto Acot(const complex<T> &v) -> decltype(std::atan(1./ static_cast<decltype(v + 0.)>(v))) {
+//            return std::atan(1./ static_cast<decltype(v + 0.)>(v));
+//        }
+
+        template<typename T>
+        auto Acot(const T &v) -> decltype(std::atan(1. / static_cast<decltype(v + 0.)>(v))) {
+            return std::atan(1. / static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Acoth(const T &v) -> decltype(std::atanh(1. / static_cast<decltype(v + 0.)>(v))) {
+            return std::atanh(1. / static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        inline auto cot(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Cot<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Cot<T>);
+        }
+
+        template<typename T>
+        inline auto coth(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Coth<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Coth<T>);
+        }
+
+        template<typename T>
+        inline auto acot(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acot<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Acot<T>);
+        }
+
+        template<typename T>
+        inline auto acoth(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acoth<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Acoth<T>);
+        }
+    }
+
+    namespace Math {
+        template<typename T>
+        auto Sec(const T &v) -> decltype(1. / MatSAR::Math::Cos(v)) {
+            return 1. / MatSAR::Math::Cos(v);
+        }
+
+        template<typename T>
+        auto Sech(const T &v) -> decltype(1. / MatSAR::Math::Cosh(v)) {
+            return 1. / MatSAR::Math::Cosh(v);
+        }
+
+        template<typename T>
+        auto Asec(const T &v) -> decltype(std::acos(1. / static_cast<decltype(v + 0.)>(v))) {
+            return std::acos(1. / static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Asech(const T &v) -> decltype(std::acosh(1. / static_cast<decltype(v + 0.)>(v))) {
+            return std::acosh(1. / static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        inline auto sec(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Sec<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Sec<T>);
+        }
+
+        template<typename T>
+        inline auto sech(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Sech<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Sech<T>);
+        }
+
+        template<typename T>
+        inline auto asec(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Asec<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Asec<T>);
+        }
+
+        template<typename T>
+        inline auto asech(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Asech<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Asech<T>);
+        }
+    }
+
+    namespace Math {
+        template<typename T>
+        auto Csc(const T &v) -> decltype(1. / MatSAR::Math::Sin(v)) {
+            return 1. / MatSAR::Math::Sin(v);
+        }
+
+        template<typename T>
+        auto Csch(const T &v) -> decltype(1. / MatSAR::Math::Sinh(v)) {
+            return 1. / MatSAR::Math::Sinh(v);
+        }
+
+        template<typename T>
+        auto Acsc(const T &v) -> decltype(std::asin(1. / static_cast<decltype(v + 0.)>(v))) {
+            return std::asin(1. / static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        auto Acsch(const T &v) -> decltype(std::asinh(1. / static_cast<decltype(v + 0.)>(v))) {
+            return std::asinh(1. / static_cast<decltype(v + 0.)>(v));
+        }
+
+        template<typename T>
+        inline auto csc(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Csc<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Csc<T>);
+        }
+
+        template<typename T>
+        inline auto csch(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Csch<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Csch<T>);
+        }
+
+        template<typename T>
+        inline auto acsc(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acsc<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Acsc<T>);
+        }
+
+        template<typename T>
+        inline auto acsch(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acsch<T>)) {
+            return MatSAR::apply_function(m, MatSAR::Math::Acsch<T>);
+        }
+    }
+    namespace Math {
+        template<typename T1, typename T2>
+        auto Atan2(const T1 &y, const T2 &x) -> real_max {
+            return std::atan2(static_cast<real_max>(y), static_cast<real_max>(x));
+        }
+
+        template<typename T1, typename T2>
+        auto atan2(Matrix<T1> Y, Matrix<T2> X) -> Matrix<real_max> {
+            Matrix<real_max>::broadcast(Y, X);
+            return MatSAR::apply_function(Y, X, MatSAR::Math::Atan2<T1, T2>);
+        }
+    }
+    namespace Math {
+        template<typename dType>
+        auto angle(const Matrix<dType> &A) -> Matrix<float64> {
+            Matrix<float64> r(A.getShape(), 0.);
+            auto iter_r = r.begin();
+            for (auto iter_a = A.begin(); iter_a != A.end(); ++iter_a, ++iter_r) {
+                auto A_r = real(*iter_a);
+                auto A_i = imag(*iter_a);
+                if (A_i == 0.) {
+                    *iter_r = A_r < 0 ? pi : 0;
+                } else {
+                    *iter_r = Atan2(A_i, A_r);//Atan2(x,y)=Atan(x/y)
+                }
+            }
             return r;
         }
     }
-}
 
+    namespace Math {
+        template<typename T1, typename T2>
+        auto pol2cart(Matrix<T1> &theta, Matrix<T2> &rho) -> vector<Matrix<real_max>> {
+            return {mul(rho, cos(theta)), mul(rho, sin(theta))};
+        }
+    }
+}
 #endif //MATSAR_TRIGONOMETRY_HPP

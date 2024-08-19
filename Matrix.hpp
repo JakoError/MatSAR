@@ -2,32 +2,55 @@
 // Created by JakoError on 2022/7/2.
 //
 #ifndef MATSAR_MATRIX_HPP
+#pragma once
 #define MATSAR_MATRIX_HPP
+//#pragma   push_macro("min")
+//#pragma   push_macro("max")
+//#undef   min
+//#undef   max
 
 #include <cstddef>
 #include <iostream>
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <memory>
 //#include <xmemory>
 #include <cstdarg>
 #include <iomanip>
 
+#ifndef MATSAR_UTILS
+
 #include "util/Utils"
+
+#endif
+
+#ifndef MATSAR_NUMBEROPERATION_HPP
+
 #include "NumberOperation.hpp"
 
-#include <cblas.h>
+#endif
 
+#define MATRIX_SIZE_TYPE int64
+using msize_type = MATRIX_SIZE_TYPE;
+using mshape_type = std::vector<msize_type>;
+
+#define OPENBLAS_USE64BITINT
+
+#include "include/cblas.h"
+
+#include <complex>
+
+#define LAPACK_COMPLEX_CUSTOM
 #define lapack_complex_float std::complex<float>
 #define lapack_complex_double std::complex<double>
 
-#ifndef lapack_int
+// have to be int
 #define lapack_int int
-#endif
 
 #ifndef _LAPACKE_H_
 
-#include <lapacke.h>
+#include "include/lapacke.h"
 
 #endif
 
@@ -68,11 +91,7 @@ VEC_CONSTRUCTOR_MAKER(VEC##6)\
 VEC_CONSTRUCTOR_MAKER(VEC##7)\
 VEC_CONSTRUCTOR_MAKER(VEC##8)
 
-#define MATRIX_SIZE_TYPE int64
-using msize_type = MATRIX_SIZE_TYPE;
-using mshape_type = vector<msize_type>;
-
-using namespace std;
+//using namespace std;
 
 using namespace MatSAR::Util::TypeUtil;
 using MatSAR::Util::TypeUtil::getCalculableString;
@@ -86,7 +105,7 @@ using MatSAR::Util::VectorUtil::to_string;
 using namespace MatSAR::Util::Exception;
 
 namespace MatSAR {
-    template<Calculable dType>
+    template<typename dType>
     void swap(dType &left, dType &right) {
         auto tmp = left;
         left = right;
@@ -100,8 +119,13 @@ namespace MatSAR {
     public:
         static void checkShape(const mshape_type &shape) {
             for (const auto &i: shape) {
-                if (i <= 0)
-                    throw_value_error("Œ¨∂»≤ªƒ‹Œ™∏∫ªÚ0 shape = " + toString(shape));
+                if (i < 0) {
+                    throw_value_error("Matrix shape cannot be less than 0, shape = " + toString(shape));
+                }
+            }
+            if (shape.size() > std::numeric_limits<msize_type>::max()) {
+                throw_shape_exception(
+                        "Matrix shape dimension size cannot be greater than INT64_MAX, shape = " + toString(shape));
             }
         }
 
@@ -114,14 +138,14 @@ namespace MatSAR {
             return new_shape;
         }
 
-        static auto newAxis(const mshape_type &shape, int64 dim) -> mshape_type {
+        static auto newAxis(const mshape_type &shape, size_type dim) -> mshape_type {
             checkShape(shape);
             if (shape.empty())
                 return {};
             if (shape.size() > dim)
                 return shape;
             mshape_type new_shape(shape);
-            MatSAR::Util::VectorUtil::alignNum(new_shape, dim, (int64) 1);
+            MatSAR::Util::VectorUtil::alignNum(new_shape, dim, (size_type) 1);
             return new_shape;
         }
 
@@ -137,30 +161,33 @@ namespace MatSAR {
         }
 
         /**
-         * ÷ª»•≥˝shape∏ﬂŒ¨∂»µƒ1
+         * Only remove the 1s of high dimension of shape
          */
         static auto squeezeShapeHigh(const mshape_type &shape) -> mshape_type {
             checkShape(shape);
             mshape_type squeezed_shape;
-            int64 idx = 0;
-            for (int64 i = 0; i < shape.size(); ++i)
+            msize_type idx = 0;
+            for (msize_type i = 0; i < shape.size(); ++i)
                 if (shape[shape.size() - i - 1] != 1) {
-                    idx = (int64) shape.size() - i - 1;
+                    idx = (msize_type) shape.size() - i - 1;
                     break;
                 }
-            for (int64 i = 0; i <= idx; ++i)
+            for (msize_type i = 0; i <= idx; ++i)
                 squeezed_shape.push_back(shape[i]);
             if (squeezed_shape.empty())
                 squeezed_shape.push_back(1);
             return squeezed_shape;
         }
 
-        static auto broadcastShape(mshape_type shape1, mshape_type shape2, int64 dim = 1) -> mshape_type {
+        static auto broadcastShape(mshape_type shape1, mshape_type shape2, msize_type dim = 1) -> mshape_type {
+            checkShape(shape1);
+            checkShape(shape2);
             auto dim_idx = dim - 1;
-            alignNum(shape1, (int64) max(shape1.size(), shape2.size()), (int64) 1);
-            alignNum(shape2, (int64) max(shape1.size(), shape2.size()), (int64) 1);
-            mshape_type shape(shape1.size());
-            for (int64 i = dim_idx; i < shape1.size(); ++i)
+            msize_type shape_dim = (msize_type) max(shape1.size(), shape2.size());
+            alignNum(shape1, shape_dim, (msize_type) 1);
+            alignNum(shape2, shape_dim, (msize_type) 1);
+            mshape_type shape(shape_dim);
+            for (msize_type i = dim_idx; i < shape1.size(); ++i)
                 if (shape1[i] == shape2[i] || shape2[i] == 1)
                     shape[i] = shape1[i];
                 else if (shape1[i] == 1)
@@ -170,16 +197,28 @@ namespace MatSAR {
             return shape;
         }
 
-        static void shapePredict(int target_size, mshape_type &shape) {
+        static void shapePredict(size_type target_size, mshape_type &shape) {
             auto iter = std::find(shape.begin(), shape.end(), -1);
             if (iter != shape.end()) {
-                if (std::find(iter + 1, shape.end(), -1) != shape.end())//¥Ê‘⁄µ⁄∂˛∏ˆ-1
-                    throw_value_error("æÿ’ÛŒ¨∂»÷ªƒ‹…˘√˜“ª∏ˆŒ¥÷™Œ¨∂»(-1)");
-                int64 exist_size = -MatSAR::Util::VectorUtil::mul(shape);
-                if (target_size % exist_size != 0)//≤ªƒ‹’˚≥˝
-                    throw_value_error("≤ªƒ‹÷ÿππsize=" + std::to_string(target_size) + "µƒ ˝◊ÈµΩshape=" +
-                                      MatSAR::Util::VectorUtil::toString(shape));
-                *iter = target_size / exist_size;
+                if (std::find(iter + 1, shape.end(), -1) != shape.end())//find second -1
+                    throw_value_error("Matrix dimensions can only declare one unknown dimension (-1)");
+//                //Potential flaw exceed the INT64_MAX
+//                msize_type exist_size = -MatSAR::Util::VectorUtil::mul(shape);
+//                if (target_size % exist_size != 0) //indivisible
+//                    throw_value_error("Cannot be refactored shape size=" + std::to_string(target_size) + "to shape=" +
+//                                      MatSAR::Util::VectorUtil::toString(shape));
+//                *iter = target_size / exist_size;
+                auto predict_dim_size = target_size;
+                for (const auto &i: shape) {
+                    if (i == -1)
+                        continue;
+                    if (predict_dim_size % i != 0)
+                        throw_value_error(
+                                "Cannot be refactored shape size=" + std::to_string(target_size) + "to shape=" +
+                                MatSAR::Util::VectorUtil::toString(shape));
+                    predict_dim_size /= i;
+                }
+                *iter = static_cast<size_type>(predict_dim_size);
             }
         };
 
@@ -191,15 +230,22 @@ namespace MatSAR {
             return ss.str();
         }
 
+        template<typename Ts, typename Td>
+        static void T(Ts *src, Td *dst, size_type dim1, size_type dim2) {
+            for (size_type i = 0; i < dim1; ++i)
+                for (size_type j = 0; j < dim2; ++j)
+                    *(dst++) = src[i + j * dim1];
+        }
+
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Add(leftT *left, rightT *right, size_type n) {
             while (n-- > 0)
                 *left++ += static_cast<leftT>(*right++);
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Add(leftT *left, const rightT &right, size_type n) {
             auto tmp = static_cast<leftT>(right);
             while (n-- > 0)
@@ -207,14 +253,14 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Sub(leftT *left, rightT *right, size_type n) {
             while (n-- > 0)
                 *left++ -= static_cast<leftT>(*right++);
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Sub(leftT *left, const rightT &right, size_type n) {
             auto tmp = static_cast<leftT>(right);
             while (n-- > 0)
@@ -239,7 +285,6 @@ namespace MatSAR {
             while (unit_times-- > 0) {
                 cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
                             m, n, k, 1., left, m, right, k, 0, dst, m);
-
                 left += m * k;
                 right += k * n;
                 dst += m * n;
@@ -275,14 +320,14 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Mul(leftT *left, rightT *right, size_type n) {
             while (n-- > 0)
                 *left++ *= static_cast<leftT>(*right++);
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Mul(leftT *left, const rightT &right, size_type n) {
             auto tmp = static_cast<leftT>(right);
             while (n-- > 0)
@@ -290,14 +335,14 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Div(leftT *left, rightT *right, size_type n) {
             while (n-- > 0)
                 *left++ /= static_cast<leftT>(*right++);
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Div(leftT *left, const rightT &right, size_type n) {
             auto tmp = static_cast<leftT>(right);
             while (n-- > 0)
@@ -305,7 +350,17 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
+        static void Div(const leftT &left, rightT *right, size_type n) {
+            auto tmp = static_cast<rightT>(left);
+            while (n-- > 0) {
+                *right = tmp / *right;
+                ++right;
+            }
+        }
+
+        ///NO CHECK!
+        template<typename leftT, typename rightT>
         static void Rem(leftT *left, rightT *right, size_type n) {
             while (n-- > 0) {
                 *left = rem(*left, static_cast<leftT>(*right));
@@ -314,7 +369,7 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Rem(leftT *left, const rightT &right, size_type n) {
             auto tmp = static_cast<leftT>(right);
             while (n-- > 0) {
@@ -324,7 +379,7 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Mod(leftT *left, rightT *right, size_type n) {
             while (n-- > 0) {
                 *left = mod(*left, static_cast<leftT>(*right));
@@ -333,7 +388,7 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Mod(leftT *left, const rightT &right, size_type n) {
             auto tmp = static_cast<leftT>(right);
             while (n-- > 0) {
@@ -343,14 +398,14 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void And(leftT *left, rightT *right, size_type n) {
             while (n-- > 0)
                 *left++ &= static_cast<leftT>(*right++);
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void And(leftT *left, const rightT &right, size_type n) {
             auto tmp = static_cast<leftT>(right);
             while (n-- > 0)
@@ -358,14 +413,14 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Or(leftT *left, rightT *right, size_type n) {
             while (n-- > 0)
                 *left++ |= static_cast<leftT>(*right++);
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Or(leftT *left, const rightT &right, size_type n) {
             auto tmp = static_cast<leftT>(right);
             while (n-- > 0)
@@ -373,14 +428,14 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Xor(leftT *left, rightT *right, size_type n) {
             while (n-- > 0)
                 *left++ ^= static_cast<leftT>(*right++);
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT>
+        template<typename leftT, typename rightT>
         static void Xor(leftT *left, const rightT &right, size_type n) {
             auto tmp = static_cast<leftT>(right);
             while (n-- > 0)
@@ -388,105 +443,105 @@ namespace MatSAR {
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void Less(leftT *left, rightT *right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ < *right++;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void Less(leftT *left, const rightT &right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ < right;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void LessEqual(leftT *left, rightT *right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ <= *right++;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void LessEqual(leftT *left, const rightT &right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ <= right;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void Great(leftT *left, rightT *right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ > *right++;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void Great(leftT *left, const rightT &right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ > right;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void GreatEqual(leftT *left, rightT *right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ >= *right++;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void GreatEqual(leftT *left, const rightT &right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ >= right;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void Equal(leftT *left, rightT *right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ == *right++;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void Equal(leftT *left, const rightT &right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ == right;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void NotEqual(leftT *left, rightT *right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ != *right++;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void NotEqual(leftT *left, const rightT &right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = *left++ != right;
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void Pow(leftT *left, rightT *right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = std::pow(*left++, *right++);
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void Pow(leftT *left, const rightT &right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = std::pow(*left++, right);
         }
 
         ///NO CHECK!
-        template<Calculable leftT, Calculable rightT, class DstT>
+        template<typename leftT, typename rightT, class DstT>
         static void Pow(const leftT &left, rightT *right, size_type n, DstT *dst) {
             while (n-- > 0)
                 *dst++ = std::pow(left, *right++);
@@ -494,25 +549,25 @@ namespace MatSAR {
 
     };
 
-    template<Calculable dType>
+    template<typename dType>
     class Matrix : public MatrixBase {
+    public:
+        using size_type = msize_type;
+        using shape_type = mshape_type;
     private:
         using alloc_trait = allocator_traits<allocator<dType>>;
     protected:
-        using size_type = msize_type;
-        using shape_type = mshape_type;
         using Base = MatrixBase;
-
         allocator<dType> alloc;
         dType *data = nullptr;
         dType *last = nullptr;
         size_type size = 0;
-        mshape_type shape = {0};
+        shape_type shape = {0};
 
         /**
-         * ◊‘∂Ø∏≥÷µdata,lastºØ÷–π‹¿Ìƒ⁄¥Ê
+         * Automatic data assignment, data and last memory management
          */
-        auto allocate(int64 n, const void *hint = nullptr) -> dType * {
+        auto allocate(size_type n, const void *hint = nullptr) -> dType * {
             try {
                 if (hint)
                     data = alloc_trait::allocate(alloc, n, hint);
@@ -535,12 +590,12 @@ namespace MatSAR {
         }
 
         /**
-         * ◊‘∂Ø∏≥÷µdata,lastºØ÷–π‹¿Ìƒ⁄¥Ê
+         * Automatic data assignment, data and last memory management
          */
         void deallocate() {
             try {
                 if (data)
-                    allocator_traits<allocator<dType>>::deallocate(alloc, data, size);
+                    alloc_trait::deallocate(alloc, data, size);
                 data = last = nullptr;
             } catch (const exception &e) {
                 cerr << e.what() << ": " << "Deallocate Failed!" << endl;
@@ -548,30 +603,37 @@ namespace MatSAR {
             }
         }
 
-        template<RealType RT>
-        static auto dataToString(RT *&p, int dataSpace = 10) -> string {
+        static auto dataToString(bool p) -> string {
+            return p ? "true " : "false";
+        }
+
+        template<typename RT>
+        static auto dataToString(RT p, int dataSpace = 10) -> string {
             stringstream ss;
             ss.setf(ios::fixed);
-            if (*p == 0.)
+            if (p == RT(0))
                 ss.precision(0);
             else
                 ss.precision(4);
-            ss << setfill(' ') << setw(dataSpace) << *p;
+            ss << setfill(' ') << setw(dataSpace) << p;
             return ss.str();
         }
 
-        template<ComplexType CT>
-        static auto dataToString(CT *&p, int dataSpace = 10) -> string {
+        template<typename T>
+        static auto dataToString(complex<T> p, int dataSpace = 10) -> string {
             stringstream ss;
             ss.setf(ios::fixed);
             ss.precision(4);
-            ss << setfill(' ') << setw(dataSpace) << p->real();
-            ss << " + ";
-            ss << setfill(' ') << setw(dataSpace) << p->imag() << "i";
+            ss << setfill(' ') << setw(dataSpace) << p.real();
+            if (p.imag() < 0)
+                ss << " - ";
+            else
+                ss << " + ";
+            ss << setfill(' ') << setw(dataSpace) << std::abs(p.imag()) << "i";
             return ss.str();
         }
 
-        auto arrayToString(dType *&p, msize_type dim, int align = 0, int dataSpace = 10) const -> string {
+        auto arrayToString(dType *&p, msize_type dim, int align = 0) const -> string {
             if (!p || dim < 0 || dim >= shape.size())
                 return "{}";
             stringstream ss;
@@ -580,7 +642,7 @@ namespace MatSAR {
                 ss << spaces << "{";
                 dType *end = p + shape[0];
                 while (p != end) {
-                    ss << dataToString(p);
+                    ss << dataToString(*p) << ' ';
                     if (++p == end)
                         ss << "}";
                     else
@@ -589,7 +651,7 @@ namespace MatSAR {
                 return ss.str();
             }
             ss << spaces << "{\n";
-            for (int i = 0; i < shape[dim]; ++i) {
+            for (size_type i = 0; i < shape[dim]; ++i) {
                 ss << arrayToString(p, dim - 1, align + 1);
                 if (i != shape[dim] - 1) {
                     ss << ",\n";
@@ -605,7 +667,7 @@ namespace MatSAR {
          * single unit 2 dim matrix get dType& element
          * NO CHECK!
          */
-        [[nodiscard]] auto getEle(dType *src, int64 i, int64 j) const -> dType & {
+        [[nodiscard]] auto getEle(dType *src, size_type i, size_type j) const -> dType & {
             return src[i + j * shape[0]];
         }
 
@@ -613,7 +675,7 @@ namespace MatSAR {
          * single unit 2 dim matrix get dType& element
          * NO CHECK!
          */
-        [[nodiscard]] auto getEle(int64 n, int64 i, int64 j) const -> dType & {
+        [[nodiscard]] auto getEle(size_type n, size_type i, size_type j) const -> dType & {
             return (data + n * shape[0] * shape[1])[i + j * shape[0]];
         }
 
@@ -621,37 +683,29 @@ namespace MatSAR {
          * single unit 2 dim matrix get dType& element
          * NO CHECK!
          */
-        [[nodiscard]] auto getEle(int64 i, int64 j) const -> dType & {
+        [[nodiscard]] auto getEle(size_type i, size_type j) const -> dType & {
             return (data)[i + j * shape[0]];
         }
 
         /**
-         * single unit 2 dim matrix
-         * NO CHECK!
+         * return a new Matrix for only 2d matrix \n
+         * only works when row col all valid \n
+         * @Hints: Do Det Operations can be easy to just implement the actual data removal operations. \n
+         * But this way can be massively memory required. \n
+         * There is better way to just overlook the removed columns and rows and do calculations.
          */
-        static void T(dType *src, dType *dst, int64 dim1, int64 dim2) {
-            for (int64 i = 0; i < dim1; ++i)
-                for (int64 j = 0; j < dim2; ++j)
-                    *(dst++) = src[i + j * dim1];
-        }
-
-        /**
-         * return a new Matrix for only 2d matrix
-         * only works when row col all valid
-         * FIXME ∏√∑Ω∑®µƒµ˜∂Ø∫Õ≤Œ ˝ø…“‘…Ã»∂
-         */
-        auto remove_row_col(dType *src, int64 row, int64 col) const -> Matrix<dType> {
+        auto remove_row_col(dType *src, size_type row, size_type col) const -> Matrix<dType> {
             if (row < 0 || col < 0 || row >= shape[0] || col >= shape[1])
                 return {{shape[0], shape[1]}, src};
             if (shape[0] == 1 || shape[1] == 1)
                 return {};
-            vector<int64> removed_shape = {shape[0] - 1, shape[1] - 1};
+            shape_type removed_shape = {shape[0] - 1, shape[1] - 1};
             Matrix<dType> m(removed_shape, 0.);
             dType *iter_m = m.getData();
-            for (int j = 0; j < shape[1]; ++j) {
+            for (size_type j = 0; j < shape[1]; ++j) {
                 if (j == col) continue;
-                for (int i = 0; i < shape[0]; ++i) {
-                    if (i == col) continue;
+                for (size_type i = 0; i < shape[0]; ++i) {
+                    if (i == row) continue;
                     *(iter_m++) = getEle(src, i, j);
                 }
             }
@@ -659,17 +713,20 @@ namespace MatSAR {
         }
 
         /**
-         * single unit 2 dim matrix
-         * ¥À∫Ø ˝ø…Õ®π˝“∆∂Øsrc¿¥ªÒ»°∑÷“≥µƒ∂˛Œ¨∂»det
+         * single unit 2 dim matrix \n
+         * This function gets the 2-dimensional det of a page by moving src \n
+         * Potential Flaw: Too slow, Stack Overflow and Memory Overflow \n
+         * @Hints: Do Det Operations can be easy to just implement the actual data removal operations. \n
+         * But this way can be massively memory required. \n
+         * There is better way to just overlook the removed columns and rows and do calculations.
          */
-        //FIXME ––¡– Ω‘ÀÀ„Ã´¬˝£¨ «∑Òø…¿˚”√Ãÿ’˜÷µ«ÛΩ‚
-        auto det(dType *src) const -> dType {
+        auto Det(dType *src) const -> dType {
             if (shape[0] == 1)
                 return *src;
-            int i = 0;
+            size_type i = 0;
             dType ans = 0;
-            for (int j = 0; j < shape[0]; ++j) {
-                dType &num = getEle(src, i, j);
+            for (size_type j = 0; j < shape[0]; ++j) {
+                auto num = getEle(src, i, j);
                 if (num == 0) continue;
                 if ((i + j) % 2 == 0)
                     ans += num * remove_row_col(src, i, j).det();
@@ -689,12 +746,12 @@ namespace MatSAR {
                 throw_value_error("inv only for square matrix");
                 return;
             }
-            int n = shape[0];
-            unique_ptr<int64[]> is(new int64[n]);
-            unique_ptr<int64[]> js(new int64[n]);
-            int64 i, j, k;
+            auto n = shape[0];
+            unique_ptr<size_type[]> is(new size_type[n]);
+            unique_ptr<size_type[]> js(new size_type[n]);
+            size_type i, j, k;
             for (k = 0; k < n; ++k) {
-                dType max = 0.;
+                dType max = 0;
                 for (i = k; i < n; ++i)
                     for (j = k; j < n; ++j) {
                         dType tmp = std::abs(getEle(dst, i, j));
@@ -705,7 +762,7 @@ namespace MatSAR {
                         }
                     }
                 if (max == 0.) {
-                    throw_value_error("∏√æÿ’Û≤ª¥Ê‘⁄ƒÊæÿ’Û");
+                    throw_value_error("This matrix does not have an inverse matrix");
                     return;
                 }
                 if ((i = is[k]) != k)
@@ -738,9 +795,9 @@ namespace MatSAR {
             }
         }
 
-        template<Calculable T>
+        template<typename T>
         static auto cat(size_type dim, vector<Matrix<T>> mv) -> Matrix<T> {
-            if (dim < 0) throw_value_error("dim≤Œ ˝±ÿ–ÎŒ™’˝ µ ˝", true);
+            if (dim < 0) throw_value_error("The dim parameter must be a positive real number.", true);
             if (mv.empty()) return {};
             for (auto &m: mv) {
                 m.squeezeHighThis();
@@ -755,14 +812,14 @@ namespace MatSAR {
                 dim_sum += shape[dim_idx];
                 shape.erase(shape.begin() + dim_idx);
                 if (shape != r_shape)
-                    throw_value_error("cat∏˜æÿ’ÛŒ¨∂»≤ª∆•≈‰", true);
+                    throw_value_error("cat matrix dimensions do not match", true);
             }
             r_shape.insert(r_shape.begin() + dim_idx, dim_sum);
             Matrix<T> r(r_shape, 0.);
             if (dim == 1) {
-                int64 dim_offset = 0;
+                size_type dim_offset = 0;
                 for (size_type mi = 0; mi < mv.size(); ++mi) {
-                    vector<int64> selector(r_shape.size(), 0);
+                    shape_type selector(r_shape.size(), 0);
                     auto current_shape = mv[mi].getShape();
                     auto size = mv[mi].getSize();
                     while (size-- > 0) {
@@ -793,18 +850,19 @@ namespace MatSAR {
 
         void debug() const {
             stringstream ss;
-            ss << "Matrix debug message: " << " shape = " << MatSAR::Util::VectorUtil::toString(shape)
+            ss << "Matrix debug message: "
+               << " shape = " << MatSAR::Util::VectorUtil::toString(shape)
                << " size = " << size
                << " data = " << data
                << " matrix * = " << this;
             cerr << ss.str() << endl;
         }
 
-        [[nodiscard]] auto getData() const -> dType * {
+        [[nodiscard]] virtual auto getData() const -> dType * {
             return data;
         }
 
-        [[nodiscard]] auto begin() const -> dType * {
+        [[nodiscard]] virtual auto begin() const -> dType * {
             return data;
         }
 
@@ -812,7 +870,7 @@ namespace MatSAR {
             return last;
         }
 
-        [[nodiscard]] auto end() const -> dType * {
+        [[nodiscard]] virtual auto end() const -> dType * {
             return last;
         }
 
@@ -824,18 +882,18 @@ namespace MatSAR {
             return shape;
         }
 
-        [[nodiscard]] auto getDims() const -> shape_type::size_type {
+        [[nodiscard]] auto getDims() const -> size_type {
             return shape.size();
         }
 
         /**
-         * æÿ’Û◊Ó¥ÛŒ¨ ˝µƒ≥§∂»
+         * The length of the maximum dimension of the matrix
          */
         [[nodiscard]] auto getLength() const -> size_type {
             return Util::VectorUtil::max(shape);
         }
 
-        ///unit-∂˛Œ¨æÿ’Ûµ•‘™
+        ///unit-Two-dimensional matrix unit
         [[nodiscard]] auto getUnitSize() const -> size_type {
             switch (getDims()) {
                 case 0:
@@ -848,14 +906,14 @@ namespace MatSAR {
             }
         }
 
-        ///unit-∂˛Œ¨æÿ’Ûµ•‘™
+        ///unit-Two-dimensional matrix unit
         [[nodiscard]] auto getUnitNum() const -> size_type {
             if (size == 0)
                 return 0;
             return size / getUnitSize();
         }
 
-        ///unit-∂˛Œ¨æÿ’Ûµ•‘™
+        ///unit-Two-dimensional matrix unit
         [[nodiscard]] auto getUnitShape() const -> shape_type {
             switch (getDims()) {
                 case 0:
@@ -877,27 +935,35 @@ namespace MatSAR {
             shape = new_shape;
         }
 
-        [[nodiscard]] auto real() const -> Matrix<float_max> {
-            Matrix<float_max> r(shape, 0.);
-            auto iter_c = data;
+        template<typename TargetType=decltype(std::real(std::declval<dType>()))>
+        [[nodiscard]] auto real() const -> Matrix<TargetType> {
+            Matrix<TargetType> r(shape, TargetType());
+            auto iter_c = getData();
             for (auto *iter = r.getData(), *end = r.getDataEnd(); iter != end; ++iter, ++iter_c)
-                *iter = std::real(*iter_c);
+                *iter = MatSAR::real(*iter_c);
             return r;
         }
 
-        [[nodiscard]] auto image() const -> Matrix<float_max> {
-            Matrix<float_max> r(shape, 0.);
-            auto iter_c = data;
+        template<typename TargetType=decltype(std::imag(std::declval<dType>()))>
+        [[nodiscard]] auto image() const -> Matrix<TargetType> {
+            Matrix<TargetType> r(shape, TargetType());
+            auto iter_c = getData();
             for (auto *iter = r.getData(), *end = r.getDataEnd(); iter != end; ++iter, ++iter_c)
-                *iter = std::imag(*iter_c);
+                *iter = MatSAR::imag(*iter_c);
             return r;
         }
 
-        [[nodiscard]] auto conj() const -> Matrix<complex_max> {
-            Matrix<complex_max> r(shape, 0.);
-            auto iter_c = data;
+        template<typename TargetType=decltype(std::imag(std::declval<dType>()))>
+        [[nodiscard]] auto imag() const -> Matrix<TargetType> {
+            return this->image<TargetType>();
+        }
+
+        template<typename TargetType=decltype(std::conj(std::declval<dType>()))>
+        [[nodiscard]] auto conj() const -> Matrix<TargetType> {
+            Matrix<TargetType> r(shape, TargetType());
+            auto iter_c = getData();
             for (auto *iter = r.getData(), *end = r.getDataEnd(); iter != end; ++iter, ++iter_c)
-                *iter = std::conj(*iter_c);
+                *iter = MatSAR::conj(*iter_c);
             return r;
         }
 
@@ -914,7 +980,7 @@ namespace MatSAR {
             return *this;
         }
 
-        template<Calculable T>
+        template<typename T>
         auto operator=(const Matrix<T> &m) -> Matrix<dType> & {
             this->operator=(Matrix<dType>(m));
             return *this;
@@ -925,7 +991,7 @@ namespace MatSAR {
             return *this;
         }
 
-        template<Calculable T>
+        template<Calculable T CheckCalculable(T)>
         auto operator=(const T &m) -> Matrix<dType> & {
             if (typeHigher<T, dType>())
                 throw_type_loss_exception<T, dType>(false);
@@ -945,7 +1011,7 @@ namespace MatSAR {
             }
         };
 
-        template<Calculable T>
+        template<typename T>
         Matrix(const Matrix<T> &another) {
             if (typeHigher<T, dType>())
                 throw_type_loss_exception<T, dType>(false);
@@ -957,15 +1023,15 @@ namespace MatSAR {
             }
         };
 
-        template<Calculable T>
-        Matrix(const vector<Matrix<T>> &ms, int64 dim = 1) {
+        template<typename T>
+        Matrix(const vector<Matrix<T>> &ms, size_type dim = 1) {
             if (typeHigher<T, dType>())
                 throw_type_loss_exception<T, dType>(false);
             this->operator=(cat(dim, vector<Matrix<dType>>(ms)));
         };
 
-        template<Calculable T>
-        Matrix(const initializer_list<Matrix<T>> &ms, int64 dim = 1) {
+        template<typename T>
+        Matrix(const initializer_list<Matrix<T>> &ms, size_type dim = 1) {
             if (typeHigher<T, dType>())
                 throw_type_loss_exception<T, dType>(false);
             vector<Matrix<dType>> mv(ms.begin(), ms.end());
@@ -983,7 +1049,12 @@ namespace MatSAR {
             return *data;
         }
 
-//        template<Calculable T>
+//        template<typename T>
+//        explicit operator T() {
+//            return T(*data);
+//        }
+
+//        template<typename T>
 //        Matrix(const vector<T> &vec) {
 //            this->shape = {vec.size()};
 //            this->size = vec.size();
@@ -993,25 +1064,30 @@ namespace MatSAR {
 //            }
 //        }
 
-        ///SINGLE VALUE GENERATOR
-        explicit Matrix(const shape_type &m_shape, dType v,const void *hint = nullptr) {
+        /**
+         * SINGLE VALUE GENERATOR
+         * don't set default value for v because there are signatures for direct vector input construction
+         */
+        explicit Matrix(const shape_type &m_shape, const dType &v, const void *hint = nullptr) {
+            Base::checkShape(m_shape);
             this->shape = Util::VectorUtil::abs(m_shape);
-            this->size = Util::VectorUtil::mul(m_shape);
+            this->size = Util::VectorUtil::mul(this->shape);
             if (size == 0) {
                 this->shape = {0};
             } else {
-                allocate(size,hint);
+                allocate(size, hint);
                 uninitialized_fill_n(data, size, v);
             }
         };
 
         Matrix(const shape_type &m_shape, dType *v) {
+            Base::checkShape(m_shape);
             this->shape = Util::VectorUtil::abs(m_shape);
-            this->size = Util::VectorUtil::mul(m_shape);
+            this->size = Util::VectorUtil::mul(this->shape);
             if (size == 0) {
                 this->shape = {0};
             } else {
-                allocate(size,v);
+                allocate(size, v);
                 if (v)
                     uninitialized_copy_n(v, size, data);
                 else
@@ -1037,6 +1113,8 @@ namespace MatSAR {
         }
 
         VEC_CONSTRUCTOR_MAKER_N
+
+        //TODO: implement constructor for different vector with different types
 
         ~Matrix() {
             deallocate();
@@ -1069,7 +1147,7 @@ namespace MatSAR {
                 for (size_type n = 0; n < getUnitNum(); ++n) {
                     for (size_type j = 0; j < n_t; ++j)
                         for (size_type i = 0; i < m_t; ++i)
-                            *(iter_r++) = *(iter_sqz + i);//÷ÿ∏¥∂¡»°sqz
+                            *(iter_r++) = *(iter_sqz + i);//ÈáçÂ§çËØªÂèñsqz
                     iter_sqz += sqz.getUnitSize();
                 }
             } else if (n_s == n_t) {
@@ -1111,7 +1189,7 @@ namespace MatSAR {
             return r;
         }
 
-        template<Calculable T1, Calculable T2>
+        template<typename T1, typename T2>
         static void broadcast(Matrix<T1> &m1, Matrix<T2> &m2) {
             if (m1.getShape() == m2.getShape())
                 return;
@@ -1122,8 +1200,8 @@ namespace MatSAR {
                 m2 = m2.broadcast(bShape);
         }
 
-        template<Calculable T1, Calculable T2>
-        static void broadcast(Matrix<T1> &m1, Matrix<T2> &m2, int64 dim) {
+        template<typename T1, typename T2>
+        static void broadcast(Matrix<T1> &m1, Matrix<T2> &m2, size_type dim) {
             if (dim <= 1) {
                 broadcast(m1, m2);
                 return;
@@ -1134,7 +1212,7 @@ namespace MatSAR {
             auto bShape1 = bShape;
             auto bShape2 = bShape;
 
-            for (int64 i = 0; i < dim; ++i) {
+            for (size_type i = 0; i < dim; ++i) {
                 bShape1[i] = m1.getShape()[i];
                 bShape2[i] = m2.getShape()[i];
             }
@@ -1142,25 +1220,25 @@ namespace MatSAR {
             m2 = m2.broadcast(bShape2);
         }
 
-        template<Calculable T1, Calculable T2>
+        template<typename T1, typename T2>
         static void mul_broadcast(Matrix<T1> &m1, Matrix<T2> &m2) {
             if (m1.isEmpty() || m2.isEmpty())
-                throw_broadcast_exception("æÿ’Û≥À∑®≤ªƒ‹Ω” ‹ø’æÿ’Û");
+                throw_broadcast_exception("Matrix multiplication cannot accept empty matrix");
 
-            auto shape1 = newAxis(m1.getShape(),2);
-            auto shape2 = newAxis(m2.getShape(),2);
+            auto shape1 = newAxis(m1.getShape(), 2);
+            auto shape2 = newAxis(m2.getShape(), 2);
 
-            if (shape1[1] != shape2[0]){
+            if (shape1[1] != shape2[0]) {
                 if (shape1[1] == 1) shape1[1] = shape2[0];
-                else if(shape2[0] == 1) shape2[0] = shape1[1];
+                else if (shape2[0] == 1) shape2[0] = shape1[1];
                 else
-                    throw_broadcast_exception(MatrixBase::shapeToString(shape1),MatrixBase::shapeToString(shape2));
+                    throw_broadcast_exception(MatrixBase::shapeToString(shape1), MatrixBase::shapeToString(shape2));
             }
-            auto bShape = broadcastShape(shape1,shape2, 3);
+            auto bShape = broadcastShape(shape1, shape2, 3);
             auto bShape1 = bShape;
             auto bShape2 = bShape;
 
-            for (int64 i = 0; i < 2; ++i) {
+            for (size_type i = 0; i < 2; ++i) {
                 bShape1[i] = shape1[i];
                 bShape2[i] = shape2[i];
             }
@@ -1169,9 +1247,9 @@ namespace MatSAR {
         }
 
 //        /**
-//         *  π”√ø…±‰≤Œ ˝µƒ÷ÿ‘ÿª·∂‘≤Œ ˝“™«Û±»Ωœ∏ﬂ£¨≤ªƒ‹≥ˆœ÷±»‘≠”–≤Œ ˝…ŸªÚ∂‡µƒ«Èøˆ£¨\n
-//         * ∑Ò‘Úª·≥ˆœ÷‘ΩΩÁ£¨µ´’‚ «“ª÷÷ƒ⁄≤øø…∏ﬂ–ßµƒ∑√Œ ∑Ω∑®£¨≥ˆœ÷‘ΩΩÁª·“Ï≥£ÕÀ≥ˆ\n
-//         * ∏¸º”∞≤»´«Î π”√Matrix({dim1,dim2,dim3,...,dimn})
+//         * ‰ΩøÁî®ÂèØÂèòÂèÇÊï∞ÁöÑÈáçËΩΩ‰ºöÂØπÂèÇÊï∞Ë¶ÅÊ±ÇÊØîËæÉÈ´òÔºå‰∏çËÉΩÂá∫Áé∞ÊØîÂéüÊúâÂèÇÊï∞Â∞ëÊàñÂ§öÁöÑÊÉÖÂÜµÔºå\n
+//         * Âê¶Âàô‰ºöÂá∫Áé∞Ë∂äÁïåÔºå‰ΩÜËøôÊòØ‰∏ÄÁßçÂÜÖÈÉ®ÂèØÈ´òÊïàÁöÑËÆøÈóÆÊñπÊ≥ïÔºåÂá∫Áé∞Ë∂äÁïå‰ºöÂºÇÂ∏∏ÈÄÄÂá∫\n
+//         * Êõ¥Âä†ÂÆâÂÖ®ËØ∑‰ΩøÁî®Matrix({dim1,dim2,dim3,...,dimn})
 //         * @param i
 //         * @param ...
 //         * @return
@@ -1184,11 +1262,11 @@ namespace MatSAR {
 //            do {
 //                if (i < 0)
 //                    i += shape[dim];
-//                ///»Áπ˚∏√≈–∂œ”∞œÏ∂¡»°–ß¬ ø…»•≥˝£¨µ´Ω¯––≈–∂œ∫‹”–±ÿ“™///
+//                ///Â¶ÇÊûúËØ•Âà§Êñ≠ÂΩ±ÂìçËØªÂèñÊïàÁéáÂèØÂéªÈô§Ôºå‰ΩÜËøõË°åÂà§Êñ≠ÂæàÊúâÂøÖË¶Å///
 //                if (i < 0 || i > this->shape[dim] - 1)
 //                    throw_logical_error(
-//                            "∂¡»°æÿ’Û‘™Àÿ£¨≥¨≥ˆæÿ’Û∑∂Œß ‘⁄" + to_string(dim + 1) + "Œ¨ (shape)Œ¨≥§=" + " ∏√Œ¨»°÷µi=" + to_string(i) +
-//                            "≥¨≥ˆ∑∂Œß");
+//                            "ËØªÂèñÁü©ÈòµÂÖÉÁ¥†ÔºåË∂ÖÂá∫Áü©ÈòµËåÉÂõ¥ Âú®" + to_string(dim + 1) + "Áª¥ (shape)Áª¥Èïø=" + " ËØ•Áª¥ÂèñÂÄºi=" + to_string(i) +
+//                            "Ë∂ÖÂá∫ËåÉÂõ¥");
 //                idx[dim] = i;
 //            } while (++dim < shape.size());
 //            for (int j = shape.size() - 1; j >= 0; --j)
@@ -1197,9 +1275,9 @@ namespace MatSAR {
 //        }
 //
 //        /**
-//         *  π”√ø…±‰≤Œ ˝µƒ÷ÿ‘ÿª·∂‘≤Œ ˝“™«Û±»Ωœ∏ﬂ£¨≤ªƒ‹≥ˆœ÷±»‘≠”–≤Œ ˝…ŸªÚ∂‡µƒ«Èøˆ£¨\n
-//         * ∑Ò‘Úª·≥ˆœ÷‘ΩΩÁ£¨µ´’‚ «“ª÷÷ƒ⁄≤øø…∏ﬂ–ßµƒ∑√Œ ∑Ω∑®£¨≥ˆœ÷‘ΩΩÁª·“Ï≥£ÕÀ≥ˆ\n
-//         * ∏¸º”∞≤»´«Î π”√Matrix({dim1,dim2,dim3,...,dimn})
+//         * ‰ΩøÁî®ÂèØÂèòÂèÇÊï∞ÁöÑÈáçËΩΩ‰ºöÂØπÂèÇÊï∞Ë¶ÅÊ±ÇÊØîËæÉÈ´òÔºå‰∏çËÉΩÂá∫Áé∞ÊØîÂéüÊúâÂèÇÊï∞Â∞ëÊàñÂ§öÁöÑÊÉÖÂÜµÔºå\n
+//         * Âê¶Âàô‰ºöÂá∫Áé∞Ë∂äÁïåÔºå‰ΩÜËøôÊòØ‰∏ÄÁßçÂÜÖÈÉ®ÂèØÈ´òÊïàÁöÑËÆøÈóÆÊñπÊ≥ïÔºåÂá∫Áé∞Ë∂äÁïå‰ºöÂºÇÂ∏∏ÈÄÄÂá∫\n
+//         * Êõ¥Âä†ÂÆâÂÖ®ËØ∑‰ΩøÁî®Matrix({dim1,dim2,dim3,...,dimn})
 //         * @param i
 //         * @param ...
 //         * @return
@@ -1212,11 +1290,11 @@ namespace MatSAR {
 //            do {
 //                if (i < 0)
 //                    i += shape[dim];
-//                ///»Áπ˚∏√≈–∂œ”∞œÏ∂¡»°–ß¬ ø…»•≥˝£¨µ´Ω¯––≈–∂œ∫‹”–±ÿ“™///
+//                ///Â¶ÇÊûúËØ•Âà§Êñ≠ÂΩ±ÂìçËØªÂèñÊïàÁéáÂèØÂéªÈô§Ôºå‰ΩÜËøõË°åÂà§Êñ≠ÂæàÊúâÂøÖË¶Å///
 //                if (i < 0 || i > this->shape[dim] - 1)
 //                    throw_logical_error(
-//                            "∂¡»°æÿ’Û‘™Àÿ£¨≥¨≥ˆæÿ’Û∑∂Œß ‘⁄" + to_string(dim + 1) + "Œ¨ (shape)Œ¨≥§=" + " ∏√Œ¨»°÷µi=" + to_string(i) +
-//                            "≥¨≥ˆ∑∂Œß");
+//                            "ËØªÂèñÁü©ÈòµÂÖÉÁ¥†ÔºåË∂ÖÂá∫Áü©ÈòµËåÉÂõ¥ Âú®" + to_string(dim + 1) + "Áª¥ (shape)Áª¥Èïø=" + " ËØ•Áª¥ÂèñÂÄºi=" + to_string(i) +
+//                            "Ë∂ÖÂá∫ËåÉÂõ¥");
 //                idx[dim] = i;
 //            } while (++dim < shape.size());
 //            for (int j = shape.size() - 1; j >= 0; --j)
@@ -1226,7 +1304,7 @@ namespace MatSAR {
 
 
 
-        auto operator()(int64 offset) -> dType & {
+        virtual auto operator()(size_type offset) -> dType & {
             if (offset < 0 || offset > size) {
                 stringstream ss;
                 ss << "read Matrix element out of Range: offset should be in size Range which( size = "
@@ -1236,7 +1314,7 @@ namespace MatSAR {
             return data[offset];
         }
 
-        auto operator()(int64 offset) const -> dType {
+        virtual auto operator()(size_type offset) const -> dType {
             if (offset < 0 || offset > size) {
                 stringstream ss;
                 ss << "read Matrix element out of Range: offset should be in size Range which( size = "
@@ -1246,14 +1324,15 @@ namespace MatSAR {
             return data[offset];
         }
 
-        /**
-         * “‘∂˛Œ¨æÿ’Û◊˜Œ™◊Ó–°µ•‘™£¨i£¨j∑÷±¥”“ªŒ¨∂˛Œ¨Ω«∂»—°‘Ò
-         * @param n µ⁄n∏ˆ∂˛Œ¨æÿ’Û
-         * @param i i–– ÷ß≥÷∏∫ ˝µπ ˝
-         * @param j j¡– ÷ß≥÷∏∫ ˝µπ ˝
-         * @return µ•∏ˆ‘™Àÿ
+        virtual /**
+         * Taking the two-dimensional matrix as the smallest unit,
+         * i and j are selected from the first and second dimensions respectively.
+         * @param n The nth two-dimensional matrix
+         * @param i i-th row (support negative index)
+         * @param j j-th column (support negative index)
+         * @return single element (reference)
          */
-        auto operator()(int64 n, int64 i, int64 j) -> dType & {
+        auto operator()(size_type n, size_type i, size_type j) -> dType & {
             auto shape2d = newAxis(shape, 2);
             if (i < 0) i += shape2d[0];
             if (j < 0) j += shape2d[1];
@@ -1265,13 +1344,14 @@ namespace MatSAR {
         }
 
         /**
-         * “‘∂˛Œ¨æÿ’Û◊˜Œ™◊Ó–°µ•‘™£¨i£¨j∑÷±¥”“ªŒ¨∂˛Œ¨Ω«∂»—°‘Ò
-         * @param n µ⁄n∏ˆ∂˛Œ¨æÿ’Û
-         * @param i i–– ÷ß≥÷∏∫ ˝µπ ˝
-         * @param j j¡– ÷ß≥÷∏∫ ˝µπ ˝
-         * @return µ•∏ˆ‘™Àÿ
+         * Taking the two-dimensional matrix as the smallest unit,
+         * i and j are selected from the first and second dimensions respectively.
+         * @param n The nth two-dimensional matrix
+         * @param i i-th row (support negative index)
+         * @param j j-th column (support negative index)
+         * @return single element (not reference)
          */
-        auto operator()(int64 n, int64 i, int64 j) const -> dType {
+        virtual auto operator()(size_type n, size_type i, size_type j) const -> dType {
             auto shape2d = newAxis(shape, 2);
             if (i < 0) i += shape2d[0];
             if (j < 0) j += shape2d[1];
@@ -1283,34 +1363,36 @@ namespace MatSAR {
         }
 
         /**
-        * “‘∂˛Œ¨æÿ’Û◊˜Œ™◊Ó–°µ•‘™£¨i£¨j∑÷±¥”“ªŒ¨∂˛Œ¨Ω«∂»—°‘Ò
-        * @param i i––
-        * @param j j¡–
-        * @return µ•∏ˆ‘™Àÿ
-        */
-        auto operator()(int64 i, int64 j) -> dType & {
+         * Taking the two-dimensional matrix as the smallest unit,
+         * i and j are selected from the first and second dimensions respectively.
+         * @param i i-th row (support negative index)
+         * @param j j-th column (support negative index)
+         * @return single element (reference)
+         */
+        virtual auto operator()(size_type i, size_type j) -> dType & {
             return (*this)(0, i, j);
         }
 
         /**
-        * “‘∂˛Œ¨æÿ’Û◊˜Œ™◊Ó–°µ•‘™£¨i£¨j∑÷±¥”“ªŒ¨∂˛Œ¨Ω«∂»—°‘Ò
-        * @param i i––
-        * @param j j¡–
-        * @return µ•∏ˆ‘™Àÿ
-        */
-        auto operator()(int64 i, int64 j) const -> dType {
+         * Taking the two-dimensional matrix as the smallest unit,
+         * i and j are selected from the first and second dimensions respectively.
+         * @param i i-th row (support negative index)
+         * @param j j-th column (support negative index)
+         * @return single element (not reference)
+         */
+        virtual auto operator()(size_type i, size_type j) const -> dType {
             return (*this)(0, i, j);
         }
 
 //        dType operator()(initializer_list<int64> plist) const {
 //            if (plist.size() != this->shape.size())
 //                throw_out_of_range_error(
-//                        "∂¡»°æÿ’Û‘™ÀÿŒ¨∂» ˝≤ª∆•≈‰ ∏√æÿ’ÛŒ¨∂»:" + to_string(shape.size()) + " ¥´»ÎŒ¨∂»:" + to_string(plist.size()), true);
+//                        "ËØªÂèñÁü©ÈòµÂÖÉÁ¥†Áª¥Â∫¶Êï∞‰∏çÂåπÈÖç ËØ•Áü©ÈòµÁª¥Â∫¶:" + to_string(shape.size()) + " ‰º†ÂÖ•Áª¥Â∫¶:" + to_string(plist.size()), true);
 //            int64 dim = 0, pos = 0;
 //            for (const int64 &i: plist) {
 //                if (i < -shape[dim] || i >= shape[dim]) {
 //                    throw_out_of_range_error(
-//                            "∂¡»°æÿ’Û‘™Àÿ£¨≥¨≥ˆæÿ’Û∑∂Œß ‘⁄" + to_string(i + 1) + "Œ¨ (shape)Œ¨≥§=" + " ∏√Œ¨»°÷µi=" + to_string(i) + "≥¨≥ˆ∑∂Œß",
+//                            "ËØªÂèñÁü©ÈòµÂÖÉÁ¥†ÔºåË∂ÖÂá∫Áü©ÈòµËåÉÂõ¥ Âú®" + to_string(i + 1) + "Áª¥ (shape)Áª¥Èïø=" + " ËØ•Áª¥ÂèñÂÄºi=" + to_string(i) + "Ë∂ÖÂá∫ËåÉÂõ¥",
 //                            true);
 //                }
 //                dim++;
@@ -1326,12 +1408,12 @@ namespace MatSAR {
 //        dType &operator()(initializer_list<int64> plist) {
 //            if (plist.size() != this->shape.size())
 //                throw_out_of_range_error(
-//                        "∂¡»°æÿ’Û‘™ÀÿŒ¨∂» ˝≤ª∆•≈‰ ∏√æÿ’ÛŒ¨∂»:" + to_string(shape.size()) + " ¥´»ÎŒ¨∂»:" + to_string(plist.size()), true);
+//                        "ËØªÂèñÁü©ÈòµÂÖÉÁ¥†Áª¥Â∫¶Êï∞‰∏çÂåπÈÖç ËØ•Áü©ÈòµÁª¥Â∫¶:" + to_string(shape.size()) + " ‰º†ÂÖ•Áª¥Â∫¶:" + to_string(plist.size()), true);
 //            int64 dim = 0, pos = 0;
 //            for (const int64 &i: plist) {
 //                if (i < -shape[dim] || i >= shape[dim]) {
 //                    throw_out_of_range_error(
-//                            "∂¡»°æÿ’Û‘™Àÿ£¨≥¨≥ˆæÿ’Û∑∂Œß ‘⁄" + to_string(i + 1) + "Œ¨ (shape)Œ¨≥§=" + " ∏√Œ¨»°÷µi=" + to_string(i) + "≥¨≥ˆ∑∂Œß",
+//                            "ËØªÂèñÁü©ÈòµÂÖÉÁ¥†ÔºåË∂ÖÂá∫Áü©ÈòµËåÉÂõ¥ Âú®" + to_string(i + 1) + "Áª¥ (shape)Áª¥Èïø=" + " ËØ•Áª¥ÂèñÂÄºi=" + to_string(i) + "Ë∂ÖÂá∫ËåÉÂõ¥",
 //                            true);
 //                }
 //                dim++;
@@ -1345,88 +1427,95 @@ namespace MatSAR {
 //        }
 
 
-        auto operator()(shape_type pvec) -> dType & {
+        virtual auto operator()(shape_type pvec) -> dType & {
             if (pvec.size() != this->shape.size()) {
                 stringstream ss;
-                ss << "∂¡»°æÿ’Û‘™ÀÿŒ¨∂» ˝≤ª∆•≈‰ ∏√æÿ’ÛŒ¨∂»:" << shape.size() << " ¥´»ÎŒ¨∂»:" << pvec.size();
+                ss << "The number of dimensions of the read matrix elements does not match, The matrix dimensions:"
+                   << shape.size() << " Input dimensions:" << pvec.size();
                 throw_out_of_range_error(ss.str());
             }
-            int64 dim = 0, pos = 0;
-            for (int64 &i: pvec) {
+            size_type dim = 0, pos = 0;
+            for (auto &i: pvec) {
                 if (i < 0) i += shape[dim];
                 if (i < 0 || i >= shape[dim]) {
                     stringstream ss;
-                    ss << "∂¡»°æÿ’Û‘™Àÿ£¨≥¨≥ˆæÿ’Û∑∂Œß ‘⁄" << dim + 1 << "Œ¨ (shape)Œ¨≥§ = " << shape[dim]
-                       << " ∏√Œ¨»°÷µi = " << i << "≥¨≥ˆ∑∂Œß";
+                    ss << "Reading matrix element, out of range In the" << dim + 1
+                       << "-th dimension (shape) dimension length = " << shape[dim]
+                       << " The selector dimension value i = " << i << " which is out of range";
                     throw_out_of_range_error(ss.str());
                 }
                 dim++;
             }
-            for (auto iter = rbegin(pvec); iter != rend(pvec); ++iter)
+            for (auto iter = pvec.rbegin(); iter != pvec.rend(); ++iter)
                 pos = *iter + pos * shape[--dim];
             return data[pos];
         }
 
-        auto operator()(shape_type pvec) const -> dType {
+        virtual auto operator()(shape_type pvec) const -> dType {
             if (pvec.size() != this->shape.size()) {
                 stringstream ss;
-                ss << "∂¡»°æÿ’Û‘™ÀÿŒ¨∂» ˝≤ª∆•≈‰ ∏√æÿ’ÛŒ¨∂»:" << shape.size() << " ¥´»ÎŒ¨∂»:" << pvec.size();
+                ss << "The number of dimensions of the read matrix elements does not match, The matrix dimensions:"
+                   << shape.size() << " Input dimensions:" << pvec.size();
                 throw_out_of_range_error(ss.str());
             }
-            int64 dim = 0, pos = 0;
-            for (int64 &i: pvec) {
+            size_type dim = 0, pos = 0;
+            for (auto &i: pvec) {
                 if (i < 0) i += shape[dim];
                 if (i < 0 || i >= shape[dim]) {
                     stringstream ss;
-                    ss << "∂¡»°æÿ’Û‘™Àÿ£¨≥¨≥ˆæÿ’Û∑∂Œß ‘⁄" << dim + 1 << "Œ¨ (shape)Œ¨≥§ = " << shape[dim]
-                       << " ∏√Œ¨»°÷µi = " << i << "≥¨≥ˆ∑∂Œß";
+                    ss << "Reading matrix element, out of range In the" << dim + 1
+                       << "-th dimension (shape) dimension length = " << shape[dim]
+                       << " The selector dimension value i = " << i << " which is out of range";
                     throw_out_of_range_error(ss.str());
                 }
                 dim++;
             }
-            for (auto iter = rbegin(pvec); iter != rend(pvec); ++iter)
+            for (auto iter = pvec.rbegin(); iter != pvec.rend(); ++iter)
                 pos = *iter + pos * shape[--dim];
             return data[pos];
         }
 
         /**
-         * @param svec ∂‡∏ˆŒ¨∂»—°»°≤ø∑÷÷µ£¨∆‰÷–»Áπ˚÷ª”–“ª∏ˆ÷µ≤¢«“Œ™shape[dim] or -shape[dim]‘Ú—°»°À˘”–
-         * @return
+         * @param svec Select some values from multiple dimensions.
+         * If there is only one value and it is shape[dim] or -shape[dim], select all values.
+         * @return selected items as a Matrix
          */
         auto operator()(vector<vector<size_type>> svec) const -> Matrix<dType> {
             if (svec.size() != this->shape.size()) {
                 stringstream ss;
-                ss << "∂¡»°æÿ’Û‘™ÀÿŒ¨∂» ˝≤ª∆•≈‰ ∏√æÿ’ÛŒ¨∂»:" << shape.size() << " ¥´»ÎŒ¨∂»:" << svec.size();
+                ss << "The number of dimensions of the read matrix elements does not match, The matrix dimensions:"
+                   << shape.size() << " Input dimensions:" << svec.size();
                 throw_out_of_range_error(ss.str());
             }
-            int64 dim = 0;
+            size_type dim = 0;
             shape_type r_shape;
-            for (vector<size_type> &v: svec) {
+            for (auto &v: svec) {
                 if (v.size() == 1 && std::abs(v[0]) == shape[dim])
                     v = Util::VectorUtil::Range(shape[dim]);
                 else
-                    for (int64 &i: v) {
+                    for (auto &i: v) {
                         if (i < -shape[dim] || i >= shape[dim]) {
                             stringstream ss;
-                            ss << "∂¡»°æÿ’Û£¨≥¨≥ˆæÿ’Û∑∂Œß ‘⁄" << dim + 1 << "Œ¨ (shape)Œ¨≥§ = " << shape[dim]
-                               << " ∏√Œ¨»°÷µi = " << i << "≥¨≥ˆ∑∂Œß";
+                            ss << "Reading matrix element, out of range In the" << dim + 1
+                               << "-th dimension (shape) dimension length = " << shape[dim]
+                               << " The selector dimension value i = " << i << " which is out of range";
                             throw_out_of_range_error(ss.str());
                         }
                     }
-                r_shape.push_back((int64) v.size());
+                r_shape.push_back((size_type) v.size());
                 dim++;
             }
             Matrix<dType> r(r_shape, 0.);
-            vector<size_type> tracker(dim, 0);
-            vector<size_type> selector(dim, 0);
+            shape_type tracker(dim, 0);
+            shape_type selector(dim, 0);
             auto iter_r = r.data, end_r = r.getDataEnd();
-            int64 fresh = dim - 1;
+            size_type fresh = dim - 1;
             while (iter_r != end_r) {
-                for (int64 i = 0; i <= fresh; ++i)
+                for (size_type i = 0; i <= fresh; ++i)
                     selector[i] = svec[i][tracker[i]];
                 *iter_r = (*this)(selector);
                 iter_r++;
-                for (int64 i = 0; i < dim; ++i) {
+                for (size_type i = 0; i < dim; ++i) {
                     if (++tracker[i] == r_shape[i])
                         tracker[i] = 0;
                     else {
@@ -1438,8 +1527,19 @@ namespace MatSAR {
             return r;
         }
 
+        virtual auto operator+() const -> Matrix<dType> {
+            return {*this};
+        }
+
+        virtual auto operator-() const -> Matrix<dType> {
+            Matrix<dType> m(*this);
+            for (auto &i: m)
+                i = -i;
+            return m;
+        }
+
         ///BroadCast Needed!
-        template<Calculable Other>
+        template<typename Other>
         auto operator+=(const Matrix<Other> &right) -> Matrix & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1454,7 +1554,7 @@ namespace MatSAR {
         }
 
         ///auto broadcast
-        template<Calculable Other>
+        template<typename Other>
         auto operator+=(const Other &v) -> Matrix<dType> & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1463,7 +1563,7 @@ namespace MatSAR {
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
+        template<typename Other>
         auto operator-=(const Matrix<Other> &right) -> Matrix & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1478,7 +1578,7 @@ namespace MatSAR {
         }
 
         ///auto broadcast
-        template<Calculable Other>
+        template<typename Other>
         auto operator-=(const Other &v) -> Matrix<dType> & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1488,12 +1588,12 @@ namespace MatSAR {
 
 
 //        ///Matirx Mul Special BroadCast!
-//        template<Calculable Other>
+//        template<typename Other>
 //        auto operator*=(const Matrix<Other> &right) -> Matrix & {
 //            if (Util::TypeUtil::typeHigher<Other, dType>())
 //                throw_type_loss_exception<Other, dType>();
 //            if (isEmpty() || right.isEmpty())
-//                throw_value_error("æÿ’Û≥À∑®¥´»Îø’æÿ’Û");
+//                throw_value_error("Áü©Èòµ‰πòÊ≥ï‰º†ÂÖ•Á©∫Áü©Èòµ");
 //            auto left_shape = shape;
 //            auto right_shape = right.getShape();
 //            newAxis(left_shape, 2);
@@ -1523,7 +1623,7 @@ namespace MatSAR {
 //        }
 
         ///BroadCast Needed!
-        template<Calculable Other>
+        template<typename Other>
         auto operator*=(const Matrix<Other> &right) -> Matrix & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1538,7 +1638,7 @@ namespace MatSAR {
         }
 
         ///auto broadcast
-        template<Calculable Other>
+        template<typename Other>
         auto operator*=(const Other &v) -> Matrix<dType> & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1547,7 +1647,7 @@ namespace MatSAR {
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
+        template<typename Other>
         auto operator/=(const Matrix<Other> &right) -> Matrix & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1562,7 +1662,7 @@ namespace MatSAR {
         }
 
         ///auto broadcast
-        template<Calculable Other>
+        template<typename Other>
         auto operator/=(const Other &v) -> Matrix<dType> & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1570,12 +1670,12 @@ namespace MatSAR {
             return *this;
         }
 
-//        template<Calculable Other>
+//        template<typename Other>
 //        auto matmul(const Matrix<Other> &right) -> Matrix & {
 //
 //        }
 
-//        ///æÿ’Û≥À∑®multiply ∂‡Œ¨”√pagemtimes
+//        ///Matrix multiplication; Multidimensional with pagemtimes
 //        template<RealType RT>
 //        auto operator*=(Matrix<RT> right) -> Matrix<dType> & {
 //            if (Util::TypeUtil::typeHigher<RT, dType>())
@@ -1639,7 +1739,7 @@ namespace MatSAR {
 
 
 //        /**
-//         * @redefine ^ not represent xor but power ÷ÿ∂®“Â^Œ™¥Œ√›‘ÀÀ„
+//         * @redefine ^ not represent xor but power
 //         */
 //        template<RealType T>
 //        Matrix<dType> &operator^=(Matrix<T> right) {
@@ -1661,7 +1761,7 @@ namespace MatSAR {
 //
 //        ///BroadCast Needed!
 //        /**
-//         * @redefine ^ not represent xor but power ÷ÿ∂®“Â^Œ™¥Œ√›‘ÀÀ„
+//         * @redefine ^ not represent xor but power
 //         */
 //        template<ComplexType CT>
 //        Matrix<dType> &operator^=(Matrix<CT> right) {
@@ -1686,7 +1786,7 @@ namespace MatSAR {
 //        }
 //
 //        /**
-//         * @redefine ^ not represent xor but power ÷ÿ∂®“Â^Œ™¥Œ√›‘ÀÀ„
+//         * @redefine ^ not represent xor but power
 //         */
 //        template<RealType T>
 //        Matrix<dType> &operator^=(const T &v) {
@@ -1700,7 +1800,7 @@ namespace MatSAR {
 //        }
 //
 //        /**
-//         * @redefine ^ not represent xor but power ÷ÿ∂®“Â^Œ™¥Œ√›‘ÀÀ„
+//         * @redefine ^ not represent xor but power
 //         */
 //        template<ComplexType CT>
 //        Matrix<dType> &operator^=(const CT &v) {
@@ -1718,7 +1818,7 @@ namespace MatSAR {
 //        }
 
         ///BroadCast Needed!
-        template<Calculable Other>
+        template<typename Other>
         auto rem(const Matrix<Other> &right) -> Matrix & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1733,7 +1833,7 @@ namespace MatSAR {
         }
 
         ///auto broadcast
-        template<Calculable Other>
+        template<typename Other>
         auto rem(const Other &v) -> Matrix<dType> & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1742,7 +1842,7 @@ namespace MatSAR {
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
+        template<typename Other>
         auto mod(const Matrix<Other> &right) -> Matrix & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1757,7 +1857,7 @@ namespace MatSAR {
         }
 
         ///auto broadcast
-        template<Calculable Other>
+        template<typename Other>
         auto mod(const Other &v) -> Matrix<dType> & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1766,7 +1866,7 @@ namespace MatSAR {
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
+        template<typename Other>
         auto operator&=(const Matrix<Other> &right) -> Matrix & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1781,7 +1881,7 @@ namespace MatSAR {
         }
 
         ///auto broadcast
-        template<Calculable Other>
+        template<typename Other>
         auto operator&=(const Other &v) -> Matrix<dType> & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1790,7 +1890,7 @@ namespace MatSAR {
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
+        template<typename Other>
         auto operator|=(const Matrix<Other> &right) -> Matrix & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1805,7 +1905,7 @@ namespace MatSAR {
         }
 
         ///auto broadcast
-        template<Calculable Other>
+        template<typename Other>
         auto operator|=(const Other &v) -> Matrix<dType> & {
             if (Util::TypeUtil::typeHigher<Other, dType>())
                 throw_type_loss_exception<Other, dType>();
@@ -1814,183 +1914,184 @@ namespace MatSAR {
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
-        auto operator<(const Matrix<Other> &right) -> Matrix<int> {
+        template<typename Other>
+        auto operator<(const Matrix<Other> &right) -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
                 broadcast(b_left, b_right);
-                Matrix<int> r(b_left.shape, 0.);
-                Base::Less(b_left.data, b_right.getData(), b_left.size, r.getData());
+                Matrix<bool> r(b_left.shape, false);
+                Base::Less(b_left.getData(), b_right.getData(), b_left.getData(), r.getData());
                 return r;
             } else {
-                Matrix<int> r(shape, 0.);
+                Matrix<bool> r(shape, false);
                 Base::Less(data, right.getData(), size, r.getData());
                 return r;
             }
         }
 
         ///auto broadcast
-        template<Calculable Other>
-        auto operator<(const Other &v) -> Matrix<int> {
-            Matrix<int> r(shape, 0.);
+        template<typename Other>
+        auto operator<(const Other &v) -> Matrix<bool> {
+            Matrix<bool> r(shape, false);
             Base::Less(data, v, size, r.getData());
             return r;
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
-        auto operator<=(const Matrix<Other> &right) -> Matrix<int> {
+        template<typename Other>
+        auto operator<=(const Matrix<Other> &right) -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
                 broadcast(b_left, b_right);
-                Matrix<int> r(b_left.shape, 0.);
+                Matrix<bool> r(b_left.shape, 0.);
                 Base::LessEqual(b_left.data, b_right.getData(), b_left.size, r.getData());
                 return r;
             } else {
-                Matrix<int> r(shape, 0.);
+                Matrix<bool> r(shape, false);
                 Base::LessEqual(data, right.getData(), size, r.getData());
                 return r;
             }
         }
 
         ///auto broadcast
-        template<Calculable Other>
-        auto operator<=(const Other &v) -> Matrix<int> {
-            Matrix<int> r(shape, 0.);
+        template<typename Other>
+        auto operator<=(const Other &v) -> Matrix<bool> {
+            Matrix<bool> r(shape, false);
             Base::LessEqual(data, v, size, r.getData());
             return r;
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
-        auto operator>(const Matrix<Other> &right) -> Matrix<int> {
+        template<typename Other>
+        auto operator>(const Matrix<Other> &right) -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
                 broadcast(b_left, b_right);
-                Matrix<int> r(b_left.shape, 0.);
+                Matrix<bool> r(b_left.shape, 0.);
                 Base::Great(b_left.data, b_right.getData(), b_left.size, r.getData());
                 return r;
             } else {
-                Matrix<int> r(shape, 0.);
+                Matrix<bool> r(shape, false);
                 Base::Great(data, right.getData(), size, r.getData());
                 return r;
             }
         }
 
         ///auto broadcast
-        template<Calculable Other>
-        auto operator>(const Other &v) -> Matrix<int> {
-            Matrix<int> r(shape, 0.);
+        template<typename Other>
+        auto operator>(const Other &v) -> Matrix<bool> {
+            Matrix<bool> r(shape, false);
             Base::Great(data, v, size, r.getData());
             return r;
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
-        auto operator>=(const Matrix<Other> &right) -> Matrix<int> {
+        template<typename Other>
+        auto operator>=(const Matrix<Other> &right) -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
                 broadcast(b_left, b_right);
-                Matrix<int> r(b_left.shape, 0.);
+                Matrix<bool> r(b_left.shape, 0.);
                 Base::GreatEqual(b_left.data, b_right.getData(), b_left.size, r.getData());
                 return r;
             } else {
-                Matrix<int> r(shape, 0.);
+                Matrix<bool> r(shape, false);
                 Base::GreatEqual(data, right.getData(), size, r.getData());
                 return r;
             }
         }
 
         ///auto broadcast
-        template<Calculable Other>
-        auto operator>=(const Other &v) -> Matrix<int> {
-            Matrix<int> r(shape, 0.);
+        template<typename Other>
+        auto operator>=(const Other &v) -> Matrix<bool> {
+            Matrix<bool> r(shape, false);
             Base::GreatEqual(data, v, size, r.getData());
             return r;
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
-        auto operator==(const Matrix<Other> &right) -> Matrix<int> {
+        template<typename Other>
+        auto operator==(const Matrix<Other> &right) -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
                 broadcast(b_left, b_right);
-                Matrix<int> r(b_left.shape, 0.);
+                Matrix<bool> r(b_left.shape, 0.);
                 Base::Equal(b_left.data, b_right.getData(), b_left.size, r.getData());
                 return r;
             } else {
-                Matrix<int> r(shape, 0.);
+                Matrix<bool> r(shape, false);
                 Base::Equal(data, right.getData(), size, r.getData());
                 return r;
             }
         }
 
         ///auto broadcast
-        template<Calculable Other>
-        auto operator==(const Other &v) -> Matrix<int> {
-            Matrix<int> r(shape, 0.);
+        template<typename Other>
+        auto operator==(const Other &v) -> Matrix<bool> {
+            Matrix<bool> r(shape, false);
             Base::Equal(data, v, size, r.getData());
             return r;
         }
 
         ///BroadCast Needed!
-        template<Calculable Other>
-        auto operator!=(const Matrix<Other> &right) -> Matrix<int> {
+        template<typename Other>
+        auto operator!=(const Matrix<Other> &right) -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
                 broadcast(b_left, b_right);
-                Matrix<int> r(b_left.shape, 0.);
+                Matrix<bool> r(b_left.shape, 0.);
                 Base::NotEqual(b_left.data, b_right.getData(), b_left.size, r.getData());
                 return r;
             } else {
-                Matrix<int> r(shape, 0.);
+                Matrix<bool> r(shape, false);
                 Base::NotEqual(data, right.getData(), size, r.getData());
                 return r;
             }
         }
 
         ///auto broadcast
-        template<Calculable Other>
-        auto operator!=(const Other &v) -> Matrix<int> {
-            Matrix<int> r(shape, 0.);
+        template<typename Other>
+        auto operator!=(const Other &v) -> Matrix<bool> {
+            Matrix<bool> r(shape, false);
             Base::NotEqual(data, v, size, r.getData());
             return r;
         }
 
         /**
-         * »´ ˝«Ûµπ ˝
-         * ≤ªøº¬«æ´∂»
+         * Tran the reciprocal of all numbers
+         * Not considering precision
          */
         [[nodiscard]] auto num_inverse() const -> Matrix<dType> {
             Matrix<dType> m(*this);
             dType *iter = m.data, *end = m.data + m.size;
             while (iter != end) {
-                *iter = 1. / *iter;
+                *iter = (dType) 1. / *iter;
                 iter++;
             }
             return m;
         }
 
-        /**
-         * »´ ˝«Û∏∫
-         */
-        [[nodiscard]] auto num_negative() const -> Matrix<dType> {
-            Matrix<dType> m(*this);
-            dType *iter = m.data, *end = m.data + m.size;
-            while (iter != end) {
-                *iter = -*iter;
-                iter++;
-            }
-            return m;
-        }
+//        /**
+//         * Tran Negative (Move to operator-)
+//         */
+//        [[nodiscard]] auto num_negative() const -> Matrix<dType> {
+//            Matrix<dType> m(*this);
+//            dType *iter = m.data, *end = m.data + m.size;
+//            while (iter != end) {
+//                *iter = -*iter;
+//                iter++;
+//            }
+//            return m;
+//        }
 
-        [[nodiscard]] auto reshape(vector<int64> new_shape) const -> Matrix<dType> {
+        ///Auto predict shape
+        [[nodiscard]] auto reshape(mshape_type new_shape) const -> Matrix<dType> {
             if (new_shape == shape)
                 return {*this};
             shapePredict(size, new_shape);
@@ -2001,13 +2102,11 @@ namespace MatSAR {
             return {new_shape, data};
         }
 
-        void expandShape(int64 dim) {
+        void expandShape(size_type dim) {
             this->setShape(newAxis(shape, dim));
         }
 
         void squeezeThis() {
-            if (shape.size() <= 2)
-                return;
             setShape(squeezeShape(shape));
         }
 
@@ -2018,14 +2117,10 @@ namespace MatSAR {
         }
 
         void squeezeHighThis() {
-//            if (shape.size() <= 2)
-//                return;
             setShape(squeezeShapeHigh(shape));
         }
 
         [[nodiscard]] auto squeezeHigh() const -> Matrix<dType> {
-//            if (shape.size() <= 2)
-//                return {*this};
             return {squeezeShapeHigh(shape), data};
         }
 
@@ -2035,8 +2130,8 @@ namespace MatSAR {
             Matrix<dType> t(t_shape, 0.);
             size_type unit_size = t_shape[0] * t_shape[1];
             dType *iter = data, *iter_t = t.getData();
-            for (int i = 0; i < size / unit_size; ++i) {
-                T(iter, iter_t, shape[0], shape[1]);
+            for (size_type i = 0; i < size / unit_size; ++i) {
+                Base::T(iter, iter_t, shape[0], shape[1]);
                 iter += unit_size;
                 iter_t += unit_size;
             }
@@ -2044,32 +2139,35 @@ namespace MatSAR {
         }
 
         /**
-         * ¥Àdet π”√µƒ «æ≠µ‰º∆À„π´ Ω£¨ π”√det(Matrix) π”√lu∑÷Ω‚øÏÀŸº∆À„
+         * This det uses the classic calculation formula, using det(Matrix) to quickly calculate using lu decomposition
          */
         [[nodiscard]] auto det() const -> dType {
             if (!is2D())
                 throw_warning("det will only calculate first 2d-Matrix");
             if (!isSquare())
                 throw_value_error("det only for square matrix");
-            return det(data);
+            return Det(data);
         }
 
-        ///FIXME inv π”√∑Ω∑®
+        ///FIXME usage of inv
         [[nodiscard]] auto inv() const -> Matrix<dType> {
-            if (shape.size() < 2 || shape[0] != shape[1]) {
-                throw_value_error("æÿ’Û»°ƒÊ–Ë“™∑Ω’Û");
+            if (!isSquare()) {
+                throw_value_error("Matrix inversion requires a square matrix");
                 return {};
             }
+            if (isEmpty())
+                return {};
             if (isInt<dType>()) {
                 throw_value_error(
-                        "æÿ’Û»°ƒÊ÷¡…Ÿ–Ë“™‘≠æÿ’ÛŒ™float32 float64 complex64 complex128,«Î π”√inv(Matrix)Ω¯––◊‘  ”¶");
+                        "The matrix inversion self-function requires the original matrix to be at least"
+                        " float32 float64 complex64 complex128. Please use inv(Matrix) for adaptation.");
                 return {};
             }
-            int64 n = shape[0];
+            auto n = shape[0];
             Matrix<dType> m(*this);
-            int64 unit_size = n * n;
-            int64 unit_len = size / unit_size;
-            dType *unit_iter = m.getData(), *unit_end = m.getDataEnd();
+            auto unit_size = n * n;
+            auto unit_len = size / unit_size;
+            auto unit_iter = m.getData(), unit_end = m.getDataEnd();
             while (unit_iter != unit_end) {
                 inv(unit_iter);
                 unit_iter += unit_size;
@@ -2078,23 +2176,24 @@ namespace MatSAR {
         }
 
         /**
-         *  «∑ÒŒ™∑Ω’Û
+         * is Square Matrix
          */
         [[nodiscard]] auto isSquare() const -> bool {
             return isEmpty() || (shape.size() > 1 && shape[0] == shape[1]);
         }
 
         /**
-         * ÷ª”–∂‘≥∆µƒ∂˛Œ¨æÿ’ÛŒ™diag
+         * Only symmetric two-dimensional matrices are diag
          */
         [[nodiscard]] auto isDiag() const -> bool {
             auto m = squeezeHigh();
-            if (!m.is2D())
+            // diag bind with 2d
+            if (!m.is2D(true))
                 return false;
             if (m.shape[0] != m.shape[1])
                 return false;
-            for (int i = 0; i < shape[0]; ++i) {
-                for (int j = 0; j < shape[1]; ++j) {
+            for (size_type i = 0; i < shape[0]; ++i) {
+                for (size_type j = 0; j < shape[1]; ++j) {
                     if (i != j && m.getEle(i, j) != 0)
                         return false;
                 }
@@ -2103,7 +2202,7 @@ namespace MatSAR {
         }
 
         [[nodiscard]] auto isEmpty() const -> bool {
-            return data == nullptr;
+            return getSize() == 0;
         }
 
         [[nodiscard]] auto isSingle() const -> bool {
@@ -2111,17 +2210,17 @@ namespace MatSAR {
         }
 
         [[nodiscard]] auto isVec() const -> bool {
-            return getDims() == 1 || (squeezeHigh().getDims() == 1);
+            return getDims() == 1;
         }
 
         [[nodiscard]] auto is2D() const -> bool {
-            return getDims() == 2 || (squeezeHigh().getDims() == 2);
+            return getDims() == 2;
         }
 
         /**
-         * @return ∑µªÿæÿ’Û»´æ÷◊Ó¥Û÷µ
+         * @return matrix global max value
          */
-        [[nodiscard]] auto max() const -> dType {
+        [[nodiscard]] auto Max() const -> dType {
             if (isEmpty()) return 0;
             dType r = *data;
             for (const auto &i: *this)
@@ -2131,9 +2230,9 @@ namespace MatSAR {
         }
 
         /**
-         * @return ∑µªÿæÿ’Û»´æ÷◊Ó–°÷µ
+         * @return matrix global min value
          */
-        [[nodiscard]] auto min() const -> dType {
+        [[nodiscard]] auto Min() const -> dType {
             if (isEmpty()) return 0;
             dType r = *data;
             for (const auto &i: *this)
@@ -2143,18 +2242,18 @@ namespace MatSAR {
         }
 
         /**
-         * @param up ƒ¨»œ…˝–Ú≈≈¡–
-         * @return ∑µªÿ∏¥÷∆∫Ûæÿ’Ûµƒ»´æ÷≈≈–Ú
+         * @param up Default ascending order
+         * @return Returns the global order of the copied matrix
          */
         [[nodiscard]] auto sort(bool up = true) const -> Matrix<dType> {
             if (isEmpty()) return {};
             Matrix<dType> r(*this);
             if (up)
                 std::sort(r.begin(), r.end(),
-                          [](const auto &left, const auto &right) { return left < right; });
+                          [](const dType &left, const dType &right) { return left < right; });
             else
                 std::sort(r.begin(), r.end(),
-                          [](const auto &left, const auto &right) { return left > right; });
+                          [](const dType &left, const dType &right) { return left > right; });
             return r;
         }
 
@@ -2167,9 +2266,11 @@ namespace MatSAR {
         }
 
         /**
-         * “‘“ªŒ¨œÚ¡øŒ™––œÚ¡ø“¿¥ŒΩ¯––¥Ú”°£¨”Î≥£πÊ––¡–¥Ú”°≤ªÕ¨£¨¥ÀŒ™ ˝æ›Ω·ππ–Œ Ω¥Ú”°
+         * Print one-dimensional vectors as row vectors in sequence.
+         * This is different from regular row and column printing.
+         * This is printed in the form of data structure.
          */
-        [[nodiscard]] auto toString(const string &matrixName = "Matrix", bool printMessage = true) const -> string {
+        [[nodiscard]]auto toString(const string &matrixName = "Matrix", bool printMessage = true) const -> string {
             stringstream ss;
             if (printMessage) {
                 ss << matrixName << "<" + getCalculableString<dType>() + ">  ";
@@ -2182,32 +2283,31 @@ namespace MatSAR {
         }
 
         /**
-         * “‘æ≠µ‰––¡––Œ Ω¥Ú”°£¨√ø¡–Œ™“ªŒ¨¡–œÚ¡ø
+         * Print in classic row-column format, with each column being a one-dimensional column vector
          */
-        [[nodiscard]] auto toRowColString(const string &matrixName = "Matrix") const -> string {
-            int dataSpace = 10;//∫Û÷√º”»Îmax≥§∂»
+        [[nodiscard]] auto toRowColString(const string &matrixName = "Matrix", int dataSpace = 10) const -> string {
             stringstream ss;
             ss << "\n";
 
-            int64 unit_num = getUnitNum();
-            vector<int64> unit_shape = getUnitShape();
+            auto unit_num = getUnitNum();
+            shape_type unit_shape = getUnitShape();
             if (unit_num == 0) {
                 ss << matrixName << " =\n\n";
                 ss << setfill(' ') << setw(dataSpace) << "[]";
             } else if (unit_num == 1) {
                 ss << matrixName << " =\n\n";
-                for (int64 i = 0; i < unit_shape[0]; ++i) {
-                    for (int64 j = 0; j < unit_shape[1]; ++j) {
-                        auto p = &getEle(i, j);
-                        ss << dataToString(p);
+                for (size_type i = 0; i < unit_shape[0]; ++i) {
+                    for (size_type j = 0; j < unit_shape[1]; ++j) {
+                        auto p = getEle(i, j);
+                        ss << dataToString(p) << ' ';
                     }
                     ss << "\n";
                 }
             } else {
-                vector<int64> shapeNum(getDims());
-                for (int64 n = 0; n < getUnitNum(); ++n) {
+                shape_type shapeNum(getDims());
+                for (size_type n = 0; n < getUnitNum(); ++n) {
                     //TODO calculate n -> shapeNum
-                    for (int i = 2; i < getDims() - 1; ++i) {
+                    for (size_type i = 2; i < getDims() - 1; ++i) {
                         if (shapeNum[i] < shape[i])
                             break;
                         shapeNum[i] = 0;
@@ -2215,10 +2315,10 @@ namespace MatSAR {
                     }
                     ss << matrixName << Util::VectorUtil::toString(shapeNum, ",") << " =\n\n";
                     shapeNum[2]++;
-                    for (int64 i = 0; i < unit_shape[0]; ++i) {
-                        for (int64 j = 0; j < unit_shape[1]; ++j) {
-                            auto p = &getEle(n, i, j);
-                            ss << dataToString(p);
+                    for (size_type i = 0; i < unit_shape[0]; ++i) {
+                        for (size_type j = 0; j < unit_shape[1]; ++j) {
+                            auto p = getEle(n, i, j);
+                            ss << dataToString(p) << ' ';
                         }
                         ss << "\n";
                     }
@@ -2227,8 +2327,19 @@ namespace MatSAR {
             }
             return ss.str();
         }
-    };
 
+        /**
+         * @author:jie
+         * The magnitude of the vector
+         */
+        auto norm() -> float_max {
+            float_max sum = 0.;
+            for (const auto i: *this) {
+                sum += i * i;
+            }
+            return sqrt(sum);
+        }
+    };
 //    template<Calculable dType>
 //    class SparseMatrix : public Matrix<dType>{
 //    private:
@@ -2238,1045 +2349,391 @@ namespace MatSAR {
 //    };
 }
 namespace MatSAR {
-    template<Calculable dType>
-    auto operator+(const Matrix<dType> &right) -> Matrix<dType> {
-        return {right};
-    }
-
-    ///UIntœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<UIntType lT, UIntType rT>
-    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<uint_max> {
-        Matrix<uint_max> tmp(left);
+    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() + std::declval<rT>())>
+    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
         tmp += right;
         return tmp;
     }
 
-    ///Intœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<IntType lT, IntType rT>
-    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
+    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() + std::declval<rT>())>
+    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
         tmp += right;
         return tmp;
     }
 
-    ///Floatœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<FloatType lT, FloatType rT>
-    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Complexœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<ComplexType lT, ComplexType rT>
-    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Uint SInt -> int_max
-    template<UIntType lT, SIntType rT>
-    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///(UInt,SInt)[IntType] Float -> float_max
-    template<IntType lT, FloatType rT>
-    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///(UInt,SInt,Float)[RealType] complex -> complex_max
-    template<RealType lT, ComplexType rT>
-    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        Matrix<real_max> real_left(left);
-        Matrix<complex_max> tmp(real_left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///SInt Uint -> int_max Ωªªª¬…
-    template<SIntType lT, UIntType rT>
-    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Float (UInt,SInt)[IntType] -> float_max Ωªªª¬…
-    template<FloatType lT, IntType rT>
-    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///complex (UInt,SInt,Float)[RealType]-> complex_max Ωªªª¬…
-    template<ComplexType lT, RealType rT>
-    auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///UIntœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<UIntType lT, UIntType rT>
-    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<uint_max> {
-        Matrix<uint_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Intœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<IntType lT, IntType rT>
-    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Floatœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<FloatType lT, FloatType rT>
-    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Complexœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<ComplexType lT, ComplexType rT>
-    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Uint SInt -> int_max
-    template<UIntType lT, SIntType rT>
-    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///(UInt,SInt)[IntType] Float -> float_max
-    template<IntType lT, FloatType rT>
-    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///(UInt,SInt,Float)[RealType] complex -> complex_max
-    template<RealType lT, ComplexType rT>
-    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///SInt Uint -> int_max Ωªªª¬…
-    template<SIntType lT, UIntType rT>
-    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Float (UInt,SInt)[IntType] -> float_max Ωªªª¬…
-    template<FloatType lT, IntType rT>
-    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///complex (UInt,SInt,Float)[RealType]-> complex_max Ωªªª¬…
-    template<ComplexType lT, RealType rT>
-    auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///UIntœ‡Õ¨¿‡–Õ‘ÀÀ„ º”∑®◊Û”“Ωªªª
-    template<UIntType lT, UIntType rT>
-    auto operator+(const lT &right, const Matrix<rT> &left) -> Matrix<uint_max> {
-        Matrix<uint_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Intœ‡Õ¨¿‡–Õ‘ÀÀ„ º”∑®◊Û”“Ωªªª
-    template<IntType lT, IntType rT>
-    auto operator+(const lT &right, const Matrix<rT> &left) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Floatœ‡Õ¨¿‡–Õ‘ÀÀ„ º”∑®◊Û”“Ωªªª
-    template<FloatType lT, FloatType rT>
-    auto operator+(const lT &right, const Matrix<rT> &left) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Complexœ‡Õ¨¿‡–Õ‘ÀÀ„ º”∑®◊Û”“Ωªªª
-    template<ComplexType lT, ComplexType rT>
-    auto operator+(const lT &right, const Matrix<rT> &left) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Uint SInt -> int_max º”∑®◊Û”“Ωªªª
-    template<UIntType lT, SIntType rT>
-    auto operator+(const lT &right, const Matrix<rT> &left) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///(UInt,SInt)[IntType] Float -> float_max º”∑®◊Û”“Ωªªª
-    template<IntType lT, FloatType rT>
-    auto operator+(const lT &right, const Matrix<rT> &left) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///(UInt,SInt,Float)[RealType] complex -> complex_max º”∑®◊Û”“Ωªªª
-    template<RealType lT, ComplexType rT>
-    auto operator+(const lT &right, const Matrix<rT> &left) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///SInt Uint -> int_max Ωªªª¬… º”∑®◊Û”“Ωªªª
-    template<SIntType lT, UIntType rT>
-    auto operator+(const lT &right, const Matrix<rT> &left) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///Float (UInt,SInt)[IntType] -> float_max Ωªªª¬… º”∑®◊Û”“Ωªªª
-    template<FloatType lT, IntType rT>
-    auto operator+(const lT &right, const Matrix<rT> &left) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp += right;
-        return tmp;
-    }
-
-    ///complex (UInt,SInt,Float)[RealType]-> complex_max Ωªªª¬… º”∑®◊Û”“Ωªªª
-    template<ComplexType lT, RealType rT>
-    auto operator+(const lT &right, const Matrix<rT> &left) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp += right;
+    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() + std::declval<rT>())>
+    auto operator+(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(right);
+        tmp += left;
         return tmp;
     }
 }
 
 namespace MatSAR {
-    template<Calculable T>
-    auto operator-(const Matrix<T> &right) -> Matrix<T> {
-        return right.num_negative();
-    }
-
-    ///UIntœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<UIntType lT, UIntType rT>
-    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<uint_max> {
-        Matrix<uint_max> tmp(left);
+    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() - std::declval<rT>())>
+    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
         tmp -= right;
         return tmp;
     }
 
-    ///Intœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<IntType lT, IntType rT>
-    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
+    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() - std::declval<rT>())>
+    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
         tmp -= right;
         return tmp;
     }
 
-    ///Floatœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<FloatType lT, FloatType rT>
-    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///Complexœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<ComplexType lT, ComplexType rT>
-    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///Uint SInt -> int_max
-    template<UIntType lT, SIntType rT>
-    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///(UInt,SInt)[IntType] Float -> float_max
-    template<IntType lT, FloatType rT>
-    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///(UInt,SInt,Float)[RealType] complex -> complex_max
-    template<RealType lT, ComplexType rT>
-    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        Matrix<real_max> real_left(left);
-        Matrix<complex_max> tmp(real_left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///SInt Uint -> int_max Ωªªª¬…
-    template<SIntType lT, UIntType rT>
-    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///Float (UInt,SInt)[IntType] -> float_max Ωªªª¬…
-    template<FloatType lT, IntType rT>
-    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///complex (UInt,SInt,Float)[RealType]-> complex_max Ωªªª¬…
-    template<ComplexType lT, RealType rT>
-    auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///UIntœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<UIntType lT, UIntType rT>
-    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<uint_max> {
-        Matrix<uint_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///Intœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<IntType lT, IntType rT>
-    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///Floatœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<FloatType lT, FloatType rT>
-    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///Complexœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<ComplexType lT, ComplexType rT>
-    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///Uint SInt -> int_max
-    template<UIntType lT, SIntType rT>
-    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///(UInt,SInt)[IntType] Float -> float_max
-    template<IntType lT, FloatType rT>
-    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///(UInt,SInt,Float)[RealType] complex -> complex_max
-    template<RealType lT, ComplexType rT>
-    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<complex_max> {
-        Matrix<real_max> real_left(left);
-        Matrix<complex_max> tmp(real_left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///SInt Uint -> int_max Ωªªª¬…
-    template<SIntType lT, UIntType rT>
-    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///Float (UInt,SInt)[IntType] -> float_max Ωªªª¬…
-    template<FloatType lT, IntType rT>
-    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<float_max> {
-        Matrix<float_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///complex (UInt,SInt,Float)[RealType]-> complex_max Ωªªª¬…
-    template<ComplexType lT, RealType rT>
-    auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp -= right;
-        return tmp;
-    }
-
-    ///UIntœ‡Õ¨¿‡–Õ‘ÀÀ„ ºı∑®”≈ªØ
-    template<UIntType lT, UIntType rT>
-    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<uint_max> {
-        return Matrix<uint_max>(right.num_negative()) += left;
-    }
-
-    ///Intœ‡Õ¨¿‡–Õ‘ÀÀ„ ºı∑®”≈ªØ
-    template<IntType lT, IntType rT>
-    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<int_max> {
-        return Matrix<int_max>(right.num_negative()) += left;
-    }
-
-    ///Floatœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<FloatType lT, FloatType rT>
-    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<float_max> {
-        return Matrix<float_max>(right.num_negative()) += left;
-    }
-
-    ///Complexœ‡Õ¨¿‡–Õ‘ÀÀ„
-    template<ComplexType lT, ComplexType rT>
-    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        return Matrix<complex_max>(right.num_negative()) += left;
-    }
-
-    ///Uint SInt -> int_max
-    template<UIntType lT, SIntType rT>
-    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<int_max> {
-        return Matrix<int_max>(right.num_negative()) += left;
-    }
-
-    ///(UInt,SInt)[IntType] Float -> float_max
-    template<IntType lT, FloatType rT>
-    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<float_max> {
-        return Matrix<float_max>(right.num_negative()) += left;
-    }
-
-    ///(UInt,SInt,Float)[RealType] complex -> complex_max
-    template<RealType lT, ComplexType rT>
-    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        return Matrix<complex_max>(right.num_negative()) += left;
-    }
-
-    ///SInt Uint -> int_max Ωªªª¬…
-    template<SIntType lT, UIntType rT>
-    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<int_max> {
-        return Matrix<int_max>(right.num_negative()) += left;
-    }
-
-    ///Float (UInt,SInt)[IntType] -> float_max Ωªªª¬…
-    template<FloatType lT, IntType rT>
-    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<float_max> {
-        return Matrix<float_max>(right.num_negative()) += left;
-    }
-
-    ///complex (UInt,SInt,Float)[RealType]-> complex_max Ωªªª¬…
-    template<ComplexType lT, RealType rT>
-    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        return Matrix<complex_max>(right.num_negative()) += left;
-    }
-}
-namespace MatSAR {
-//    template<RealType T1, RealType T2>
-//    auto mul(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<real_max> {
-//        Matrix<real_max> r(left);
-//        real_max *iter = r.getData(), *end = r.getDataEnd();
-//        real_max *iter_right = right.getData();
-//        while (iter != end)
-//            *iter++ *= *iter_right++;
-//        return r;
-//    }
-//
-//    ///≥À∑®Ωªªª¬…
-//    template<RealType T1, ComplexType T2>
-//    auto mul(const Matrix<T1> &right, const Matrix<T2> &left) -> Matrix<complex_max> {
-//        Matrix<complex_max> r(left);
-//        complex_max *iter = r.getData(), *end = r.getDataEnd();
-//        real_max *iter_right = right.getData();
-//        while (iter != end)
-//            *iter++ *= *iter_right++;
-//        return r;
-//    }
-//
-//    template<ComplexType T1, RealType T2>
-//    auto mul(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-//        Matrix<complex_max> r(left);
-//        complex_max *iter = r.getData(), *end = r.getDataEnd();
-//        real_max *iter_right = right.getData();
-//        while (iter != end)
-//            *iter++ *= *iter_right++;
-//        return r;
-//    }
-//
-//    template<ComplexType T1, ComplexType T2>
-//    auto mul(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-//        Matrix<complex_max> r(left);
-//        complex_max *iter = r.getData(), *end = r.getDataEnd();
-//        complex_max *iter_right = right.getData();
-//        while (iter != end)
-//            *iter++ *= *iter_right++;
-//        return r;
-//    }
-
-    template<RealType T1, RealType T2>
-    auto mul(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<real_max> {
-        Matrix<real_max> tmp(left);
-        tmp *= right;
-        return tmp;
-    }
-
-    template<RealType T1, ComplexType T2>
-    auto mul(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp *= right;
-        return tmp;
-    }
-
-    template<ComplexType T1, RealType T2>
-    auto mul(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp *= right;
-        return tmp;
-    }
-
-    template<ComplexType T1, ComplexType T2>
-    auto mul(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp *= right;
-        return tmp;
-    }
-
-    template<RealType T1, RealType T2>
-    auto operator*(const Matrix<T1> &left, const T2 &right) -> Matrix<real_max> {
-        Matrix<real_max> tmp(left);
-        tmp *= right;
-        return tmp;
-    }
-
-    template<RealType T1, ComplexType T2>
-    auto operator*(const Matrix<T1> &left, const T2 &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp *= right;
-        return tmp;
-    }
-
-    template<ComplexType T1, RealType T2>
-    auto operator*(const Matrix<T1> &left, const T2 &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp *= right;
-        return tmp;
-    }
-
-    template<ComplexType T1, ComplexType T2>
-    auto operator*(const Matrix<T1> &left, const T2 &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp *= right;
-        return tmp;
-    }
-
-    /**
-     * law of commutation
-     */
-    template<RealType T1, RealType T2>
-    auto operator*(const T1 &left, const Matrix<T2> &right) -> Matrix<real_max> {
-        Matrix<real_max> tmp(right);
-        tmp *= left;
-        return tmp;
-    }
-
-    /**
-     * law of commutation
-     */
-    template<RealType T1, ComplexType T2>
-    auto operator*(const T1 &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(right);
-        tmp *= left;
-        return tmp;
-    }
-
-    /**
-     * law of commutation
-     */
-    template<ComplexType T1, RealType T2>
-    auto operator*(const T1 &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(right);
-        tmp *= left;
-        return tmp;
-    }
-
-    /**
-     * law of commutation
-     */
-    template<ComplexType T1, ComplexType T2>
-    auto operator*(const T1 &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(right);
-        tmp *= left;
-        return tmp;
-    }
-
-    template<RealType T1, RealType T2>
-    auto operator*(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<real_max> {
-        if (left.isEmpty() || right.isEmpty())
-            throw_value_error("æÿ’Û≥À∑®¥´»Îø’æÿ’Û");
-        auto b_left = Matrix<real_max>(left);
-        auto b_right = Matrix<real_max>(right);
-        Matrix<real_max>::mul_broadcast(b_left,b_right);
-        auto r_shape = b_left.getShape();
-        r_shape[1] = b_right.getShape()[1];
-        Matrix<real_max> r(r_shape,0.);
-        auto m = b_left.getShape()[0],n = b_right.getShape()[1],k = b_left.getShape()[1];
-        MatrixBase::MMul(b_left.getData(),b_right.getData(),r.getData(),m,n,k,b_left.getUnitNum());
-        return r;
-    }
-
-    template<RealType T1, ComplexType T2>
-    auto operator*(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        if (left.isEmpty() || right.isEmpty())
-            throw_value_error("æÿ’Û≥À∑®¥´»Îø’æÿ’Û");
-        auto b_left = Matrix<complex_max>(left);
-        auto b_right = Matrix<complex_max>(right);
-        Matrix<complex_max>::mul_broadcast(b_left,b_right);
-        auto r_shape = b_left.getShape();
-        r_shape[1] = b_right.getShape()[1];
-        Matrix<complex_max> r(r_shape,0.);
-        auto m = b_left.getShape()[0],n = b_right.getShape()[1],k = b_left.getShape()[1];
-        MatrixBase::MMul(b_left.getData(),b_right.getData(),r.getData(),m,n,k,b_left.getUnitNum());
-        return r;
-    }
-
-    template<ComplexType T1, RealType T2>
-    auto operator*(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        if (left.isEmpty() || right.isEmpty())
-            throw_value_error("æÿ’Û≥À∑®¥´»Îø’æÿ’Û");
-        auto b_left = Matrix<complex_max>(left);
-        auto b_right = Matrix<complex_max>(right);
-        Matrix<complex_max>::mul_broadcast(b_left,b_right);
-        auto r_shape = b_left.getShape();
-        r_shape[1] = b_right.getShape()[1];
-        Matrix<complex_max> r(r_shape,0.);
-        auto m = b_left.getShape()[0],n = b_right.getShape()[1],k = b_left.getShape()[1];
-        MatrixBase::MMul(b_left.getData(),b_right.getData(),r.getData(),m,n,k,b_left.getUnitNum());
-        return r;
-    }
-
-    template<ComplexType T1, ComplexType T2>
-    auto operator*(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        if (left.isEmpty() || right.isEmpty())
-            throw_value_error("æÿ’Û≥À∑®¥´»Îø’æÿ’Û");
-        auto b_left = Matrix<complex_max>(left);
-        auto b_right = Matrix<complex_max>(right);
-        Matrix<complex_max>::mul_broadcast(b_left,b_right);
-        auto r_shape = b_left.getShape();
-        r_shape[1] = b_right.getShape()[1];
-        Matrix<complex_max> r(r_shape,0.);
-        auto m = b_left.getShape()[0],n = b_right.getShape()[1],k = b_left.getShape()[1];
-        MatrixBase::MMul(b_left.getData(),b_right.getData(),r.getData(),m,n,k,b_left.getUnitNum());
-        return r;
-    }
-}
-namespace MatSAR {
-    template<RealType T1, RealType T2>
-    auto operator/(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<real_max> {
-        Matrix<real_max> tmp(left);
-        tmp /= right;
-        return tmp;
-    }
-
-    template<RealType T1, ComplexType T2>
-    auto operator/(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp /= right;
-        return tmp;
-    }
-
-    template<ComplexType T1, RealType T2>
-    auto operator/(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp /= right;
-        return tmp;
-    }
-
-    template<ComplexType T1, ComplexType T2>
-    auto operator/(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp /= right;
-        return tmp;
-    }
-
-    template<RealType T1, RealType T2>
-    auto operator/(const Matrix<T1> &left, const T2 &right) -> Matrix<real_max> {
-        Matrix<real_max> tmp(left);
-        tmp /= right;
-        return tmp;
-    }
-
-    template<RealType T1, ComplexType T2>
-    auto operator/(const Matrix<T1> &left, const T2 &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp /= right;
-        return tmp;
-    }
-
-    template<ComplexType T1, RealType T2>
-    auto operator/(const Matrix<T1> &left, const T2 &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp /= right;
-        return tmp;
-    }
-
-    template<ComplexType T1, ComplexType T2>
-    auto operator/(const Matrix<T1> &left, const T2 &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        tmp /= right;
-        return tmp;
-    }
-
-
-    /**
-     * be divided optimize
-     */
-    template<RealType T1, RealType T2>
-    auto operator/(const T1 &left, const Matrix<T2> &right) -> Matrix<real_max> {
-        Matrix<real_max> tmp(right);
-        real_max left_ = left;
-        for (auto &i: tmp)
-            i = left_ / i;
-        return tmp;
-    }
-
-    /**
-     * be divided optimize
-     */
-    template<RealType T1, ComplexType T2>
-    auto operator/(const T1 &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(right);
-        complex_max left_ = (real_max) left;
-        for (auto &i: tmp)
-            i = left_ / i;
-        return tmp;
-    }
-
-    /**
-     * be divided optimize
-     */
-    template<ComplexType T1, RealType T2>
-    auto operator/(const T1 &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(right);
-        complex_max left_ = left;
-        for (auto &i: tmp)
-            i = left_ / i;
-        return tmp;
-    }
-
-    /**
-     * be divided optimize
-     */
-    template<ComplexType T1, ComplexType T2>
-    auto operator/(const T1 &left, const Matrix<T2> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(right);
-        complex_max left_ = left;
-        for (auto &i: tmp)
-            i = left_ / i;
+    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() - std::declval<rT>())>
+    auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(-right);
+        tmp += left;
         return tmp;
     }
 }
 namespace MatSAR {
-    template<SIntType SIT1, SIntType SIT2>
-    auto operator&(const Matrix<SIT1> &left, const Matrix<SIT2> &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
+    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() * std::declval<rT>())>
+    auto mul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
+        MatrixBase::Mul(tmp.getData(), right.getData(), tmp.getSize());
+        return tmp;
+    }
+
+    template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
+                                                                    (std::declval<rT>() + 0.))>
+    auto operator*(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
+        tmp *= TargetType{right + 0.};
+        return tmp;
+    }
+
+    template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
+                                                                    (std::declval<rT>() + 0.))>
+    auto operator*(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(right);
+        tmp *= TargetType{left + 0.};
+        return tmp;
+    }
+
+    template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
+                                                                    (std::declval<rT>() + 0.))>
+    auto operator*(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(right);
+        tmp *= TargetType{left + 0.};
+        return tmp;
+    }
+
+    /**
+     * Matrix Multiplication
+     */
+    template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
+                                                                    (std::declval<rT>() + 0.))>
+    auto mmul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        auto b_left = Matrix<TargetType>(left);
+        auto b_right = Matrix<TargetType>(right);
+        Matrix<TargetType>::mul_broadcast(b_left, b_right);
+        auto r_shape = b_left.getShape();
+        r_shape[1] = b_right.getShape()[1];
+        Matrix<TargetType> r(r_shape, 0.);
+        auto m = b_left.getShape()[0], n = b_right.getShape()[1], k = b_left.getShape()[1];
+        MatrixBase::MMul(b_left.getData(), b_right.getData(), r.getData(), m, n, k, b_left.getUnitNum());
+        return r;
+    }
+
+    template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
+                                                                    (std::declval<rT>() + 0.))>
+    auto operator%(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        return mmul<lT, rT, TargetType>(left, right);
+    }
+
+    /**
+     * Vector Dot Product
+     * Vector horizontal input, one row represents a vector X or Y
+     */
+    template<typename dType, typename TargetType=decltype(std::declval<dType>() + std::declval<real_max>())>
+    auto dot(Matrix<dType> A, Matrix<dType> B) -> Matrix<TargetType> {
+        A = A.squeeze();
+        B = B.squeeze();
+        if (A.isEmpty() || B.isEmpty())
+            return {};
+
+        //0-D scalar
+        if (A.isSingle() && B.isSingle())
+            return {dType(A) * dType(B)};
+        if (A.isSingle())
+            return {dType(A) * B};
+        if (B.isSingle())
+            return {A * dType(B)};
+
+        //vec inner product
+        if ((A.isVec() || B.isVec()) && A.getShape()[0] != B.getShape()[0])
+            throw_shape_exception("matrix A dim 0:" + to_string(A.getShape()[0]) +
+                                  " not equals to matrix dim 0:" + to_string(B.getShape()[0]));
+
+        // directly multiply and sum
+        if (A.isVec() && B.isVec()) {
+            TargetType sum = 0.;
+            auto iter_A = A.begin();
+            auto iter_B = B.begin();
+            while (iter_A != A.end() && iter_B != B.end()) {
+                sum += (*iter_A) * (*iter_B);
+                iter_A++;
+                iter_B++;
+            }
+            return {sum};
+        }
+
+        if (A.isVec() || B.isVec()) {
+            auto &vec = A.isVec() ? A : B;
+            auto &mm = A.isVec() ? B : A;
+
+            auto r_shape = mm.getShape();
+            r_shape[0] = 1;
+            Matrix<TargetType> r(r_shape, 0.);
+            auto iter_r = r.begin();
+            auto iter_mm = mm.begin();
+            while (iter_r != r.end()) {
+                auto iter_vec = vec.begin();
+                while (iter_vec != vec.end()) {
+                    *iter_r += *iter_vec * (*iter_mm);
+                    iter_vec++;
+                    iter_mm++;
+                }
+            }
+            return r;
+        }
+
+        //Two-dimensional matrix multiplication
+        if (A.is2D() && B.is2D()) {
+            return mmul(A, B);
+        }
+
+        //M-dimensional matrix and N-dimensional matrix
+        if (A.getDims() < 2 || B.getDims() < 2) {
+            A.debug();
+            B.debug();
+            throw_runtime_error_exception("dot failed");
+        }
+
+        if (A.getShape()[0] != B.getShape()[1])
+            throw_shape_exception("matrix A dim 0:" + to_string(A.getShape()[0]) +
+                                  " not equals to matrix B dim 1:" + to_string(B.getShape()[1]));
+        else {
+            auto t_B = B.T();
+            auto r_shape = mshape_type();
+            r_shape.insert(r_shape.end(), t_B.begin() + 1, t_B.end());
+            r_shape.insert(r_shape.end(), A.begin() + 1, A.end());
+            Matrix<TargetType> r(r_shape, 0.);
+
+            auto iter_r = r.begin();
+            auto A_vec_nums = A.getSize() / A.getShape()[0];
+            auto tB_vec_nums = t_B.getSize() / t_B.getShape()[0];
+            auto vec_size = A.getShape()[0];
+
+            for (msize_type i = 0; i < A_vec_nums; ++i) {
+                for (msize_type j = 0; j < tB_vec_nums; ++j) {
+                    auto iter_A = A.begin() + i * vec_size;
+                    auto iter_tB = t_B.begin() + j * vec_size;
+                    for (msize_type k = 0; k < vec_size; ++k) {
+                        *iter_r += *iter_A * *iter_tB;
+                    }
+                    iter_r++;
+                }
+            }
+            return r;
+        }
+    }
+}
+namespace MatSAR {
+    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() / std::declval<rT>() +
+                                                                    std::declval<real_max>())>
+    auto operator/(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
+        tmp /= right;
+        return tmp;
+    }
+
+    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() / std::declval<rT>() +
+                                                                    std::declval<real_max>())>
+    auto operator/(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
+        tmp /= right;
+        return tmp;
+    }
+
+    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() / std::declval<rT>() +
+                                                                    std::declval<real_max>())>
+    auto operator/(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(right.getShape(), static_cast<TargetType>(left));
+        tmp /= right;
+        return tmp;
+    }
+}
+namespace MatSAR {
+    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() & std::declval<T2>())>
+    auto operator&(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
         tmp &= right;
         return tmp;
     }
 
-    template<SIntType SIT1, SIntType SIT2>
-    auto operator&(const Matrix<SIT1> &left, const SIT2 &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
+    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() & std::declval<T2>())>
+    auto operator&(const Matrix<T1> &left, const T2 &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
         tmp &= right;
         return tmp;
     }
 
-    template<SIntType SIT1, SIntType SIT2>
-    auto operator&(const SIT1 &left, const Matrix<SIT2> &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(right);
+    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() & std::declval<T2>())>
+    auto operator&(const T1 &left, const Matrix<T2> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(right);
         tmp &= left;
         return tmp;
     }
 
-    template<UIntType UIT1, UIntType UIT2>
-    auto operator&(const Matrix<UIT1> &left, const Matrix<UIT2> &right) -> Matrix<uint_max> {
-        Matrix<int_max> tmp(left);
-        tmp &= right;
-        return tmp;
-    }
-
-    template<UIntType UIT1, UIntType UIT2>
-    auto operator&(const Matrix<UIT1> &left, const UIT2 &right) -> Matrix<uint_max> {
-        Matrix<int_max> tmp(left);
-        tmp &= right;
-        return tmp;
-    }
-
-    template<UIntType UIT1, UIntType UIT2>
-    auto operator&(const UIT1 &left, const Matrix<UIT2> &right) -> Matrix<uint_max> {
-        Matrix<int_max> tmp(right);
-        tmp &= left;
-        return tmp;
-    }
-
-    template<SIntType SIT1, SIntType SIT2>
-    auto operator|(const Matrix<SIT1> &left, const Matrix<SIT2> &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
+    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() | std::declval<T2>())>
+    auto operator|(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
         tmp |= right;
         return tmp;
     }
 
-    template<SIntType SIT1, SIntType SIT2>
-    auto operator|(const Matrix<SIT1> &left, const SIT2 &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
+    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() | std::declval<T2>())>
+    auto operator|(const Matrix<T1> &left, const T2 &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
         tmp |= right;
         return tmp;
     }
 
-    template<SIntType SIT1, SIntType SIT2>
-    auto operator|(const SIT1 &left, const Matrix<SIT2> &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(right);
+    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() | std::declval<T2>())>
+    auto operator|(const T1 &left, const Matrix<T2> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(right);
         tmp |= left;
         return tmp;
     }
 
-    template<UIntType UIT1, UIntType UIT2>
-    auto operator|(const Matrix<UIT1> &left, const Matrix<UIT2> &right) -> Matrix<uint_max> {
-        Matrix<int_max> tmp(left);
-        tmp |= right;
-        return tmp;
-    }
-
-    template<UIntType UIT1, UIntType UIT2>
-    auto operator|(const Matrix<UIT1> &left, const UIT2 &right) -> Matrix<uint_max> {
-        Matrix<int_max> tmp(left);
-        tmp |= right;
-        return tmp;
-    }
-
-    template<UIntType UIT1, UIntType UIT2>
-    auto operator|(const UIT1 &left, const Matrix<UIT2> &right) -> Matrix<uint_max> {
-        Matrix<int_max> tmp(right);
-        tmp |= left;
-        return tmp;
-    }
-
-    template<SIntType SIT1, SIntType SIT2>
-    auto bitxor(const Matrix<SIT1> &left, const Matrix<SIT2> &right) -> Matrix<int_max> {
+    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() ^ std::declval<T2>())>
+    auto bitxor(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<TargetType> {
         if (left.getShape() == right.getShape()) {
-            Matrix<int_max> tmp(left);
+            Matrix<TargetType> tmp(left);
             MatrixBase::Xor(tmp.getData(), right.getData(), tmp.getSize());
             return tmp;
         } else {
-            Matrix<int_max> tmp(left);
-            Matrix<int_max> b_right(right);
-            Matrix<int_max>::broadcast(tmp, b_right);
-            MatrixBase::Xor(tmp.getData(), b_right.getData(), tmp.getSize());
-            return tmp;
+            Matrix<TargetType> b_left(left);
+            Matrix<TargetType> b_right(right);
+            Matrix<TargetType>::broadcast(b_left, b_right);
+            MatrixBase::Xor(b_left.getData(), b_right.getData(), b_left.getSize());
+            return b_left;
         }
     }
 
-    template<SIntType SIT1, SIntType SIT2>
-    auto bitxor(Matrix<SIT1> left, const SIT2 &right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(left);
+    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() ^ std::declval<T2>())>
+    auto bitxor(const Matrix<T1> &left, const T2 &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(left);
         MatrixBase::Xor(tmp.getData(), right, tmp.getSize());
         return tmp;
     }
 
-    template<SIntType SIT1, SIntType SIT2>
-    auto bitxor(const SIT1 &left, Matrix<SIT2> right) -> Matrix<int_max> {
-        Matrix<int_max> tmp(right);
-        MatrixBase::Xor(tmp.getData(), left, tmp.getSize());
-        return tmp;
-    }
-
-    template<UIntType UIT1, UIntType UIT2>
-    auto bitxor(const Matrix<UIT1> &left, const Matrix<UIT2> &right) -> Matrix<uint_max> {
-        if (left.getShape() == right.getShape()) {
-            Matrix<int_max> tmp(left);
-            MatrixBase::Xor(tmp.getData(), right.getData(), tmp.getSize());
-            return tmp;
-        } else {
-            Matrix<int_max> tmp(left);
-            Matrix<int_max> b_right(right);
-            Matrix<int_max>::broadcast(tmp, b_right);
-            MatrixBase::Xor(tmp.getData(), b_right.getData(), tmp.getSize());
-            return tmp;
-        }
-    }
-
-    template<UIntType UIT1, UIntType UIT2>
-    auto bitxor(Matrix<UIT1> left, const UIT2 &right) -> Matrix<uint_max> {
-        Matrix<int_max> tmp(left);
-        MatrixBase::Xor(tmp.getData(), right, tmp.getSize());
-        return tmp;
-    }
-
-    template<UIntType UIT1, UIntType UIT2>
-    auto bitxor(const UIT1 &left, Matrix<UIT2> right) -> Matrix<uint_max> {
-        Matrix<int_max> tmp(right);
+    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() ^ std::declval<T2>())>
+    auto bitxor(const T1 &left, const Matrix<T2> &right) -> Matrix<TargetType> {
+        Matrix<TargetType> tmp(right);
         MatrixBase::Xor(tmp.getData(), left, tmp.getSize());
         return tmp;
     }
 }
 
 namespace MatSAR {
-    template<RealType lT, IntType rT>
-    auto operator^(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<real_max> {
+    template<typename lT, typename rT, typename TargetType=decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
+    auto operator^(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         if (left.getShape() == right.getShape()) {
-            Matrix<real_max> tmp(left);
-            MatrixBase::Pow(tmp.getData(), right.getData(), tmp.getSize(), tmp.getData());
-            return tmp;
+            Matrix<TargetType> r(left.getShape(), 0.);
+            MatrixBase::Pow(left.getData(), right.getData(), r.getSize(), r.getData());
+            return r;
         } else {
-            Matrix<real_max> tmp(left);
+            auto b_left = left;
             auto b_right = right;
-            Matrix<real_max>::broadcast(tmp, b_right);
-            MatrixBase::Pow(tmp.getData(), b_right.getData(), tmp.getSize(), tmp.getData());
-            return tmp;
+            Matrix<TargetType>::broadcast(b_left, b_right);
+            Matrix<TargetType> r(b_left.getShape(), 0.);
+            MatrixBase::Pow(b_left.getData(), b_right.getData(), r.getSize(), r.getData());
+            return r;
         }
     }
 
-    template<RealType lT, IntType rT>
+    template<typename lT, typename rT, typename TargetType=decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
     auto operator^(const Matrix<lT> &left, const rT &right) -> Matrix<real_max> {
-        Matrix<real_max> tmp(left);
-        MatrixBase::Pow(tmp.getData(), right, tmp.getSize(), tmp.getData());
-        return tmp;
+        Matrix<TargetType> r(left.getShape(), 0.);
+        MatrixBase::Pow(left.getData(), right, r.getSize(), r.getData());
+        return r;
     }
 
-    template<RealType lT, IntType rT>
+    template<typename lT, typename rT, typename TargetType=decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
     auto operator^(const lT &left, const Matrix<rT> &right) -> Matrix<real_max> {
-        Matrix<real_max> tmp(right);
-        MatrixBase::Pow(left, tmp.getData(), tmp.getSize(), tmp.getData());
-        return tmp;
+        Matrix<TargetType> r(right.getShape(), 0.);
+        MatrixBase::Pow(left, right.getData(), r.getSize(), r.getData());
+        return r;
     }
-
-    template<RealType lT, FloatType rT>
-    auto operator^(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        if (left.getShape() == right.getShape()) {
-            Matrix<complex_max> tmp(left);
-            MatrixBase::Pow(tmp.getData(), right.getData(), tmp.getSize(), tmp.getData());
-            return tmp;
-        } else {
-            Matrix<complex_max> tmp(left);
-            auto b_right = right;
-            Matrix<complex_max>::broadcast(tmp, b_right);
-            MatrixBase::Pow(tmp.getData(), b_right.getData(), tmp.getSize(), tmp.getData());
-            return tmp;
-        }
-    }
-
-    template<RealType lT, FloatType rT>
-    auto operator^(const Matrix<lT> &left, const rT &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        MatrixBase::Pow(tmp.getData(), right, tmp.getSize(), tmp.getData());
-        return tmp;
-    }
-
-    template<RealType lT, FloatType rT>
-    auto operator^(const lT &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(right);
-        MatrixBase::Pow(left, tmp.getData(), tmp.getSize(), tmp.getData());
-        return tmp;
-    }
-
-    template<ComplexType lT, Calculable rT>
-    auto operator^(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        if (left.getShape() == right.getShape()) {
-            Matrix<complex_max> tmp(left);
-            MatrixBase::Pow(tmp.getData(), right.getData(), tmp.getSize(), tmp.getData());
-            return tmp;
-        } else {
-            Matrix<complex_max> tmp(left);
-            auto b_right = right;
-            Matrix<complex_max>::broadcast(tmp, b_right);
-            MatrixBase::Pow(tmp.getData(), b_right.getData(), tmp.getSize(), tmp.getData());
-            return tmp;
-        }
-    }
-
-    template<ComplexType lT, Calculable rT>
-    auto operator^(const Matrix<lT> &left, const rT &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        MatrixBase::Pow(tmp.getData(), right, tmp.getSize(), tmp.getData());
-        return tmp;
-    }
-
-    template<ComplexType lT, Calculable rT>
-    auto operator^(const lT &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(right);
-        MatrixBase::Pow(left, tmp.getData(), tmp.getSize(), tmp.getData());
-        return tmp;
-    }
-
-    template<Calculable lT, ComplexType rT>
-    auto operator^(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        if (left.getShape() == right.getShape()) {
-            Matrix<complex_max> tmp(left);
-            MatrixBase::Pow(tmp.getData(), right.getData(), tmp.getSize(), tmp.getData());
-            return tmp;
-        } else {
-            Matrix<complex_max> tmp(left);
-            auto b_right = right;
-            Matrix<complex_max>::broadcast(tmp, b_right);
-            MatrixBase::Pow(tmp.getData(), b_right.getData(), tmp.getSize(), tmp.getData());
-            return tmp;
-        }
-    }
-
-    template<Calculable lT, ComplexType rT>
-    auto operator^(const Matrix<lT> &left, const rT &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(left);
-        MatrixBase::Pow(tmp.getData(), right, tmp.getSize(), tmp.getData());
-        return tmp;
-    }
-
-    template<Calculable lT, ComplexType rT>
-    auto operator^(const lT &left, const Matrix<rT> &right) -> Matrix<complex_max> {
-        Matrix<complex_max> tmp(right);
-        MatrixBase::Pow(left, tmp.getData(), tmp.getSize(), tmp.getData());
-        return tmp;
-    }
-
 }
+
+namespace MatSAR {
+    template<typename T>
+    auto operator+(const Matrix<T> &left, const Matrix<bool> &right) -> Matrix<T> {
+        Matrix<T> tmp_l(left), tmp_r(right);
+        return tmp_l + tmp_r;
+    }
+
+    template<typename T>
+    auto operator+(const Matrix<bool> &left, const Matrix<T> &right) -> Matrix<T> {
+        Matrix<T> tmp_l(left), tmp_r(right);
+        return tmp_l + tmp_r;
+    }
+
+    template<typename T = int_max>
+    auto operator+(const Matrix<bool> &left, const Matrix<bool> &right) -> Matrix<T> {
+        Matrix<T> tmp_l(left), tmp_r(right);
+        return tmp_l + tmp_r;
+    }
+}
+
+namespace MatSAR {
+    template<typename T>
+    auto operator-(const Matrix<T> &left, const Matrix<bool> &right) -> Matrix<T> {
+        Matrix<T> tmp_l(left), tmp_r(right);
+        return tmp_l - tmp_r;
+    }
+
+    template<typename T>
+    auto operator-(const Matrix<bool> &left, const Matrix<T> &right) -> Matrix<T> {
+        Matrix<T> tmp_l(left), tmp_r(right);
+        return tmp_l - tmp_r;
+    }
+
+    template<typename T = int_max>
+    auto operator-(const Matrix<bool> &left, const Matrix<bool> &right) -> Matrix<T> {
+        Matrix<T> tmp_l(left), tmp_r(right);
+        return tmp_l - tmp_r;
+    }
+}
+
+namespace MatSAR {
+    template<typename T>
+    auto operator*(const Matrix<T> &left, const Matrix<bool> &right) -> Matrix<T> {
+        Matrix<T> tmp_l(left), tmp_r(right);
+        return tmp_l * tmp_r;
+    }
+
+    template<typename T>
+    auto operator*(const Matrix<bool> &left, const Matrix<T> &right) -> Matrix<T> {
+        Matrix<T> tmp_l(left), tmp_r(right);
+        return tmp_l * tmp_r;
+    }
+
+    template<typename T = int_max>
+    auto operator*(const Matrix<bool> &left, const Matrix<bool> &right) -> Matrix<T> {
+        Matrix<T> tmp_l(left), tmp_r(right);
+        return tmp_l * tmp_r;
+    }
+}
+
 #endif //MATSAR_MATRIX_HPP

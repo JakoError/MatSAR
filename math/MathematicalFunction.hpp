@@ -1,0 +1,160 @@
+//
+// Created by JakoError on 24-8-5.
+//
+
+#ifndef MATSAR_MATHEMATICALFUNCTION_HPP
+#define MATSAR_MATHEMATICALFUNCTION_HPP
+
+#ifndef MATSAR_MATRIXCREATION_HPP
+
+#include "../MatrixCreation.hpp"
+
+#endif //MATSAR_MATRIXCREATION_HPP
+
+#ifndef MATSAR_UNIVERSALFUNCTIONS_HPP
+
+#include "../UniversalFunctions.hpp"
+
+#endif //MATSAR_UNIVERSALFUNCTIONS_HPP
+
+namespace MatSAR {
+    namespace Math {
+        namespace Internal {
+            template<typename dType, typename TargetType>
+            auto do_global_sum(const Matrix<dType> &m) -> Matrix<TargetType> {
+                return MatSAR::apply_function_global<dType, TargetType>(m, [](const TargetType &x, const dType &y) {
+                    return static_cast<TargetType>(x + y);
+                }, 0);
+            }
+
+            template<typename dType, typename TargetType>
+            auto do_sum(const Matrix<dType> &m, const msize_type &dim_idx) -> Matrix<TargetType> {
+                return MatSAR::apply_function_n1<dType, TargetType>(m, [](const TargetType &x, const dType &y) {
+                    return static_cast<TargetType>(x + y);
+                }, dim_idx, 0);
+            }
+        }
+
+        /**
+         * @param dim_idx Global evaluation is performed when it is none.
+         */
+        template<typename dType, typename TargetType=decltype(std::declval<dType>() + std::declval<dType>())>
+        auto sum(const Matrix<dType> &m, Container<msize_type> dim_idx = 0) -> Matrix<TargetType> {
+            if (dim_idx == none || m.isEmpty()) {
+                return Internal::do_global_sum<dType, TargetType>(m);
+            }
+            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "sum");
+            return Internal::do_sum<dType, TargetType>(m, dim_idx);
+        }
+    }
+
+    namespace Math {
+        namespace Internal {
+            template<typename dType, typename TargetType>
+            auto do_global_prod(const Matrix<dType> &m) -> Matrix<TargetType> {
+                return MatSAR::apply_function_global<dType, TargetType>(m, [](const TargetType &x, const dType &y) {
+                    return static_cast<TargetType>(x * y);
+                }, 1);
+            }
+
+            template<typename dType, typename TargetType>
+            auto do_prod(const Matrix<dType> &m, const msize_type &dim_idx) -> Matrix<TargetType> {
+                return MatSAR::apply_function_n1<dType, TargetType>(m, [](const TargetType &x, const dType &y) {
+                    return static_cast<TargetType>(x * y);
+                }, dim_idx, 1);
+            }
+        }
+
+        /**
+         * @param dim_idx Global evaluation is performed when it is none.
+         */
+        template<typename dType, typename TargetType=decltype(std::declval<dType>() * std::declval<dType>())>
+        auto prod(const Matrix<dType> &m, Container<msize_type> dim_idx = 0) -> Matrix<TargetType> {
+            if (dim_idx == none || m.isEmpty()) {
+                return Internal::do_global_prod<dType, TargetType>(m);
+            }
+            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "prod");
+            return Internal::do_prod<dType, TargetType>(m, dim_idx);
+        }
+    }
+
+    namespace Math {
+        namespace Internal {
+            template<typename dType, typename TargetType>
+            auto do_global_cumsum(const Matrix<dType> &m) -> Matrix<TargetType> {
+                TargetType sum = 0;
+                return MatSAR::apply_function_global_nn<dType, TargetType>(m,
+                                                                           [&sum](const TargetType &x, const dType &y) {
+                                                                               sum = static_cast<TargetType>(sum + y);
+                                                                               return sum;
+                                                                           }, 0);
+            }
+
+            template<typename dType, typename TargetType>
+            auto do_cumsum(const Matrix<dType> &m, const msize_type &dim_idx) -> Matrix<TargetType> {
+                TargetType sum = 0;
+                return MatSAR::apply_function_nn_idx<dType, TargetType>(m, [&sum](const TargetType &x, const dType &y,
+                                                                                  const typename Matrix<dType>::size_type &idx) {
+                    if (idx == 0) {
+                        sum = 0;
+                    }
+                    sum = static_cast<TargetType>(sum + y);
+                    return sum;
+                }, dim_idx, 0);
+            }
+        }
+
+        /**
+         * @param dim_idx Global evaluation is performed when it is none.
+         */
+        template<typename dType, typename TargetType=decltype(std::declval<dType>() + std::declval<dType>())>
+        auto cumsum(const Matrix<dType> &m, Container<msize_type> dim_idx = 0) -> Matrix<TargetType> {
+            if (dim_idx == none || m.isEmpty()) {
+                return Internal::do_global_cumsum<dType, TargetType>(m);
+            }
+            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "cumsum");
+            return Internal::do_cumsum<dType, TargetType>(m, dim_idx);
+        }
+    }
+
+    namespace Math {
+        namespace Internal {
+            template<typename dType, typename TargetType>
+            auto do_global_cumprod(const Matrix<dType> &m) -> Matrix<TargetType> {
+                TargetType prod = 1;
+                return MatSAR::apply_function_global_nn<dType, TargetType>(m, [&prod](const TargetType &x,
+                                                                                      const dType &y) {
+                    prod = static_cast<TargetType>(prod * y);
+                    return prod;
+                }, 0);
+            }
+
+            template<typename dType, typename TargetType>
+            auto do_cumprod(const Matrix<dType> &m, const msize_type &dim_idx) -> Matrix<TargetType> {
+                TargetType prod = 1;
+                return MatSAR::apply_function_nn_idx<dType, TargetType>(m, [&prod](const TargetType &x, const dType &y,
+                                                                                   const typename Matrix<dType>::size_type &idx) {
+                    if (idx == 0) {
+                        prod = 1;
+                    }
+                    prod = static_cast<TargetType>(prod * y);
+                    return prod;
+                }, dim_idx, 0);
+            }
+        }
+
+        /**
+         * @param dim_idx Global evaluation is performed when it is none.
+         */
+        template<typename dType, typename TargetType=decltype(std::declval<dType>() + std::declval<dType>())>
+        auto cumprod(const Matrix<dType> &m, Container<msize_type> dim_idx = 0) -> Matrix<TargetType> {
+            if (dim_idx == none || m.isEmpty()) {
+                return Internal::do_global_cumprod<dType, TargetType>(m);
+            }
+            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "cumprod");
+            return Internal::do_cumprod<dType, TargetType>(m, dim_idx);
+        }
+    }
+}
+
+#endif //MATSAR_MATHEMATICALFUNCTION_HPP
