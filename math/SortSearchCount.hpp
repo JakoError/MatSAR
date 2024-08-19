@@ -73,7 +73,7 @@ namespace MatSAR {
             if (dim_idx == none || m.isEmpty()) {
                 return Internal::do_global_sort<dType, dType>(m, up);
             }
-            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "sort");
+            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), __FUNCTION__);
             return Internal::do_sort<dType, dType>(m, dim_idx, up);
         }
     }

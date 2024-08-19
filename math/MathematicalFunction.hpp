@@ -43,7 +43,7 @@ namespace MatSAR {
             if (dim_idx == none || m.isEmpty()) {
                 return Internal::do_global_sum<dType, TargetType>(m);
             }
-            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "sum");
+            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), __FUNCTION__);
             return Internal::do_sum<dType, TargetType>(m, dim_idx);
         }
     }
@@ -73,7 +73,7 @@ namespace MatSAR {
             if (dim_idx == none || m.isEmpty()) {
                 return Internal::do_global_prod<dType, TargetType>(m);
             }
-            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "prod");
+            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), __FUNCTION__);
             return Internal::do_prod<dType, TargetType>(m, dim_idx);
         }
     }
@@ -112,7 +112,7 @@ namespace MatSAR {
             if (dim_idx == none || m.isEmpty()) {
                 return Internal::do_global_cumsum<dType, TargetType>(m);
             }
-            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "cumsum");
+            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), __FUNCTION__);
             return Internal::do_cumsum<dType, TargetType>(m, dim_idx);
         }
     }
@@ -151,7 +151,7 @@ namespace MatSAR {
             if (dim_idx == none || m.isEmpty()) {
                 return Internal::do_global_cumprod<dType, TargetType>(m);
             }
-            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "cumprod");
+            Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), __FUNCTION__);
             return Internal::do_cumprod<dType, TargetType>(m, dim_idx);
         }
     }

@@ -93,7 +93,7 @@ namespace MatSAR {
                 if (dim_idx == none) {
                     return Internal::do_global_all<dType>(m, dim_idx);
                 }
-                Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "all");
+                Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), __FUNCTION__);
                 return Internal::do_all<dType>(m, dim_idx);
             }
 
@@ -102,7 +102,7 @@ namespace MatSAR {
                 if (dim_idx == none) {
                     return Internal::do_global_any<dType>(m, dim_idx);
                 }
-                Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), "all");
+                Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), __FUNCTION__);
                 return Internal::do_any<dType>(m, dim_idx);
             }
         }
