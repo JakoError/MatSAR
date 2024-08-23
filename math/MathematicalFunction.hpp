@@ -22,14 +22,15 @@ namespace MatSAR {
         namespace Internal {
             template<typename dType, typename TargetType>
             auto do_global_sum(const Matrix<dType> &m) -> Matrix<TargetType> {
-                return MatSAR::apply_function_global<dType, TargetType>(m, [](const TargetType &x, const dType &y) {
-                    return static_cast<TargetType>(x + y);
-                }, 0);
+                return MatSAR::apply_function_global_all_1<dType, TargetType>(m,
+                                                                              [](const TargetType &x, const dType &y) {
+                                                                                  return static_cast<TargetType>(x + y);
+                                                                              }, 0);
             }
 
             template<typename dType, typename TargetType>
             auto do_sum(const Matrix<dType> &m, const msize_type &dim_idx) -> Matrix<TargetType> {
-                return MatSAR::apply_function_n1<dType, TargetType>(m, [](const TargetType &x, const dType &y) {
+                return MatSAR::apply_function_all_1<dType, TargetType>(m, [](const TargetType &x, const dType &y) {
                     return static_cast<TargetType>(x + y);
                 }, dim_idx, 0);
             }
@@ -52,14 +53,15 @@ namespace MatSAR {
         namespace Internal {
             template<typename dType, typename TargetType>
             auto do_global_prod(const Matrix<dType> &m) -> Matrix<TargetType> {
-                return MatSAR::apply_function_global<dType, TargetType>(m, [](const TargetType &x, const dType &y) {
-                    return static_cast<TargetType>(x * y);
-                }, 1);
+                return MatSAR::apply_function_global_all_1<dType, TargetType>(m,
+                                                                              [](const TargetType &x, const dType &y) {
+                                                                                  return static_cast<TargetType>(x * y);
+                                                                              }, 1);
             }
 
             template<typename dType, typename TargetType>
             auto do_prod(const Matrix<dType> &m, const msize_type &dim_idx) -> Matrix<TargetType> {
-                return MatSAR::apply_function_n1<dType, TargetType>(m, [](const TargetType &x, const dType &y) {
+                return MatSAR::apply_function_all_1<dType, TargetType>(m, [](const TargetType &x, const dType &y) {
                     return static_cast<TargetType>(x * y);
                 }, dim_idx, 1);
             }
@@ -83,24 +85,27 @@ namespace MatSAR {
             template<typename dType, typename TargetType>
             auto do_global_cumsum(const Matrix<dType> &m) -> Matrix<TargetType> {
                 TargetType sum = 0;
-                return MatSAR::apply_function_global_nn<dType, TargetType>(m,
-                                                                           [&sum](const TargetType &x, const dType &y) {
-                                                                               sum = static_cast<TargetType>(sum + y);
-                                                                               return sum;
-                                                                           }, 0);
+                return MatSAR::apply_function_global_all_all<dType, TargetType>(m,
+                                                                                [&sum](const TargetType &x,
+                                                                                       const dType &y) {
+                                                                                    sum = static_cast<TargetType>(sum +
+                                                                                                                  y);
+                                                                                    return sum;
+                                                                                });
             }
 
             template<typename dType, typename TargetType>
             auto do_cumsum(const Matrix<dType> &m, const msize_type &dim_idx) -> Matrix<TargetType> {
                 TargetType sum = 0;
-                return MatSAR::apply_function_nn_idx<dType, TargetType>(m, [&sum](const TargetType &x, const dType &y,
-                                                                                  const typename Matrix<dType>::size_type &idx) {
-                    if (idx == 0) {
-                        sum = 0;
-                    }
-                    sum = static_cast<TargetType>(sum + y);
-                    return sum;
-                }, dim_idx, 0);
+                return MatSAR::apply_function_all_all_idx<dType, TargetType>(m,
+                                                                             [&sum](const TargetType &x, const dType &y,
+                                                                                    const typename Matrix<dType>::size_type &idx) {
+                                                                                 if (idx == 0) {
+                                                                                     sum = 0;
+                                                                                 }
+                                                                                 sum = static_cast<TargetType>(sum + y);
+                                                                                 return sum;
+                                                                             }, dim_idx, 0);
             }
         }
 
@@ -122,8 +127,8 @@ namespace MatSAR {
             template<typename dType, typename TargetType>
             auto do_global_cumprod(const Matrix<dType> &m) -> Matrix<TargetType> {
                 TargetType prod = 1;
-                return MatSAR::apply_function_global_nn<dType, TargetType>(m, [&prod](const TargetType &x,
-                                                                                      const dType &y) {
+                return MatSAR::apply_function_global_all_all<dType, TargetType>(m, [&prod](const TargetType &x,
+                                                                                           const dType &y) {
                     prod = static_cast<TargetType>(prod * y);
                     return prod;
                 }, 0);
@@ -132,14 +137,17 @@ namespace MatSAR {
             template<typename dType, typename TargetType>
             auto do_cumprod(const Matrix<dType> &m, const msize_type &dim_idx) -> Matrix<TargetType> {
                 TargetType prod = 1;
-                return MatSAR::apply_function_nn_idx<dType, TargetType>(m, [&prod](const TargetType &x, const dType &y,
-                                                                                   const typename Matrix<dType>::size_type &idx) {
-                    if (idx == 0) {
-                        prod = 1;
-                    }
-                    prod = static_cast<TargetType>(prod * y);
-                    return prod;
-                }, dim_idx, 0);
+                return MatSAR::apply_function_all_all_idx<dType, TargetType>(m,
+                                                                             [&prod](const TargetType &x,
+                                                                                     const dType &y,
+                                                                                     const typename Matrix<dType>::size_type &idx) {
+                                                                                 if (idx == 0) {
+                                                                                     prod = 1;
+                                                                                 }
+                                                                                 prod = static_cast<TargetType>(prod *
+                                                                                                                y);
+                                                                                 return prod;
+                                                                             }, dim_idx, 0);
             }
         }
 

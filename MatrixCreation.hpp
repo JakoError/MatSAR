@@ -10,6 +10,7 @@
 #include "./Matrix.hpp"
 
 #endif //MATSAR_MATRIX_HPP
+
 namespace MatSAR {
     template<typename dType = float_max>
     auto zeros() -> dType {
@@ -21,9 +22,15 @@ namespace MatSAR {
         return Matrix<dType>(shape, dType(0));
     }
 
-    template<typename TargetType, typename dType>
-    auto zeros_like(const Matrix<dType> &m) -> Matrix<TargetType> {
+    template<typename TargetType, typename dType, class = typename std::enable_if<!std::is_same<dType, TargetType>::value>::type>
+    auto zeros_like(const Matrix<dType> &m,
+                    __attribute__((unused)) TargetType data_type = TargetType()) -> Matrix<TargetType> {
         return Matrix<TargetType>(m.getShape(), TargetType(0), m.getData());
+    }
+
+    template<typename dType>
+    auto zeros_like(const Matrix<dType> &m) -> Matrix<dType> {
+        return Matrix<dType>(m.getShape(), dType(0), m.getData());
     }
 
     template<typename dType = float_max>
@@ -36,8 +43,9 @@ namespace MatSAR {
         return Matrix<dType>(shape, dType(1));
     }
 
-    template<typename TargetType, typename dType>
-    auto ones_like(const Matrix<dType> &m) -> Matrix<TargetType> {
+    template<typename TargetType, typename dType, class = typename std::enable_if<!std::is_same<dType, TargetType>::value>::type>
+    auto ones_like(const Matrix<dType> &m,
+                   __attribute__((unused)) TargetType data_type = TargetType()) -> Matrix<TargetType> {
         return Matrix<TargetType>(m.getShape(), TargetType(1), m.getData());
     }
 
@@ -189,10 +197,9 @@ namespace MatSAR {
         auto iter = r.getData();
         for (msize_type n = 0; n < unit_num; ++n) {
             for (msize_type i = 0; i < step_size; ++i) {
-                for (msize_type j = 0; j < step_num; ++j)
-                    tmp[j] = *(iter + i + j * step_size);
-                for (msize_type j = 0; j < step_num; ++j)
-                    *(iter + i + j * step_size) = tmp[step_num - 1 - j];
+                for (msize_type j = 0; j < step_num / 2; ++j) {
+                    std::swap(*(iter + i + j * step_size), *(iter + i + (step_num - j - 1) * step_size));
+                }
             }
             iter += unit_size;
         }

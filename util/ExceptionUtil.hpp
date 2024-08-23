@@ -7,14 +7,14 @@
 
 #ifndef MATSAR_TYPEUTIL_HPP
 
+#include "TypeUtil.hpp"
+
+#endif
+
 #include <cassert>
 #include <cstdlib>
 #include <utility>
 #include <string>
-
-#include "TypeUtil.hpp"
-
-#endif
 
 #define RUNTIME_ERROR_CODE (-1)
 #define LOGICAL_ERROR_CODE (-2)
@@ -98,10 +98,10 @@ namespace MatSAR {
                 try {
                     throw ValueError(msg);
                 } catch (ValueError &e) {
-                    fflush(stdout);
-                    flush(cerr);
-                    cerr << "ValueError: " << e.what() << endl;
-                    flush(cerr);
+                    flush(std::cout);
+                    flush(std::cerr);
+                    std::cerr << "ValueError: " << e.what() << std::endl;
+                    flush(std::cerr);
                     if (to_exit)
                         exit(VALUE_ERROR_CODE);
                 }
@@ -111,10 +111,10 @@ namespace MatSAR {
                 try {
                     throw logic_error(msg);
                 } catch (logic_error &e) {
-                    fflush(stdout);
-                    flush(cerr);
-                    cerr << "LogicalError: " << e.what() << endl;
-                    flush(cerr);
+                    flush(std::cout);
+                    flush(std::cerr);
+                    std::cerr << "LogicalError: " << e.what() << std::endl;
+                    flush(std::cerr);
                     if (to_exit)
                         exit(LOGICAL_ERROR_CODE);
                 }
@@ -124,10 +124,10 @@ namespace MatSAR {
                 try {
                     throw out_of_range(msg);
                 } catch (out_of_range &e) {
-                    fflush(stdout);
-                    flush(cerr);
-                    cerr << "Out_Of_Range: " << e.what() << endl;
-                    flush(cerr);
+                    flush(std::cout);
+                    flush(std::cerr);
+                    std::cerr << "Out_Of_Range: " << e.what() << std::endl;
+                    flush(std::cerr);
                     if (to_exit)
                         exit(OUT_OF_RANGE_CODE);
                 }
@@ -141,10 +141,10 @@ namespace MatSAR {
                                  "\" may loss data";
                     throw TypeLossException(msg);
                 } catch (TypeLossException &e) {
-                    fflush(stdout);
-                    flush(cerr);
-                    cerr << "TypeLossException: " << e.what() << endl;
-                    flush(cerr);
+                    flush(std::cout);
+                    flush(std::cerr);
+                    std::cerr << "TypeLossException: " << e.what() << std::endl;
+                    flush(std::cerr);
                     if (to_exit)
                         exit(TYPE_LOSS_EXCEPTION_CODE);
                 }
@@ -154,10 +154,10 @@ namespace MatSAR {
                 try {
                     throw BroadcastException(msg);
                 } catch (BroadcastException &e) {
-                    fflush(stdout);
-                    flush(cerr);
-                    cerr << "BroadcastException: " << e.what() << endl;
-                    flush(cerr);
+                    flush(std::cout);
+                    flush(std::cerr);
+                    std::cerr << "BroadcastException: " << e.what() << std::endl;
+                    flush(std::cerr);
                     if (to_exit)
                         exit(BROADCAST_EXCEPTION_CODE);
                 }
@@ -168,10 +168,10 @@ namespace MatSAR {
                     throw BroadcastException("broadcast failed: cannot broadcast " + shape_str +
                                              " to " + target_str);
                 } catch (BroadcastException &e) {
-                    fflush(stdout);
-                    flush(cerr);
-                    cerr << "BroadcastException: " << e.what() << endl;
-                    flush(cerr);
+                    flush(std::cout);
+                    flush(std::cerr);
+                    std::cerr << "BroadcastException: " << e.what() << std::endl;
+                    flush(std::cerr);
                     if (to_exit)
                         exit(BROADCAST_EXCEPTION_CODE);
                 }
@@ -181,10 +181,10 @@ namespace MatSAR {
                 try {
                     throw ShapeException(msg);
                 } catch (ShapeException &e) {
-                    fflush(stdout);
-                    flush(cerr);
-                    cerr << "ShapeException: " << e.what() << endl;
-                    flush(cerr);
+                    flush(std::cout);
+                    flush(std::cerr);
+                    std::cerr << "ShapeException: " << e.what() << std::endl;
+                    flush(std::cerr);
                     if (to_exit)
                         exit(SHAPE_EXCEPTION_CODE);
                 }
@@ -197,10 +197,10 @@ namespace MatSAR {
                     ss << pre_msg << "Matrix shape not match: shape1 = " << shape1_str << " shape2 = " << shape2_str;
                     throw ShapeException(ss.str());
                 } catch (ShapeException &e) {
-                    fflush(stdout);
-                    flush(cerr);
-                    cerr << "ShapeException: " << e.what() << endl;
-                    flush(cerr);
+                    flush(std::cout);
+                    flush(std::cerr);
+                    std::cerr << "ShapeException: " << e.what() << std::endl;
+                    flush(std::cerr);
                     if (to_exit)
                         exit(SHAPE_EXCEPTION_CODE);
                 }
@@ -213,19 +213,19 @@ namespace MatSAR {
                 try {
                     throw runtime_error(msg);
                 } catch (BroadcastException &e) {
-                    fflush(stdout);
-                    flush(cerr);
-                    cerr << "RuntimeError(debug): " << e.what() << endl;
-                    flush(cerr);
+                    flush(std::cout);
+                    flush(std::cerr);
+                    std::cerr << "RuntimeError(debug): " << e.what() << std::endl;
+                    flush(std::cerr);
                     exit(RUNTIME_ERROR_CODE);
                 }
             }
 
             void throw_warning(const string &msg) {
-                fflush(stdout);
-                flush(cerr);
-                cerr << "WARNING: " << msg << endl;
-                flush(cerr);
+                flush(std::cout);
+                flush(std::cerr);
+                std::cerr << "WARNING: " << msg << std::endl;
+                flush(std::cerr);
             }
         }
     }

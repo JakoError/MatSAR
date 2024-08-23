@@ -20,32 +20,35 @@
 namespace MatSAR {
     namespace Math {
         namespace Internal {
-            template<typename ITER_SRC_T, typename ITER_DST_T>
-            void
-            SORT_UP(ITER_SRC_T src_iter, ITER_DST_T dst_iter, const msize_type &k,
-                    __attribute__((unused)) void *work) {
-                std::copy_n(src_iter, k, dst_iter);
-                std::sort(dst_iter, dst_iter + k);
-            }
+            template<typename ITER_SRC_T, typename ITER_DST_T, typename WORT_T=void>
+            class SORT_UP {
+            public:
+                void operator()(ITER_SRC_T src_iter, ITER_DST_T dst_iter, const msize_type &n,
+                                __attribute__((unused)) void *work) {
+                    std::copy_n(src_iter, n, dst_iter);
+                    std::sort(dst_iter, dst_iter + n);
+                }
+            };
 
-            template<typename ITER_SRC_T, typename ITER_DST_T>
-            void SORT_DOWN(ITER_SRC_T src_iter, ITER_DST_T dst_iter, const msize_type &k,
-                           __attribute__((unused)) void *work) {
-                std::copy_n(src_iter, k, dst_iter);
-                std::sort(dst_iter, dst_iter + k);
-                std::reverse(dst_iter, dst_iter + k);
-            }
+            template<typename ITER_SRC_T, typename ITER_DST_T, typename WORT_T=void>
+            class SORT_DOWN {
+            public:
+                void operator()(ITER_SRC_T src_iter, ITER_DST_T dst_iter, const msize_type &n,
+                                __attribute__((unused)) void *work) {
+                    std::copy_n(src_iter, n, dst_iter);
+                    std::sort(dst_iter, dst_iter + n);
+                    std::reverse(dst_iter, dst_iter + n);
+                }
+            };
 
             template<typename dType, typename TargetType>
             auto do_global_sort(const Matrix<dType> &m, const bool &up) -> Matrix<TargetType> {
                 if (up) {
-                    return MatSAR::apply_function_global_nk<dType, TargetType>(m,
-                                                                               Internal::SORT_UP<typeof(std::declval<Matrix<dType>>().getData()), typeof(std::declval<Matrix<dType>>().getData())>,
-                                                                               m.getSize());
+                    return MatSAR::apply_tfunction_global_all_k<dType, TargetType, dType, Internal::SORT_UP>(m,
+                                                                                                             m.getSize());
                 } else {
-                    return MatSAR::apply_function_global_nk<dType, TargetType>(m,
-                                                                               Internal::SORT_DOWN<typeof(std::declval<Matrix<dType>>().getData()), typeof(std::declval<Matrix<dType>>().getData())>,
-                                                                               m.getSize());
+                    return MatSAR::apply_tfunction_global_all_k<dType, TargetType, dType, Internal::SORT_DOWN>(m,
+                                                                                                               m.getSize());
                 }
             }
 
@@ -53,13 +56,13 @@ namespace MatSAR {
             auto
             do_sort(const Matrix<dType> &m, const msize_type &dim_idx, const bool &up) -> Matrix<TargetType> {
                 if (up) {
-                    return MatSAR::apply_function_nk<dType, TargetType>(m,
-                                                                        Internal::SORT_UP<typeof(std::declval<Matrix<dType>>().getData()), typeof(std::declval<Matrix<dType>>().getData())>,
-                                                                        dim_idx, m.getShape()[dim_idx]);
+                    return MatSAR::apply_tfunction_all_k<dType, TargetType, dType, Internal::SORT_UP>(m,
+                                                                                               dim_idx,
+                                                                                               m.getShape()[dim_idx]);
                 } else {
-                    return MatSAR::apply_function_nk<dType, TargetType>(m,
-                                                                        Internal::SORT_DOWN<typeof(std::declval<Matrix<dType>>().getData()), typeof(std::declval<Matrix<dType>>().getData())>,
-                                                                        dim_idx, m.getShape()[dim_idx]);
+                    return MatSAR::apply_tfunction_all_k<dType, TargetType, dType, Internal::SORT_DOWN>(m,
+                                                                                                 dim_idx,
+                                                                                                 m.getShape()[dim_idx]);
                 }
             }
         }
