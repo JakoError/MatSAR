@@ -2400,7 +2400,7 @@ namespace MatSAR {
     template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() * std::declval<rT>())>
     auto mul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
-        MatrixBase::Mul(tmp.getData(), right.getData(), tmp.getSize());
+        tmp *= right;   // element-wise with broadcasting (consistent with operator*)
         return tmp;
     }
 
@@ -2423,8 +2423,8 @@ namespace MatSAR {
     template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
                                                                     (std::declval<rT>() + 0.))>
     auto operator*(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
-        Matrix<TargetType> tmp(right);
-        tmp *= TargetType{left + 0.};
+        Matrix<TargetType> tmp(left);
+        tmp *= right;   // element-wise with broadcasting; matrix product is mmul()/operator%
         return tmp;
     }
 

@@ -3,6 +3,7 @@ set(MATSAR_TESTS
         test_smoke
         test_core
         test_public_header
+        test_arithmetic
 )
 
 foreach(t IN LISTS MATSAR_TESTS)
