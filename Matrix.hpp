@@ -35,9 +35,11 @@
 using msize_type = MATRIX_SIZE_TYPE;
 using mshape_type = std::vector<msize_type>;
 
-#include "include/cblas.h"
-
 #include <complex>
+
+#ifdef MATSAR_WITH_BLAS
+
+#include "include/cblas.h"
 
 #define LAPACK_COMPLEX_CUSTOM
 #define lapack_complex_float std::complex<float>
@@ -51,6 +53,8 @@ using mshape_type = std::vector<msize_type>;
 #include "include/lapacke.h"
 
 #endif
+
+#endif // MATSAR_WITH_BLAS
 
 #define LIST_CONSTRUCTOR_MAKER(LIST_n) \
 Matrix(LIST_n list) {\
@@ -265,6 +269,7 @@ namespace MatSAR {
                 *left++ -= tmp;
         }
 
+#ifdef MATSAR_WITH_BLAS
         /// Narrowing guard: BLAS dimensions must fit the library's native blasint.
         static blasint to_blasint(size_type v) {
             if (v < 0 || v > static_cast<size_type>(std::numeric_limits<blasint>::max()))
@@ -327,6 +332,8 @@ namespace MatSAR {
                 dst += m * n;
             }
         }
+
+#endif // MATSAR_WITH_BLAS
 
         ///NO CHECK!
         template<typename leftT, typename rightT>
@@ -2437,6 +2444,7 @@ namespace MatSAR {
         return tmp;
     }
 
+#ifdef MATSAR_WITH_BLAS
     /**
      * Matrix Multiplication
      */
@@ -2459,6 +2467,7 @@ namespace MatSAR {
     auto operator%(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         return mmul<lT, rT, TargetType>(left, right);
     }
+#endif // MATSAR_WITH_BLAS
 
     /**
      * Vector Dot Product

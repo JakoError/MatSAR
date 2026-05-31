@@ -5,6 +5,7 @@ set(MATSAR_TESTS
         test_public_header
         test_arithmetic
         test_comparison
+        test_build_config
 )
 
 foreach(t IN LISTS MATSAR_TESTS)
@@ -13,6 +14,13 @@ foreach(t IN LISTS MATSAR_TESTS)
     target_include_directories(${t} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(NAME ${t} COMMAND ${t})
 endforeach()
+
+# Death test: invalid-shape op prints a *Exception message and exit()s.
+add_executable(death_invalid_shape death_invalid_shape.cpp)
+target_link_libraries(death_invalid_shape PRIVATE matsar)
+target_include_directories(death_invalid_shape PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME death_invalid_shape COMMAND death_invalid_shape)
+set_tests_properties(death_invalid_shape PROPERTIES PASS_REGULAR_EXPRESSION "(Broadcast|Shape)Exception")
 
 # BLAS-backed tests (only when OpenBLAS is enabled)
 if(MATSAR_WITH_BLAS)
