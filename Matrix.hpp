@@ -1924,7 +1924,7 @@ namespace MatSAR {
                 auto b_right = right;
                 broadcast(b_left, b_right);
                 Matrix<bool> r(b_left.shape, false);
-                Base::Less(b_left.getData(), b_right.getData(), b_left.getData(), r.getData());
+                Base::Less(b_left.getData(), b_right.getData(), b_left.size, r.getData());
                 return r;
             } else {
                 Matrix<bool> r(shape, false);

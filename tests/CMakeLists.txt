@@ -4,6 +4,7 @@ set(MATSAR_TESTS
         test_core
         test_public_header
         test_arithmetic
+        test_comparison
 )
 
 foreach(t IN LISTS MATSAR_TESTS)
