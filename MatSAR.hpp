@@ -5,28 +5,28 @@
 #ifndef MATSAR_HPP
 #define MATSAR_HPP
 
-#ifndef MATSAR_MATRIX_HPP
 #include "Matrix.hpp"
-#endif
 
-#ifndef MATSAR_TRIGONOMETRY_HPP
+#include "SparseMatrix.hpp"
+
+#include "MatrixCreation.hpp"
+
+#include "UniversalFunctions.hpp"
+
+#include "SortSearchCount.hpp"
+
+#include "math/LogicFunctions.hpp"
+
+#include "math/MathematicalFunction.hpp"
+
 #include "math/Trigonometry.hpp"
-#endif
 
-#ifndef MATSAR_MATRIXOPERATION_HPP
 #include "math/MatrixOperation.hpp"
-#endif
 
-#ifndef MATSAR_LINEARALGEBRA_HPP
 #include "math/LinearAlgebra.hpp"
-#endif
+//
+//#include "math/Probability.hpp"
 
-#ifndef MATSAR_PROBABILITY_HPP
-#include "math/Probability.hpp"
-#endif
-
-#ifndef MATSAR_DIGITALSIGNAL_HPP
 #include "math/DigitalSignal.hpp"
-#endif
 
 #endif //MATSAR_HPP

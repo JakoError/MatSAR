@@ -106,7 +106,7 @@ using namespace MatSAR::Util::Exception;
 
 namespace MatSAR {
     template<typename dType>
-    void swap(dType &left, dType &right) {
+    void swap(dType &left, dType &right) noexcept {
         auto tmp = left;
         left = right;
         right = tmp;
@@ -138,14 +138,14 @@ namespace MatSAR {
             return new_shape;
         }
 
-        static auto newAxis(const mshape_type &shape, size_type dim) -> mshape_type {
+        static auto newAxis(const mshape_type &shape, const size_type dim) -> mshape_type {
             checkShape(shape);
             if (shape.empty())
                 return {};
             if (shape.size() > dim)
                 return shape;
             mshape_type new_shape(shape);
-            MatSAR::Util::VectorUtil::alignNum(new_shape, dim, (size_type) 1);
+            alignNum(new_shape, dim, static_cast<size_type>(1));
             return new_shape;
         }
 
@@ -169,7 +169,7 @@ namespace MatSAR {
             msize_type idx = 0;
             for (msize_type i = 0; i < shape.size(); ++i)
                 if (shape[shape.size() - i - 1] != 1) {
-                    idx = (msize_type) shape.size() - i - 1;
+                    idx = static_cast<msize_type>(shape.size()) - i - 1;
                     break;
                 }
             for (msize_type i = 0; i <= idx; ++i)
@@ -179,13 +179,13 @@ namespace MatSAR {
             return squeezed_shape;
         }
 
-        static auto broadcastShape(mshape_type shape1, mshape_type shape2, msize_type dim = 1) -> mshape_type {
+        static auto broadcastShape(mshape_type shape1, mshape_type shape2, const msize_type dim = 1) -> mshape_type {
             checkShape(shape1);
             checkShape(shape2);
-            auto dim_idx = dim - 1;
-            msize_type shape_dim = (msize_type) max(shape1.size(), shape2.size());
-            alignNum(shape1, shape_dim, (msize_type) 1);
-            alignNum(shape2, shape_dim, (msize_type) 1);
+            const auto dim_idx = dim - 1;
+            const msize_type shape_dim = static_cast<msize_type>(max(shape1.size(), shape2.size()));
+            alignNum(shape1, shape_dim, static_cast<msize_type>(1));
+            alignNum(shape2, shape_dim, static_cast<msize_type>(1));
             mshape_type shape(shape_dim);
             for (msize_type i = dim_idx; i < shape1.size(); ++i)
                 if (shape1[i] == shape2[i] || shape2[i] == 1)
@@ -962,8 +962,9 @@ namespace MatSAR {
         [[nodiscard]] auto conj() const -> Matrix<TargetType> {
             Matrix<TargetType> r(shape, TargetType());
             auto iter_c = getData();
-            for (auto *iter = r.getData(), *end = r.getDataEnd(); iter != end; ++iter, ++iter_c)
+            for (auto *iter = r.getData(), *end = r.getDataEnd(); iter != end; ++iter, ++iter_c) {
                 *iter = MatSAR::conj(*iter_c);
+            }
             return r;
         }
 
@@ -1490,9 +1491,9 @@ namespace MatSAR {
             size_type dim = 0;
             shape_type r_shape;
             for (auto &v: svec) {
-                if (v.size() == 1 && std::abs(v[0]) == shape[dim])
+                if (v.size() == 1 && std::abs(v[0]) == shape[dim]) {
                     v = Util::VectorUtil::Range(shape[dim]);
-                else
+                } else {
                     for (auto &i: v) {
                         if (i < -shape[dim] || i >= shape[dim]) {
                             stringstream ss;
@@ -1502,17 +1503,19 @@ namespace MatSAR {
                             throw_out_of_range_error(ss.str());
                         }
                     }
+                }
                 r_shape.push_back((size_type) v.size());
                 dim++;
             }
-            Matrix<dType> r(r_shape, 0.);
+            Matrix<dType> r(r_shape, dType(0), this->getData());
             shape_type tracker(dim, 0);
             shape_type selector(dim, 0);
             auto iter_r = r.data, end_r = r.getDataEnd();
             size_type fresh = dim - 1;
             while (iter_r != end_r) {
-                for (size_type i = 0; i <= fresh; ++i)
+                for (size_type i = 0; i <= fresh; ++i) {
                     selector[i] = svec[i][tracker[i]];
+                }
                 *iter_r = (*this)(selector);
                 iter_r++;
                 for (size_type i = 0; i < dim; ++i) {
@@ -2299,7 +2302,7 @@ namespace MatSAR {
                 for (size_type i = 0; i < unit_shape[0]; ++i) {
                     for (size_type j = 0; j < unit_shape[1]; ++j) {
                         auto p = getEle(i, j);
-                        ss << dataToString(p) << ' ';
+                        ss << dataToString(p, dataSpace) << ' ';
                     }
                     ss << "\n";
                 }
@@ -2318,7 +2321,7 @@ namespace MatSAR {
                     for (size_type i = 0; i < unit_shape[0]; ++i) {
                         for (size_type j = 0; j < unit_shape[1]; ++j) {
                             auto p = getEle(n, i, j);
-                            ss << dataToString(p) << ' ';
+                            ss << dataToString(p, dataSpace) << ' ';
                         }
                         ss << "\n";
                     }

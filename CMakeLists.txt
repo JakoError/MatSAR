@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
 project(MatSAR)
 
-set(CMAKE_CXX_STANDARD 20)
+#set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 11)
 
 set(INC_DIR ./include)
 include_directories(${INC_DIR})
@@ -18,7 +19,7 @@ add_executable(test test/test.cpp old/Property.h Matrix.hpp
         util/VectorUtil.hpp util/TypeUtil.hpp util/Utils util/UtilHeadCheck.hpp util/ExceptionUtil.hpp util/IgnoreWarningUtil.hpp
         math/Trigonometry.hpp math/LinearAlgebra.hpp NumberOperation.hpp math/DigitalSignal.hpp math/MatrixOperation.hpp math/Probability.hpp)
 
-add_executable(Matrix matrix_main.cpp Matrix.hpp util/IgnoreWarningUtil.hpp math/LinearAlgebra.hpp NumberOperation.hpp math/DigitalSignal.hpp math/MatrixOperation.hpp math/Probability.hpp)
+#add_executable(Matrix Matrix.hpp util/IgnoreWarningUtil.hpp math/LinearAlgebra.hpp NumberOperation.hpp math/DigitalSignal.hpp math/MatrixOperation.hpp math/Probability.hpp)
 add_executable(pure_test test/pure_test.cpp)
 
 add_executable(broadcast_test test/broadcast_test.cpp)
@@ -26,6 +27,18 @@ add_executable(numberop_test test/numberop_test.cpp)
 
 add_executable(probability_test test/probability_test.cpp)
 target_link_libraries(probability_test libopenblas)
+
+add_executable(sortsearchcount_test test/sortsearchcount_test.cpp)
+target_link_libraries(sortsearchcount_test libopenblas)
+
+add_executable(logic_test test/logic_test.cpp)
+target_link_libraries(logic_test libopenblas)
+
+add_executable(matrix_creation_test test/matrix_creation.cpp)
+target_link_libraries(matrix_creation_test libopenblas)
+
+add_executable(mathematical_function_test test/mathematical_function_test.cpp)
+target_link_libraries(mathematical_function_test libopenblas)
 
 add_executable(linear_algebra_test test/linear_algebra_test.cpp)
 target_link_libraries(linear_algebra_test libopenblas)

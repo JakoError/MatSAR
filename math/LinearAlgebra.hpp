@@ -1,11 +1,11 @@
 //
 // Created by JakoError on 2022/7/9.
 //
-
+///LA Linear Algebra
 #ifndef MATSAR_LINEARALGEBRA_HPP
 #define MATSAR_LINEARALGEBRA_HPP
 
-#include <cstring>
+#include <string>
 
 #ifndef MATSAR_MATRIX_HPP
 
@@ -13,605 +13,337 @@
 
 #endif //MATSAR_MATRIX_HPP
 
+#ifndef MATSAR_MATRIXCREATION_HPP
+
+#include "../MatrixCreation.hpp"
+
+#endif //MATSAR_MATRIXCREATION_HPP
+
+#ifndef MATSAR_UNIVERSALFUNCTIONS_HPP
+
+#include "../UniversalFunctions.hpp"
+
+#endif //MATSAR_UNIVERSALFUNCTIONS_HPP
+
+#ifndef MATSAR_MATHEMATICALFUNCTION_HPP
+
+#include "MathematicalFunction.hpp"
+
+#endif //MATSAR_MATHEMATICALFUNCTION_HPP
+
 using MatSAR::Util::TypeUtil::eps;
 
 using MatSAR::Util::VectorUtil::Range;
 
 namespace MatSAR {
     namespace Math {
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<Calculable TargetType, Calculable dType>
-        auto sum(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<TargetType> {
-            auto dim_idx = dim - 1;
-            if (m.isEmpty())
-                return {};
-            if (dim_idx >= m.getDims())
-                return {m};
-            if (dim_idx < 0) {
-                TargetType sum = 0.;
-                for (const auto &i: m)
-                    sum += i;
-                return {sum};
-            }
-            auto shape = m.getShape();
-            auto step_size = MatSAR::Util::VectorUtil::mul(shape, 0, dim_idx);
-            auto unit_size = step_size * shape[dim_idx];
-            auto step_num = shape[dim_idx];
-            auto unit_num = m.getSize() / unit_size;
-
-            auto r_shape = m.getShape();
-            r_shape[dim_idx] = 1;
-            Matrix<TargetType> r(r_shape, 0.,m.getData());
-
-            auto iter_r = r.getData();
-            auto iter_m = m.getData();
-            for (msize_type i = 0; i < unit_num; ++i) {
-                for (msize_type j = 0; j < step_num; ++j) {
-                    for (msize_type k = 0; k < step_size; ++k) {
-                        *(iter_r + k) += *(iter_m + k);
-                    }
-                    iter_m += step_size;
-                }
-                iter_r += step_size;
-            }
-            return r;
-        }
-
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<SIntType SIT>
-        auto sum(const Matrix<SIT> &m, msize_type dim = 1) -> Matrix<int_max> {
-            return sum<int_max, SIT>(m, dim);
-        }
-
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<UIntType UIT>
-        auto sum(const Matrix<UIT> &m, msize_type dim = 1) -> Matrix<uint_max> {
-            return sum<uint_max, UIT>(m, dim);
-        }
-
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<FloatType FT>
-        auto sum(const Matrix<FT> &m, msize_type dim = 1) -> Matrix<float_max> {
-            return sum<float_max, FT>(m, dim);
-        }
-
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<ComplexType CT>
-        auto sum(const Matrix<CT> &m, msize_type dim = 1) -> Matrix<complex_max> {
-            return sum<complex_max, CT>(m, dim);
-        }
-
-    }
-    namespace Math {
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<Calculable TargetType, Calculable dType>
-        auto prod(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<TargetType> {
-            auto dim_idx = dim - 1;
-            if (m.isEmpty())
-                return {};
-            if (dim_idx >= m.getDims())
-                return {m};
-            if (dim_idx < 0) {
-                TargetType prod = 1.;
-                for (const auto &i: m)
-                    prod *= i;
-                return {prod};
-            }
-            auto shape = m.getShape();
-            auto step_size = MatSAR::Util::VectorUtil::mul(shape, 0, dim_idx);
-            auto unit_size = step_size * shape[dim_idx];
-            auto step_num = shape[dim_idx];
-            auto unit_num = m.getSize() / unit_size;
-
-            auto r_shape = m.getShape();
-            r_shape[dim_idx] = 1;
-            Matrix<TargetType> r(r_shape, 1,m.getData());
-
-            auto iter_r = r.getData();
-            auto iter_m = m.getData();
-            for (msize_type i = 0; i < unit_num; ++i) {
-                for (msize_type j = 0; j < step_num; ++j) {
-                    for (msize_type k = 0; k < step_size; ++k) {
-                        *(iter_r + k) *= *(iter_m + k);
-                    }
-                    iter_m += step_size;
-                }
-                iter_r += step_size;
-            }
-            return r;
-        }
-
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<SIntType SIT>
-        auto prod(const Matrix<SIT> &m, msize_type dim = 1) -> Matrix<int_max> {
-            return prod<int_max, SIT>(m, dim);
-        }
-
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<UIntType UIT>
-        auto prod(const Matrix<UIT> &m, msize_type dim = 1) -> Matrix<uint_max> {
-            return prod<uint_max, UIT>(m, dim);
-        }
-
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<FloatType FT>
-        auto prod(const Matrix<FT> &m, msize_type dim = 1) -> Matrix<float_max> {
-            return prod<float_max, FT>(m, dim);
-        }
-
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<ComplexType CT>
-        auto prod(const Matrix<CT> &m, msize_type dim = 1) -> Matrix<complex_max> {
-            return prod<complex_max, CT>(m, dim);
-        }
-
-    }
-
-    namespace Math {
-        template<RealType T1, RealType T2>
-        auto kron(Matrix<T1> m1, Matrix<T2> m2) -> Matrix<real_max> {
+        template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() * std::declval<T2>())>
+        auto kron(Matrix<T1> m1, Matrix<T2> m2) -> Matrix<TargetType> {
             m1.expandShape(2);
             m2.expandShape(2);
             if (!m1.is2D() || !m2.is2D())
-                throw_value_error("kronÒªÇóÁ½¾ØÕó¾ùÎª¶şÎ¬¾ØÕó»ò¿ÉÀ©Õ¹Îª¶şÎ¬¾ØÕó", true);
+                throw_value_error(
+                        "kron: kron requires that both matrices be two-dimensional or extensible to two-dimensional matrices");
             auto shape1 = m1.getShape();
             auto shape2 = m2.getShape();
-            auto r_shape = shape1;
-            r_shape[0] *= shape2[0];
-            r_shape[1] *= shape2[1];
-            Matrix<real_max> r(r_shape, 0.,m1.getData());
-            for (int64 i = 0; i < shape1[0]; ++i)
-                for (int64 j = 0; j < shape1[1]; ++j)
-                    for (int64 k = 0; k < shape2[0]; ++k)
-                        for (int64 l = 0; l < shape2[1]; ++l)
+            mshape_type r_shape = {shape1[0] * shape2[0], shape1[1] * shape2[1]};
+            Matrix<TargetType> r(r_shape, TargetType(0), m1.getData());
+            for (msize_type i = 0; i < shape1[0]; ++i) {
+                for (msize_type j = 0; j < shape1[1]; ++j) {
+                    for (msize_type k = 0; k < shape2[0]; ++k) {
+                        for (msize_type l = 0; l < shape2[1]; ++l) {
                             r(i * shape2[0] + k, j * shape2[1] + l) = m1(i, j) * m2(k, l);
+                        }
+                    }
+                }
+            }
             return r;
         }
     }
 
     namespace Math {
-        template<RealType RT>
-        auto svd(const Matrix<RT> &A) -> Matrix<float64> {
-            Matrix<float64> fA(A);
-            fA.expandShape(2);
-            if (!fA.is2D())
-                throw_value_error("svdĞèÒª¶şÎ¬¾ØÕó»ò¿ÉÀ©Õ¹Îª¶şÎ¬¾ØÕó");
-            ///FIXME int64ºÍlapack_intÅĞ¶Ï×ª»»
-            lapack_int m = fA.getShape()[0], n = fA.getShape()[1];
-            mshape_type S_shape = {min(m, n)};
-            Matrix<float64> S(S_shape, 0.,A.getData());
-
-            unique_ptr<float64> size(new float64);
-            LAPACKE_dgesvd_work(CblasColMajor, 'N', 'N', m, n, Matrix<float64>(A).getData(), m, S.getData(),
-                                nullptr, 1,
-                                nullptr, 1,
-                                size.get(), -1);
-            lapack_int work_size = (max(3 * min(m, n) + max(m, n), 5 * max(m, n)) + (lapack_int) *size) / 2;
-            unique_ptr<float64[]> work(new float64[work_size]);
-
-            auto info = LAPACKE_dgesvd_work(CblasColMajor, 'N', 'N', m, n,
-                                            fA.getData(), m, S.getData(),
-                                            nullptr, 1, nullptr, 1, work.get(), work_size);
-            if (info != 0) {
-                A.debug();
-                throw_warning("svd works badly error code:" + to_string(info));
+        namespace Internal {
+            auto LAPACK_SVD(double *a, double *s, double *u, double *vt,
+                            char jobu, char jobvt,
+                            lapack_int m, lapack_int n,
+                            lapack_int lda,
+                            lapack_int ldu, lapack_int ldvt,
+                            double *work, lapack_int lwork) -> lapack_int {
+                return LAPACKE_dgesvd_work(CblasColMajor, jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork);
             }
-            return S;
+
+            auto LAPACK_SVD(lapack_complex_float *a, float *s, lapack_complex_float *u, lapack_complex_float *vt,
+                            char jobu, char jobvt,
+                            lapack_int m, lapack_int n,
+                            lapack_int lda,
+                            lapack_int ldu,
+                            lapack_int ldvt, lapack_complex_float *work,
+                            lapack_int lwork, float *rwork) -> lapack_int {
+                return LAPACKE_cgesvd_work(CblasColMajor, jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork,
+                                           rwork);
+            }
+
+            auto LAPACK_SVD(lapack_complex_double *a, double *s, lapack_complex_double *u, lapack_complex_double *vt,
+                            char jobu, char jobvt,
+                            lapack_int m, lapack_int n,
+                            lapack_int lda,
+                            lapack_int ldu,
+                            lapack_int ldvt, lapack_complex_double *work,
+                            lapack_int lwork, double *rwork) -> lapack_int {
+                return LAPACKE_zgesvd_work(CblasColMajor, jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork,
+                                           rwork);
+            }
+
+            template<typename>
+            auto LAPACK_SVD_WORK_SIZE(char jobu, char jobvt,
+                                      lapack_int m, lapack_int n,
+                                      lapack_int lda,
+                                      lapack_int ldu, lapack_int ldvt) -> lapack_int = delete;
+
+            template<>
+            auto LAPACK_SVD_WORK_SIZE<float64>(char jobu, char jobvt,
+                                               lapack_int m, lapack_int n,
+                                               lapack_int lda,
+                                               lapack_int ldu, lapack_int ldvt) -> lapack_int {
+                unique_ptr<float64> size(new float64);
+                LAPACK_SVD(nullptr, nullptr, nullptr, nullptr,
+                           jobu, jobvt, m, n, lda, ldu, ldvt,
+                           size.get(), -1);
+                return static_cast<lapack_int>(std::ceil(*size));
+            }
+
+            template<>
+            auto LAPACK_SVD_WORK_SIZE<complex64>(char jobu, char jobvt,
+                                                 lapack_int m, lapack_int n,
+                                                 lapack_int lda,
+                                                 lapack_int ldu,
+                                                 lapack_int ldvt) -> lapack_int {
+                unique_ptr<complex64> size(new complex64);
+                LAPACK_SVD(nullptr, nullptr, nullptr, nullptr,
+                           jobu, jobvt, m, n, lda, ldu, ldvt,
+                           size.get(), -1, nullptr);
+                return static_cast<lapack_int>(std::ceil(std::real(*size)));
+            }
+
+            template<>
+            auto LAPACK_SVD_WORK_SIZE<complex128>(char jobu, char jobvt,
+                                                  lapack_int m, lapack_int n,
+                                                  lapack_int lda,
+                                                  lapack_int ldu,
+                                                  lapack_int ldvt) -> lapack_int {
+                unique_ptr<complex128> size(new complex128);
+                LAPACK_SVD(nullptr, nullptr, nullptr, nullptr,
+                           jobu, jobvt, m, n, lda, ldu, ldvt,
+                           size.get(), -1, nullptr);
+                return static_cast<lapack_int>(std::ceil(std::real(*size)));
+            }
+
+            template<typename T>
+            void svd_prepare_uv(const Matrix<T> &A, const bool &compute_uv, const bool &full_matrices, int m, int n,
+                                const int &k,
+                                char &jobu, char &jobvt, int &ldu, int &ldvt, Matrix<T> &U, Matrix<T> &V) {
+                // as U V have the same type in every condition, extract to this function
+                if (compute_uv) {
+                    auto U_shape = A.getShape();
+                    auto V_shape = A.getShape();
+                    if (full_matrices) {
+                        U_shape[0] = m;
+                        U_shape[1] = m;
+                        V_shape[0] = n;
+                        V_shape[1] = n;
+                        jobu = 'A';
+                        jobvt = 'A';
+                        ldu = m;
+                        ldvt = n;
+                    } else {
+                        U_shape[0] = m;
+                        U_shape[1] = k;
+                        V_shape[0] = k;
+                        V_shape[1] = n;
+                        jobu = 'S';
+                        jobvt = 'S';
+                        ldu = m;
+                        ldvt = k;
+                    }
+                    U = zeros<T>(U_shape);
+                    V = zeros<T>(V_shape);
+                } else {
+                    jobu = 'N';
+                    jobvt = 'N';
+                    ldu = 1;
+                    ldvt = 1;
+                }
+            }
+
+            auto do_svd(const Matrix<float64> &A, const bool &compute_uv, const bool &full_matrices
+            ) -> vector<Matrix<float64>> {
+                using T = float64;
+
+                auto m = static_cast<lapack_int>(A.getShape()[0]), n = static_cast<lapack_int>(A.getShape()[1]);
+
+                auto &k = min(m, n);
+                mshape_type S_shape = Util::VectorUtil::cut(A.getShape(), 1);
+                S_shape[0] = k;
+                auto S = MatSAR::zeros<T>(S_shape);
+
+                char jobu, jobvt;
+                lapack_int lda = m, ldu, ldvt;
+                Matrix<T> U, V;
+                svd_prepare_uv(A, compute_uv, full_matrices, m, n, k, jobu, jobvt, ldu, ldvt, U, V);
+
+                auto work_size = LAPACK_SVD_WORK_SIZE<float64>(jobu, jobvt, m, n, lda, ldu, ldvt);
+                unique_ptr<float64[]> work(new T[work_size]);
+
+                auto unit_num = A.getUnitNum();
+                auto A_unit_size = A.getUnitSize();
+                auto S_unit_size = k;
+                auto U_unit_size = U.getUnitSize();
+                auto V_unit_size = V.getUnitSize();
+
+                auto A_iter = A.begin();
+                auto S_iter = S.begin();
+                auto U_iter = U.begin();
+                auto V_iter = V.begin();
+
+                for (typeof(unit_num) i = 0; i < unit_num; ++i) {
+                    auto info = LAPACK_SVD(A_iter, S_iter, U_iter, V_iter,
+                                           jobu, jobvt, m, n,
+                                           lda, ldu, ldvt,
+                                           work.get(), work_size);
+                    if (info != 0) {
+                        Matrix<T>({m, n}, A_iter).debug();
+                        throw_warning("svd works badly error code:" + to_string(info));
+                    }
+
+                    A_iter += A_unit_size;
+                    S_iter += S_unit_size;
+                    if (compute_uv) {
+                        U_iter += U_unit_size;
+                        V_iter += V_unit_size;
+                    }
+                }
+
+                if (compute_uv) {
+                    return {U, S, V};
+                } else {
+                    return {S};
+                }
+            }
+
+            template<typename T>
+            auto do_svd(const Matrix<complex<T>> &A, const bool &compute_uv, const bool &full_matrices
+            ) -> vector<Matrix<complex<T>>> {
+                auto m = static_cast<lapack_int>(A.getShape()[0]), n = static_cast<lapack_int>(A.getShape()[1]);
+
+                auto &k = min(m, n);
+                mshape_type S_shape = cut(A.getShape(), 1);
+                S_shape[0] = k;
+                auto S = zeros<T>(S_shape);
+
+                char jobu, jobvt;
+                lapack_int lda = m, ldu, ldvt;
+                Matrix<complex<T>> U, V;
+                svd_prepare_uv(A, compute_uv, full_matrices, m, n, k, jobu, jobvt, ldu, ldvt, U, V);
+
+
+                auto work_size = LAPACK_SVD_WORK_SIZE<complex<T>>(jobu, jobvt, m, n, lda, ldu, ldvt);
+                unique_ptr<complex<T>[]> work(new complex<T>[work_size]);
+                unique_ptr<T[]> rwork(new T[5 * k]);
+
+                auto unit_num = A.getUnitNum();
+                auto A_unit_size = A.getUnitSize();
+                auto S_unit_size = k;
+                auto U_unit_size = U.getUnitSize();
+                auto V_unit_size = V.getUnitSize();
+
+                auto A_iter = A.begin();
+                auto S_iter = S.begin();
+                auto U_iter = U.begin();
+                auto V_iter = V.begin();
+
+                for (typeof(unit_num) i = 0; i < unit_num; ++i) {
+                    auto info = LAPACK_SVD(A_iter, S_iter, U_iter, V_iter,
+                                           jobu, jobvt, m, n,
+                                           lda, ldu, ldvt,
+                                           work.get(), work_size, rwork.get());
+                    if (info != 0) {
+                        Matrix<complex<T>>({m, n}, A_iter).debug();
+                        throw_warning("svd works badly error code:" + to_string(info));
+                    }
+
+                    A_iter += A_unit_size;
+                    S_iter += S_unit_size;
+                    if (compute_uv) {
+                        U_iter += U_unit_size;
+                        V_iter += V_unit_size;
+                    }
+                }
+
+                // S perform T to complex<T>
+                if (compute_uv) {
+                    return {U, S, V};
+                } else {
+                    return {S};
+                }
+            }
         }
 
-        auto svd(const Matrix<complex64> &A) -> Matrix<float32> {
-            Matrix<complex64> cA(A);
-            cA.expandShape(2);
-            if (!cA.is2D())
-                throw_value_error("svdĞèÒª¶şÎ¬¾ØÕó»ò¿ÉÀ©Õ¹Îª¶şÎ¬¾ØÕó");
-            lapack_int m = cA.getShape()[0], n = cA.getShape()[1];
-            mshape_type S_shape = {min(m, n)};
-            Matrix<float32> S(S_shape, 0.,A.getData());
 
-            unique_ptr<complex64> size(new complex64);
-            LAPACKE_cgesvd_work(CblasColMajor, 'N', 'N', m, n, nullptr, m, nullptr,
-                                nullptr, 1,
-                                nullptr, 1,
-                                size.get(), -1, nullptr);
-
-            lapack_int work_size = ((2 * min(m, n) + max(m, n)) + (lapack_int) size->real()) / 2;
-            unique_ptr<complex64[]> lwork(new complex64[work_size]);
-            unique_ptr<float32[]> rwork(new float32[5 * min(m, n)]);
-            LAPACKE_cgesvd_work(CblasColMajor, 'N', 'N', m, n,
-                                cA.getData(), m, S.getData(),
-                                nullptr, 1, nullptr, 1, lwork.get(), work_size, rwork.get());
-            return S;
+        template<typename RT>
+        auto svd(const Matrix<RT> &A, const bool &compute_uv = true, const bool &full_matrices = true
+        ) -> vector<Matrix<float64>> {
+            if (A.getDims() < 2) {
+                throw_value_error(
+                        "svd: svd requires Matrix at least 2 dimensions, but got: " + to_string(A.getDims()));
+            }
+            if (A.getShape()[0] > std::numeric_limits<lapack_int>::max() ||
+                A.getShape()[1] > std::numeric_limits<lapack_int>::max()) {
+                throw_value_error("svd: input Matrix first 2 dimensions exceed the max limit of lapack_int (" +
+                                  getCalculableString<lapack_int>() + ") max limits = " +
+                                  to_string(std::numeric_limits<lapack_int>::max()) +
+                                  " but got input matrix shape = " +
+                                  A.shapeToString());
+            }
+            return Internal::do_svd(Matrix<float64>(A), compute_uv, full_matrices);
         }
 
-        auto svd(const Matrix<complex128> &A) -> Matrix<float64> {
-            Matrix<complex128> cA(A);
-            cA.expandShape(2);
-            if (!cA.is2D())
-                throw_value_error("svdĞèÒª¶şÎ¬¾ØÕó»ò¿ÉÀ©Õ¹Îª¶şÎ¬¾ØÕó");
-            lapack_int m = cA.getShape()[0], n = cA.getShape()[1];
-            mshape_type S_shape = {min(m, n)};
-            Matrix<float64> S(S_shape, 0.,A.getData());
-
-            unique_ptr<complex128> size(new complex128);
-            LAPACKE_zgesvd_work(CblasColMajor, 'N', 'N', m, n, nullptr, m, nullptr,
-                                nullptr, 1,
-                                nullptr, 1,
-                                size.get(), -1, nullptr);
-
-            lapack_int work_size = ((2 * min(m, n) + max(m, n)) + (lapack_int) size->real()) / 2;
-            unique_ptr<complex128[]> lwork(new complex128[work_size]);
-            unique_ptr<float64[]> rwork(new float64[5 * min(m, n)]);
-            LAPACKE_zgesvd_work(CblasColMajor, 'N', 'N', m, n,
-                                cA.getData(), m, S.getData(),
-                                nullptr, 1, nullptr, 1, lwork.get(), work_size, rwork.get());
-            return S;
+        template<typename T>
+        auto svd(const Matrix<complex<T>> &A, const bool &compute_uv = true, const bool &full_matrices = true
+        ) -> vector<Matrix<complex<T>>> {
+            if (A.getDims() < 2) {
+                throw_value_error(
+                        "svd: svd requires Matrix at least 2 dimensions, but got: " + to_string(A.getDims()));
+            }
+            if (A.getShape()[0] > std::numeric_limits<lapack_int>::max() ||
+                A.getShape()[1] > std::numeric_limits<lapack_int>::max()) {
+                throw_value_error("svd: input Matrix first 2 dimensions exceed the max limit of lapack_int (" +
+                                  getCalculableString<lapack_int>() + ") max limits = " +
+                                  to_string(std::numeric_limits<lapack_int>::max()) +
+                                  " but got input matrix shape = " +
+                                  A.shapeToString());
+            }
+            return Internal::do_svd(A, compute_uv, full_matrices);
         }
 
-        template<Calculable dType>
+        template<typename dType>
         auto rank(const Matrix<dType> &m, float64 tol) -> msize_type {
-            Matrix<float64> s = svd(m);
-            return msize_type(sum(s > tol));
+            Matrix<float64> s = MatSAR::Math::svd(m, false, false)[0];
+            return msize_type(MatSAR::Math::sum(s > tol)(0));
         }
 
-        template<Calculable dType>
+        template<typename dType>
         auto rank(const Matrix<dType> &m) -> msize_type {
-            Matrix<float64> s = svd(m);
-            auto tol = m.getLength() * eps(s.max());
-            return msize_type(sum(s > tol));
+            Matrix<float64> s = MatSAR::Math::svd(m, false, false)[0];
+            // TODO: Check the integrity
+            auto tol = m.getLength() * MatSAR::Util::TypeUtil::eps(s.Max());
+            return msize_type(MatSAR::Math::sum(s > tol)(0));
         }
     }
 
-    ///¾ØÕóÅĞ¶Ï
-    namespace Math {
-        template<Calculable dType>
-        auto all(const Matrix<dType> &m) -> bool {
-            if (m.isEmpty())
-                return true;
-            for (const auto &i: m)
-                if (i == 0.)
-                    return false;
-            return true;
-        }
-
-        template<Calculable dType>
-        auto any(const Matrix<dType> &m) -> bool {
-            if (m.isEmpty())
-                return true;
-            for (const auto &i: m)
-                if (i != 0.)
-                    return true;
-            return false;
-        }
-    }
-    ///¾ØÕóÉú³É
     namespace Math {
         /**
-         * Èç¹ûÎª1Î¬±äÎª¶şÎ¬À©Õ¹£¬Èç¹ûÎª¶şÎ¬³éÈ¡¶Ô½Çµ½Ò»Î¬
-         */
-        template<Calculable dType>
-        auto diag(const Matrix<dType> &m) -> Matrix<dType> {
-            if (m.isEmpty())
-                return {};
-            if (m.getDims() > 2)
-                throw_value_error("diagº¯ÊıĞèÒª¾ØÕóÎª2Î¬»ò1Î¬");
-            if (m.isVec()) {
-                auto n = m.getShape()[0];
-                Matrix<dType> r({n, n}, 0.,m.getData());
-                for (msize_type i = 0; i < n; ++i)
-                    r(i, i) = m(i);
-                return r;
-            } else {
-                auto n = std::min(m.getShape()[0], m.getShape()[1]);
-                Matrix<dType> r({n}, 0.,m.getData());
-                for (msize_type i = 0; i < n; ++i)
-                    r(i) = m(i, i);
-                return r;
-            }
-        }
-
-        template<Calculable dType>
-        auto eye(const msize_type &n) -> Matrix<dType> {
-            if (n <= 0)
-                throw_value_error("eye¹¹Ôì¾ØÕóÎ¬¶È³¤¶ÈÖÁÉÙ´óÓÚ0");
-            Matrix<dType> r({n, n}, 0.);
-            for (msize_type i = 0; i < n; ++i)
-                r(i, i) = 1;
-            return r;
-        }
-
-        template<Calculable dType>
-        auto eye(const msize_type &m, const msize_type &n) -> Matrix<dType> {
-            if (m < 0 || n < 0)
-                throw_value_error("¹¹Ôì¾ØÕóÎ¬¶È³¤¶ÈÖÁÉÙ´óÓÚµÈÓÚ0");
-            msize_type min_ = std::min(m, n);
-            Matrix<dType> r({m, n}, 0.);
-            for (msize_type i = 0; i < min_; ++i)
-                r(i, i) = 1;
-            return r;
-        }
-
-        auto ones() -> int_max {
-            return 1;
-        }
-
-        auto ones(const int64 &n) -> Matrix<int_max> {
-            return Matrix<int_max>({n, n}, 1);
-        }
-
-        auto ones(const initializer_list<msize_type> &shape) -> Matrix<int_max> {
-            return Matrix<int_max>(mshape_type(shape), 1);
-        }
-
-        auto ones(const mshape_type &shape) -> Matrix<int_max> {
-            return Matrix<int_max>(shape, 1);
-        }
-
-        template<Calculable TargetType>
-        auto ones() -> TargetType {
-            return 1.;
-        }
-
-        template<Calculable dType>
-        auto ones(const msize_type &n) -> Matrix<dType> {
-            return Matrix<dType>({n, n}, 1);
-        }
-
-        template<Calculable dType>
-        auto ones(const mshape_type &shape) -> Matrix<dType> {
-            return Matrix<dType>(shape, 1);
-        }
-
-        auto zeros() -> int_max {
-            return 0;
-        }
-
-        auto zeros(const msize_type &n) -> Matrix<int_max> {
-            return Matrix<int_max>({n, n}, 0.);
-        }
-
-        auto zeros(const mshape_type &shape) -> Matrix<int_max> {
-            return Matrix<int_max>(shape, 0.);
-        }
-
-        template<Calculable TargetType>
-        auto zeros() -> TargetType {
-            return 0.;
-        }
-
-        template<Calculable dType>
-        auto zeros(const msize_type &n) -> Matrix<dType> {
-            return Matrix<dType>({n, n}, 0.);
-        }
-
-        template<Calculable dType>
-        auto zeros(const mshape_type &shape) -> Matrix<dType> {
-            return Matrix<dType>(shape, 0.);
-        }
-    }
-
-    ///¾ØÕó½á¹¹º¯Êı
-    namespace Math {
-        /**
-         * ·­×ªÔªËØË³Ğò
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<Calculable dType>
-        auto flip(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
-            msize_type dim_idx = dim - 1;
-            if (dim_idx >= m.getDims())
-                return {m};
-            if (dim_idx < 0) {
-                Matrix<dType> r(m.getShape(), 0.,m.getData());
-                auto riter_m = m.getDataEnd() - 1;
-                for (auto &i: r)
-                    i = *riter_m--;
-                return r;
-            }
-            Matrix<dType> r(m);
-            msize_type step_size = Util::VectorUtil::mul(m.getShape(), 0, dim_idx);
-            msize_type step_num = m.getShape()[dim_idx];
-            msize_type unit_size = step_size * step_num;
-            msize_type unit_num = m.getSize() / unit_size;
-            unique_ptr<dType[]> tmp(new dType[step_num]);
-            auto iter = r.getData();
-            for (msize_type n = 0; n < unit_num; ++n) {
-                for (msize_type i = 0; i < step_size; ++i) {
-                    for (msize_type j = 0; j < step_num; ++j)
-                        tmp[j] = *(iter + i + j * step_size);
-                    for (msize_type j = 0; j < step_num; ++j)
-                        *(iter + i + j * step_size) = tmp[step_num - 1 - j];
-                }
-                iter += unit_size;
-            }
-            return r;
-        }
-
-        /**
-         * ×óÓÒÖ¸µÄÊÇ¾­µäĞĞÁĞ±í´ï·½·¨ÖĞµÄÁĞÏòÁ¿»¥ÏàË³Ğò¾µÏñ
-         * ¼´µÚ¶şÎ¬ÖĞµÄÒ»Î¬ÏòÁ¿µ¹ÖÃË³Ğò
-         */
-        template<Calculable dType>
-        auto fliplr(const Matrix<dType> &m) -> Matrix<dType> {
-            if (m.getDims() < 2)
-                return m;
-            Matrix<dType> r(m.getShape(), 0.,m.getData());
-            msize_type vec_size = m.getShape()[0];
-            msize_type vec_num = m.getShape()[1];
-            msize_type unit_size = vec_size * vec_num;
-            msize_type unit_num = m.getSize() / unit_size;
-            auto iter_r = r.getData();
-            auto iter_m = m.getData();
-            for (msize_type i = 0; i < unit_num; ++i) {
-                for (msize_type j = 0; j < vec_num; ++j) {
-                    for (msize_type k = 0; k < vec_size; ++k) {
-                        *(iter_r++) = *(iter_m + vec_size * (vec_num - 1 - j) + k);
-                    }
-                }
-                iter_m += unit_size;
-            }
-            return r;
-        }
-
-        /**
-         * ÉÏÏÂÖ¸µÄÊÇ¾­µäĞĞÁĞ±í´ï·½·¨ÖĞµÄÁĞÏòÁ¿ÄÚ²¿×óÓÒ¾µÏñ
-         * ¼´µÚÒ»Î¬ÏòÁ¿ÄÚ²¿µ¹Ğò\n
-         * µÈÍ¬ÓÚflip(Matrix,1)
-         */
-        template<Calculable dType>
-        auto flipud(const Matrix<dType> &m) -> Matrix<dType> {
-            return flip(m, 1);
-        }
-
-
-        /**
-         * ÄæÊ±ÕëĞı×ªk*90¶È
-         */
-        template<Calculable dType>
-        auto rot90(const Matrix<dType> &m, msize_type k = 1) -> Matrix<dType> {
-            k = k % 4;
-            k = k < 0 ? k + 4 : k;
-            if (k == 0)
-                return {m};
-            else if (k == 1)
-                return flip(m.T(), 1);
-            else if (k == 2)
-                return flip(flip(m).T()).T();
-            else
-                return flip(m).T();
-        }
-
-        /**
-         * @param k Òª°üÀ¨µÄ¶Ô½ÇÏß£¬Ö¸¶¨Îª±êÁ¿¡£k = 0 ÊÇÖ÷¶Ô½ÇÏß£¬k > 0 Î»ÓÚÖ÷¶Ô½ÇÏßÉÏ·½£¬¶ø k < 0 Î»ÓÚÖ÷¶Ô½ÇÏßÏÂ·½¡£
-         */
-        template<Calculable dType>
-        auto tril(const Matrix<dType> &m, msize_type k = 0) -> Matrix<dType> {
-            Matrix<dType> r(m);
-            auto unit_shape = r.getUnitShape();
-            for (msize_type n = 0; n < r.getUnitNum(); ++n) {
-                for (msize_type i = 0; i < unit_shape[0]; ++i) {
-                    for (msize_type j = 0; j < unit_shape[1]; ++j) {
-                        if (j > i + k)
-                            r(n, i, j) = 0;
-                    }
-                }
-            }
-            return r;
-        }
-
-        /**
-         * @param k Òª°üÀ¨µÄ¶Ô½ÇÏß£¬Ö¸¶¨Îª±êÁ¿¡£k = 0 ÊÇÖ÷¶Ô½ÇÏß£¬k > 0 Î»ÓÚÖ÷¶Ô½ÇÏßÉÏ·½£¬¶ø k < 0 Î»ÓÚÖ÷¶Ô½ÇÏßÏÂ·½¡£
-         */
-        template<Calculable dType>
-        auto triu(const Matrix<dType> &m, msize_type k = 0) -> Matrix<dType> {
-            Matrix<dType> r(m);
-            auto unit_shape = r.getUnitShape();
-            for (msize_type n = 0; n < r.getUnitNum(); ++n) {
-                for (msize_type i = 0; i < unit_shape[0]; ++i) {
-                    for (msize_type j = 0; j < unit_shape[1]; ++j) {
-                        if (j < i + k)
-                            r(n, i, j) = 0;
-                    }
-                }
-            }
-            return r;
-        }
-
-        /**
-         * @param dim ÑØ×ÅÄÄ¸öÎ¬¶È½øĞĞÅÅĞò Îª¸º»ò0ÔòÈ«¾ÖÅÅĞò£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         * @param up Ä¬ÈÏÉıĞò false½µĞò
-         */
-        template<Calculable dType>
-        auto sort(const Matrix<dType> &m, msize_type dim = 1, bool up = true) -> Matrix<dType> {
-            msize_type dim_idx = dim - 1;
-            if (dim_idx >= m.getDims())
-                return {m};
-            if (dim_idx < 0)
-                return m.sort(up);
-            Matrix<dType> r(m);
-            msize_type step_size = Util::VectorUtil::mul(m.getShape(), 0, dim_idx);
-            msize_type step_num = m.getShape()[dim_idx];
-            msize_type unit_size = step_size * step_num;
-            msize_type unit_num = m.getSize() / unit_size;
-            unique_ptr<dType[]> tmp(new dType[step_num]);
-            auto iter = r.getData();
-            for (msize_type n = 0; n < unit_num; ++n) {
-                for (msize_type i = 0; i < step_size; ++i) {
-                    for (msize_type j = 0; j < step_num; ++j)
-                        tmp[j] = *(iter + i + j * step_size);
-                    std::sort(tmp.get(), tmp.get() + step_num);
-                    for (msize_type j = 0; j < step_num; ++j)
-                        if (up)
-                            *(iter + i + j * step_size) = tmp[j];
-                        else
-                            *(iter + i + j * step_size) = tmp[step_num - j - 1];
-                }
-                iter += unit_size;
-            }
-            return r;
-        }
-
-    }
-    ///¾ØÕóÊıÑ§ÇóÖµ
-    namespace Math {
-        /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         */
-        template<Calculable dType>
-        auto cumsum(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
-            msize_type dim_idx = dim - 1;
-            if (m.isEmpty())
-                return {};
-            if (dim_idx >= m.getDims())
-                return {m};
-            if (dim_idx < 0) {
-                Matrix<dType> r(m);
-                dType sum = 0.;
-                for (auto &i: r)
-                    i = sum += i;
-                return r;
-            }
-            Matrix<dType> r(m);
-            msize_type step_size = Util::VectorUtil::mul(m.getShape(), 0, dim_idx);
-            msize_type step_num = m.getShape()[dim_idx];
-            msize_type unit_size = step_size * step_num;
-            msize_type unit_num = m.getSize() / unit_size;
-            auto iter = r.getData();
-            for (msize_type n = 0; n < unit_num; ++n) {
-                for (msize_type i = 0; i < step_size; ++i) {
-                    dType sum = 0.;
-                    for (msize_type j = 0; j < step_num; ++j) {
-                        auto &item = *(iter + i + j * step_size);
-                        item = sum += item;
-                    }
-                }
-                iter += unit_size;
-            }
-            return r;
-        }
-
-        /**
-         * geomeanÇón¸öÊıµÄ³Ë»ıÔÙ¿ªn´Î¸ù
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
+         * geomeanæ±‚nä¸ªæ•°çš„ä¹˜ç§¯å†å¼€næ¬¡æ ¹
+         * @param dim ä¸ºè´Ÿæˆ–0æ—¶è¿›è¡Œå…¨å±€æ±‚å€¼ï¼Œåœ¨ç»´åº¦èŒƒå›´å†…è¿”å›æ²¿ç€è¯¥ç»´åº¦çš„æ±‚å€¼ï¼Œè¶…è¿‡ç»´åº¦é•¿åº¦æ—¶èŒƒå›´è¿”å›çŸ©é˜µæœ¬èº«
          */
         template<RealType dType>
         auto geomean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<real_max> {
@@ -634,7 +366,7 @@ namespace MatSAR {
 
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
-            Matrix<real_max> r(r_shape, 1,m.getData());//³Ë»ıĞèÒª³õÊ¼»¯Îª1
+            Matrix<real_max> r(r_shape, 1, m.getData());//ä¹˜ç§¯éœ€è¦åˆå§‹åŒ–ä¸º1
 
             auto iter_r = r.getData();
             auto iter_m = m.getData();
@@ -655,8 +387,8 @@ namespace MatSAR {
         }
 
         /**
-         * µ÷ºÍÆ½¾ùÊı
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
+         * è°ƒå’Œå¹³å‡æ•°
+         * @param dim ä¸ºè´Ÿæˆ–0æ—¶è¿›è¡Œå…¨å±€æ±‚å€¼ï¼Œåœ¨ç»´åº¦èŒƒå›´å†…è¿”å›æ²¿ç€è¯¥ç»´åº¦çš„æ±‚å€¼ï¼Œè¶…è¿‡ç»´åº¦é•¿åº¦æ—¶èŒƒå›´è¿”å›çŸ©é˜µæœ¬èº«
          */
         template<RealType dType>
         auto harmmean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<real_max> {
@@ -679,7 +411,7 @@ namespace MatSAR {
 
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
-            Matrix<real_max> r(r_shape, 1,m.getData());
+            Matrix<real_max> r(r_shape, 1, m.getData());
 
             auto iter_r = r.getData();
             auto iter_m = m.getData();
@@ -702,7 +434,7 @@ namespace MatSAR {
         template<Calculable dType>
         auto trace(const Matrix<dType> &m) -> dType {
             if (!m.isSquare() || m.getDims() > 2)
-                throw_value_error("traceÒªÇó¾ØÕóÎª·½Õó²¢ÇÒÎ¬¶ÈÎª2");
+                throw_value_error("traceè¦æ±‚çŸ©é˜µä¸ºæ–¹é˜µå¹¶ä¸”ç»´åº¦ä¸º2");
             dType r = 0;
             for (msize_type i = 0; i < m.getShape()[0]; ++i)
                 r += m(i, i);
@@ -710,7 +442,7 @@ namespace MatSAR {
         }
     }
 
-    ///LU·Ö½â
+///LUåˆ†è§£
     namespace Math {
         auto LAPACK_LU(lapack_int m, lapack_int n, float64 *data, lapack_int lda, lapack_int *ipiv) -> lapack_int {
             return LAPACKE_dgetrf2(CblasColMajor, m, n, data, lda, ipiv);
@@ -729,7 +461,7 @@ namespace MatSAR {
             Matrix<TargetType> fm(M);
             fm.expandShape(2);
             if (!fm.is2D())
-                throw_value_error("svdĞèÒª¶şÎ¬¾ØÕó»ò¿ÉÀ©Õ¹Îª¶şÎ¬¾ØÕó");
+                throw_value_error("svdéœ€è¦äºŒç»´çŸ©é˜µæˆ–å¯æ‰©å±•ä¸ºäºŒç»´çŸ©é˜µ");
             lapack_int m = fm.getShape()[0], n = fm.getShape()[1];
             lapack_int min_m_n = m > n ? std::max(m, n) : std::min(m, n);
             unique_ptr<lapack_int[]> IPIV(new lapack_int[min_m_n]);
@@ -745,7 +477,7 @@ namespace MatSAR {
                 if (swap_idx != i && swap_idx >= 0 && swap_idx < min_m_n)
                     std::swap(IDX[i], IDX[swap_idx]);
             }
-            Matrix<int64> P({min_m_n, min_m_n}, 0.,M.getData());
+            Matrix<int64> P({min_m_n, min_m_n}, 0., M.getData());
             for (int i = 0; i < min_m_n; ++i)
                 P(IDX[i], i) = 1;//P.T()!!!
 
@@ -780,7 +512,7 @@ namespace MatSAR {
             Matrix<TargetType> fm(M);
             fm.expandShape(2);
             if (!fm.is2D())
-                throw_value_error("svdĞèÒª¶şÎ¬¾ØÕó»ò¿ÉÀ©Õ¹Îª¶şÎ¬¾ØÕó");
+                throw_value_error("svdéœ€è¦äºŒç»´çŸ©é˜µæˆ–å¯æ‰©å±•ä¸ºäºŒç»´çŸ©é˜µ");
             lapack_int m = fm.getShape()[0], n = fm.getShape()[1];
             lapack_int min_m_n = m > n ? std::max(m, n) : std::min(m, n);
             unique_ptr<lapack_int[]> IPIV(new lapack_int[min_m_n]);
@@ -797,7 +529,7 @@ namespace MatSAR {
                 if (swap_idx != i && swap_idx >= 0 && swap_idx < min_m_n)
                     std::swap(IDX[i], IDX[swap_idx]);
             }
-            Matrix<int64> P({min_m_n, min_m_n}, 0.,M.getData());
+            Matrix<int64> P({min_m_n, min_m_n}, 0., M.getData());
             for (int i = 0; i < min_m_n; ++i)
                 P(i, IDX[i]) = 1;//P!!!
 //            cout << fm.toRowColString("fm") << endl;
@@ -849,10 +581,10 @@ namespace MatSAR {
         template<RealType RT>
         auto inv(const Matrix<RT> &m) -> Matrix<real_max> {
             if (!m.isSquare() || m.getDims() != 2)
-                throw_value_error("¾ØÕóÇóÄæĞèÒª¶şÎ¬·½Õó");
+                throw_value_error("çŸ©é˜µæ±‚é€†éœ€è¦äºŒç»´æ–¹é˜µ");
             auto n = m.getShape()[0];
             Matrix<real_max> A(m);
-            Matrix<real_max> X({n, n}, 0.,m.getData());
+            Matrix<real_max> X({n, n}, 0., m.getData());
 
             lapack_int iter;
 
@@ -861,10 +593,10 @@ namespace MatSAR {
             auto info = LAPACKE_dsgesv(CblasColMajor, n, n, A.getData(), n,
                                        IPIV.get(), eye<real_max>(n).getData(), n, X.getData(), n, &iter);
             if (info < 0)
-                throw_value_error("inv²ÎÊı³ö´í"+ to_string(info));
-            if (info > 0){
+                throw_value_error("invå‚æ•°å‡ºé”™" + to_string(info));
+            if (info > 0) {
                 stringstream ss;
-                ss<<"¸Ã¾ØÕóÖÈÎª"<<rank(m)<<"ĞÎ×´Îª"<<n<<"ÎŞÄæ¾ØÕó½â";
+                ss << "è¯¥çŸ©é˜µç§©ä¸º" << rank(m) << "å½¢çŠ¶ä¸º" << n << "æ— é€†çŸ©é˜µè§£";
                 m.debug();
                 throw_warning(ss.str());
             }
@@ -874,10 +606,10 @@ namespace MatSAR {
         template<ComplexType CT>
         auto inv(const Matrix<CT> &m) -> Matrix<complex_max> {
             if (!m.isSquare() || m.getDims() != 2)
-                throw_value_error("¾ØÕóÇóÄæĞèÒª¶şÎ¬·½Õó");
+                throw_value_error("çŸ©é˜µæ±‚é€†éœ€è¦äºŒç»´æ–¹é˜µ");
             auto n = m.getShape()[0];
             Matrix<complex_max> A(m);
-            Matrix<complex_max> X({n, n}, 0.,m.getData());
+            Matrix<complex_max> X({n, n}, 0., m.getData());
 
             lapack_int iter;
 
@@ -886,14 +618,513 @@ namespace MatSAR {
             auto info = LAPACKE_zcgesv(CblasColMajor, n, n, A.getData(), n,
                                        IPIV.get(), eye<complex_max>(n).getData(), n, X.getData(), n, &iter);
             if (info < 0)
-                throw_value_error("inv²ÎÊı³ö´í"+ to_string(info));
-            if (info > 0){
+                throw_value_error("invå‚æ•°å‡ºé”™" + to_string(info));
+            if (info > 0) {
                 stringstream ss;
-                ss<<"¸Ã¾ØÕóÖÈÎª"<<rank(m)<<"ĞÎ×´Îª"<<n<<"ÎŞÄæ¾ØÕó½â";
+                ss << "è¯¥çŸ©é˜µç§©ä¸º" << rank(m) << "å½¢çŠ¶ä¸º" << n << "æ— é€†çŸ©é˜µè§£";
                 m.debug();
                 throw_warning(ss.str());
             }
             return X;
+        }
+    }
+    namespace Math {
+//        /**
+//         * @author wzp
+//         * @function norm èŒƒæ•°
+//         * @param n = 0 ä»£è¡¨æ— ç©·èŒƒæ•°
+//         * @param n = 1 ä»£è¡¨1èŒƒæ•°
+//         * @param n = 2 2èŒƒæ•°
+//         *
+//         */
+//        template<typename dType>
+//        auto norm(Matrix<dType> m, int n = 2) -> dType {
+//            if (!m.is2D())
+//                throw_value_error("ä¸æ˜¯äºŒç»´æ•°ç»„ï¼");
+//            if (n == 2) {
+//                return MatSAR::Math::sqrt(MatSAR::Math::svd(m * m.T())).Max();
+//            } else if (n == 1) {
+//                auto sp = m.getShape();
+//                m = MatSAR::Math::cumsum(MatSAR::Math::abs(m), 2);
+//                dType max_val = 0;
+//                for (int i = 0; i < sp[0]; i++) {
+//                    if (max_val < m(i, sp[1] - 1))
+//                        max_val = m(i, sp[1] - 1);
+//                }
+//                return max_val;
+//            } else if (n == 0) {
+//                m = MatSAR::Math::cumsum(MatSAR::Math::abs(m.T()), 2);
+//                auto sp = m.getShape();
+//                dType max_val = 0;
+//                for (int i = 0; i < sp[0]; i++) {
+//                    if (max_val < m(i, sp[1] - 1))
+//                        max_val = m(i, sp[1] - 1);
+//                }
+//                return max_val;
+//            } else {
+//                throw_value_error("pèŒƒæ•°åªæ”¯æŒ1ï¼Œ2ï¼Œâˆï¼");
+//                return 0;
+//            }
+//        }
+
+        /**
+        * @author wzp
+        * @fuction [V,D, W] = eig(A)
+        * @return è¿”å›ç‰¹å¾å€¼çš„å¯¹è§’çŸ©é˜µ D å’ŒçŸ©é˜µ Vï¼Œå…¶åˆ—æ˜¯å¯¹åº”çš„å³ç‰¹å¾å‘é‡ï¼Œä½¿å¾— A*V = V*Dã€‚
+        * @return è¿˜è¿”å›æ»¡çŸ©é˜µ Wï¼Œå…¶åˆ—æ˜¯å¯¹åº”çš„å·¦ç‰¹å¾å‘é‡ï¼Œä½¿å¾— W'*A = D*W'*Bã€‚
+        */
+        template<typename dType>
+        auto eig(const Matrix<dType> &A) -> vector<Matrix<float64>> {
+            Matrix<float64> fA(A);
+            fA.expandShape(2);
+            if (!fA.is2D())
+                throw_value_error("eigéœ€è¦äºŒç»´çŸ©é˜µæˆ–å¯æ‰©å±•ä¸ºäºŒç»´çŸ©é˜µ");
+            lapack_int m = fA.getShape()[0], n = fA.getShape()[1];
+            mshape_type S_shape = {min(m, n)};
+            Matrix<float64> S(S_shape, 0., A.getData());
+            unique_ptr<float64> size(new float64);
+            unique_ptr<float64[]> wr(new float64[m]);
+            unique_ptr<float64[]> wi(new float64[m]);
+            unique_ptr<float64[]> vl(new float64[m * n]);
+            unique_ptr<float64[]> vr(new float64[m * n]);
+            int lda = (int) m;
+            int ldvl = (int) m;
+            int ldvr = (int) n;
+            auto info = LAPACKE_dgeev(LAPACK_COL_MAJOR, 'V', 'V', m, fA.getData(), lda, wr.get(), wi.get(),
+                                      vl.get(),
+                                      ldvl, vr.get(), ldvr);
+            if (info != 0) {
+                A.debug();
+                throw_warning("eig works badly error code:" + to_string(info));
+            }
+            vector<Matrix<float64>> V_D_W(3);
+            vector<float64> eig_v;
+            for (int i = 0; i < m; i++) {
+                eig_v.push_back(wr.get()[i]);
+            }
+
+            vector<float64> l_eigenvector;
+            vector<float64> r_eigenvector;
+
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < n; j++) {
+                    l_eigenvector.push_back(vl.get()[n * j + i]);
+                    r_eigenvector.push_back(vr.get()[n * j + i]);
+                }
+            }
+
+            Matrix<float64> V(l_eigenvector);
+            Matrix<float64> W(r_eigenvector);
+            V = V.reshape({m, n});
+            W = W.reshape({m, n});
+            V_D_W[0] = V;
+            V_D_W[1] = diag(Matrix<float64>(eig_v));
+            V_D_W[2] = W;
+            return V_D_W;
+        }
+
+        /**
+         * @author wzp
+         * @function condeig ä¸ç‰¹å¾å€¼æœ‰å…³çš„æ¡ä»¶æ•°
+         * @return [V,D,s] = condeig(A)
+         * s = a vector of condition numbers for the eigenvalues of A. These condition numbers are the reciprocals of the cosines of the angles between the left and right eigenvectors.
+         */
+        template<typename dType>
+        auto condeig(const Matrix<dType> &A) -> vector<Matrix<float64>> {
+            vector<Matrix<dType>> V_D_s(3);
+            if (!A.is2D() || !A.isSquare()) {
+                throw_value_error("è¾“å…¥çŸ©é˜µå¿…é¡»ä¸ºæ–¹é˜µï¼");
+                return V_D_s;
+            }
+            auto V_D_W = eig(A);
+            auto V = V_D_W[0];
+            auto D = V_D_W[1];
+            auto W = V_D_W[2];
+            auto shape = D.getShape();
+            vector<dType> s(shape[0]);
+            vector<dType> a(shape[1]);
+            vector<dType> b(shape[1]);
+
+            for (int j = 0; j < shape[1]; j++) {
+                float64 mul = 0;
+                float64 norm_a = 0;
+                float64 norm_b = 0;
+                for (int i = 0; i < shape[0]; i++) {
+                    mul += V(j, i) * W(j, i);
+                    norm_a += std::pow(V(j, i), 2);
+                    norm_b += std::pow(W(j, i), 2);
+                }
+                s[j] = std::sqrt(norm_a) * std::sqrt(norm_b) / mul;
+            }
+            V_D_s[0] = V;
+            V_D_s[1] = D;
+            V_D_s[2] = Matrix<dType>(s);
+            return V_D_s;
+        }
+
+        //pinvå‡½æ•°
+        template<typename dType>
+        auto pinv(const Matrix<dType> &matrix) -> Matrix<dType> {
+            Matrix<float64> transposed = matrix.T();
+            int rows = matrix.getShape()[0];  //è¡Œ
+            int cols = matrix.getShape()[1];  //åˆ—
+            if (rows > cols) {
+                Matrix<float64> product = mmul(transposed, matrix);
+                Matrix<float64> inverse = inv(product);
+                Matrix<float64> res = mmul(inverse, transposed);
+                //res = res.reshape({ n*origRows,n*origCols });
+                return res;
+            } else {
+                Matrix<float64> product = mmul(matrix, transposed);
+                Matrix<float64> inverse = inv(product);
+                Matrix<float64> res = mmul(transposed, inverse);
+                //res = res.reshape({ n*origRows,n*origCols });
+                return res;
+            }
+        }
+
+        template<typename dType>
+        Matrix<dType> schur(const Matrix<dType> &A, const std::string &flag) {
+            Matrix<dType> inputA(A);
+            inputA.expandShape(2);
+
+            if (!inputA.is2D()) {
+                throw_value_error("schur requires a 2D matrix or a matrix that can be expanded to 2D");
+            }
+
+            int m = inputA.getShape()[0];
+            int n = inputA.getShape()[1];
+
+            // Ensure A is a square matrix
+            if (m != n) {
+                throw_value_error("schur requires a square matrix");
+            }
+
+            lapack_int lda = (int) m;
+            lapack_int sdim;
+            unique_ptr<dType[]> wr(new dType[m]);
+            unique_ptr<dType[]> wi(new dType[m]);
+            unique_ptr<dType[]> vs(new dType[m * n]);
+
+            int ldvs = (int) m;
+            char sort = 'N';
+            LAPACK_D_SELECT2 select = nullptr;
+            auto info = LAPACKE_dgees(LAPACK_COL_MAJOR, 'V', sort, select, n, inputA.getData(), lda, &sdim, wr.get(),
+                                      wi.get(), vs.get(), ldvs);
+
+            if (info != 0) {
+                A.debug();
+                throw_warning("schur works badly, error code:" + to_string(info));
+            }
+
+            Matrix<dType> T = inputA;
+
+            if (flag == "complex") {
+                return T;
+            } else if (flag == "real") {
+                // Convert T to real Schur form
+                for (int i = 0; i < n; i++) {
+                    for (int j = 0; j < i; j++) {
+                        T(i, j) = 0;
+                    }
+                }
+            } else {
+                throw_value_error("Invalid flag value. Expected 'complex' or 'real'.");
+            }
+            //Tå°šéœ€è½¬ç½®
+            return T;
+        }
+
+
+        /******schur by wwl******/
+        template<typename dType>
+        vector<Matrix<dType>> schur(const Matrix<dType> &A) {
+            vector<Matrix<dType>> U_T(2); //å­˜å‚¨ç»“æœ
+
+            Matrix<dType> inputA(A);
+            inputA.expandShape(2);
+
+            if (!inputA.is2D()) {
+                throw_value_error("schur requires a 2D matrix or a matrix that can be expanded to 2D");
+            }
+
+            int m = inputA.getShape()[0];
+            int n = inputA.getShape()[1];
+
+            // Ensure A is a square matrix
+            if (m != n) {
+                throw_value_error("schur requires a square matrix");
+            }
+
+            lapack_int lda = (int) m;
+            lapack_int sdim;
+            unique_ptr<dType[]> wr(new dType[m]);
+            unique_ptr<dType[]> wi(new dType[m]);
+            unique_ptr<dType[]> vs(new dType[m * n]);
+
+            int ldvs = (int) m;
+            char sort = 'N';
+            LAPACK_D_SELECT2 select = nullptr;
+            auto info = LAPACKE_dgees(LAPACK_COL_MAJOR, 'V', sort, select, n, inputA.getData(), lda, &sdim, wr.get(),
+                                      wi.get(), vs.get(), ldvs);
+
+            if (info != 0) {
+                A.debug();
+                throw_warning("schur works badly, error code:" + to_string(info));
+            }
+
+            Matrix<dType> T = inputA;
+            vector<dType> temp_U;
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < n; j++) {
+                    temp_U.push_back(vs.get()[(m - 1) * n + i - j * n]);
+                }
+            }
+            Matrix<dType> U(temp_U);
+            U = U.reshape({m, n});
+
+            // T,U å°šéœ€è½¬ç½®
+            U_T[0] = T;
+            U_T[1] = U;
+            return U_T;
+        }
+
+    }
+
+    namespace Math {
+        template<typename dType>
+        auto polyder(const vector<dType> &p) -> vector<dType> {
+            if (p.size() <= 1) return {0};
+            vector<dType> r(p);
+            r.pop_back();
+            auto n = r.size();
+            for (auto &i: r) {
+                if (i != 0.)
+                    i *= n;
+                n--;
+            }
+            return r;
+        }
+
+        /**
+         * @author zzx
+         */
+        template<typename dType>
+        auto polyder(const vector<dType> &a, const vector<dType> &b) -> vector<dType> {
+            vector<dType> merge(a.size() + b.size() - 1, 0.);
+            auto an = a.size() - 1;
+            auto bn = b.size() - 1;
+            for (int i = 0; i < a.size(); ++i) {
+                for (int j = 0; j < b.size(); ++j) {
+                    merge[an - i + bn - j] += a[an - i] * b[bn - j];
+                }
+            }
+            return polyder(merge);
+        }
+
+        /**
+         * @author zzx
+         */
+        template<typename dType>
+        auto polyvalm(const vector<dType> &p, Matrix<dType> &X) -> Matrix<dType> {
+            if (!X.isSquare()) {
+                throw_value_error("polyvalm:NonSquareMatrix");
+            }
+            auto m = X.getShape()[0];
+            Matrix<dType> Y(X.getShape(), 0.);
+            for (int i = 0; i < p.size(); ++i) {
+                Y = mmul(X, Y) + diag(p[i] * ones(mshape_type{m}));
+            }
+            return Y;
+        }
+
+        template<typename dType>
+        auto polyeval(const vector<dType> &coef, dType x) -> dType {
+            if (coef.size() == 0) return 0.;
+            dType r = 0.;
+            dType x_cal = 1;
+            for (int i = 0; i < coef.size(); ++i) {
+                r += x_cal * coef[coef.size() - i - 1];
+                x_cal *= x;
+            }
+            return r;
+        }
+
+        /**
+         * @author zzx
+         */
+        template<typename dType>
+        auto ppval(const vector<dType> &breaks, Matrix<dType> coefs, const vector<dType> &xq) -> vector<dType> {
+            coefs.expandShape(2);
+            auto coefs_shape = coefs.getShape();
+            if (breaks.size() - 1 != coefs_shape[1])
+                throw_value_error("breaks size must match coefs size");
+            if (breaks.size() - 1 == 0)
+                throw_value_error("breaks size must bigger than one");
+            vector<vector<dType>> coefs_v(coefs_shape[1], vector<dType>(coefs_shape[0], 0));
+            for (int64 i = 0; i < coefs_shape[0]; ++i) {
+                for (int64 j = 0; j < coefs_shape[1]; ++j) {
+                    coefs_v[j][i] = coefs(i, j);
+                }
+            }
+
+            vector<dType> r(xq.size(), 0.);
+            const dType left_bound = *breaks.begin();
+            const dType right_bound = *(breaks.end() - 1);
+            for (typename vector<dType>::size_type xi = 0; xi < xq.size(); ++xi) {
+                auto x = xq[xi];
+                if (x <= left_bound) {
+                    r[xi] = polyeval(*coefs_v.begin(), x - *breaks.begin());
+                } else if (x >= right_bound) {
+                    r[xi] = polyeval(*(coefs_v.end() - 1), x - *(breaks.end() - 2));
+                } else {
+                    for (int64 i = 0; i < coefs_v.size(); ++i) {
+                        if (x >= breaks[i] && x <= breaks[i + 1])
+                            r[xi] = polyeval(coefs_v[i], x - breaks[i]);
+                    }
+                }
+            }
+            return r;
+        }
+
+        /**
+         * @author zzx
+         */
+        template<typename dType, typename TargetType=decltype(boost::math::expint(declval<dType>()))>
+        auto Expint(const Matrix<dType> x) -> Matrix<TargetType> {
+            Matrix<TargetType> r(x);
+            for (auto &i: r) {
+                i = boost::math::expint(i);
+            }
+            return r;
+        }
+
+        /**
+         * @author zzx
+         */
+        template<typename dType>
+        auto Expint(const Matrix<complex<dType>> x) -> Matrix<complex<dType>> {
+            Matrix<complex<dType>> r(x);
+            for (auto &i: r) {
+                i = -boost::math::expint(-i.real()) - pi * I(1.);
+            }
+            return r;
+        }
+
+        auto spdiags(const Matrix<double> &A) -> tuple<Matrix<double>, Matrix<double>> {
+            Matrix<double> temp(A);
+            int m = temp.getShape()[1], n = temp.getShape()[0];
+            if (m == 0 || n == 0) {
+                return {};
+            }
+            vector<double> idx;
+            int num = min(m, n);
+            vector<vector<double> > res;
+            int k = -m + 1;
+            //m >=n å¯¹è§’çº¿ä¸‹æ–¹ä»ä¸€å¼€å§‹è®¡ç®—ï¼Œ m<n,å¯¹è§’çº¿ä¸‹æ–¹çš„è¦å…ˆå¡«0
+            if (m >= n) {
+                for (int row = m - 1; row >= 0; row--) {
+                    bool flag = false;
+                    vector<double> temp_v(num, 0.);
+                    for (int i = row, j = 0, index = 0; i < m && j < n; i++, j++) {
+                        if (temp(j, i) != 0.) {
+                            flag = true;
+                        }
+                        temp_v[index++] = temp(j, i);
+                    }
+                    //æœ‰é0ï¼Œæ‰èƒ½åŠ å…¥
+                    if (flag) {
+                        idx.push_back(k);
+                        res.push_back(temp_v);
+                    }
+                    k++;
+                }
+                for (int col = 1; col < n; col++) {
+                    vector<double> temp_v(num, 0.);
+                    bool flag = false;
+                    //k>0 æ˜¯ ä¸ŠåŠçŸ©é˜µ
+                    for (int i = 0, j = col, index = k; i < m && j < n; i++, j++) {
+                        if (temp(j, i) != 0.) {
+                            flag = true;
+                        }
+                        temp_v[index++] = temp(j, i);
+                    }
+                    if (flag) {
+                        res.push_back(temp_v);
+                        idx.push_back(k);
+                    }
+                    k++;
+                }
+            } else {
+                for (int row = m - 1; row >= 0; row--) {
+                    bool flag = false;
+                    vector<double> temp_v(num, 0.);
+                    for (int i = row, j = 0, index = -k; i < m && j < n; i++, j++) {
+                        if (temp(j, i) != 0.) {
+                            flag = true;
+                        }
+                        temp_v[index++] = temp(j, i);
+                    }
+                    //æœ‰é0ï¼Œæ‰èƒ½åŠ å…¥
+                    if (flag) {
+                        idx.push_back(k);
+                        res.push_back(temp_v);
+                    }
+                    k++;
+                }
+                for (int col = 1; col < n; col++) {
+                    vector<double> temp_v(num, 0.);
+                    bool flag = false;
+                    //k>0 æ˜¯ ä¸ŠåŠçŸ©é˜µ
+                    for (int i = 0, j = col, index = 0; i < m && j < n; i++, j++) {
+                        if (temp(j, i) != 0.) {
+                            flag = true;
+                        }
+                        temp_v[index++] = temp(j, i);
+                    }
+                    if (flag) {
+                        res.push_back(temp_v);
+                        idx.push_back(k);
+                    }
+                    k++;
+                }
+            }
+            Matrix<double> res_m(res);
+            return std::make_tuple(res_m.T(), idx);
+        }
+
+        auto spdiags(const Matrix<double> A, const Matrix<double> d) -> Matrix<double> {
+            if (A.getSize() < 1 || d.getSize() < 1) {
+                return {};
+            }
+            Matrix<double> temp(A.T());
+            int m = temp.getShape()[0], n = temp.getShape()[1];
+            int len = min(m, n);
+            vector<vector<double>> res_v;
+            for (auto iter_d = d.begin(); iter_d != d.end(); iter_d++) {
+                int k = (int) (*iter_d);
+                vector<double> temp_v(len, 0.);
+                if (k <= 0 && k > -m) {
+                    for (int i = -k, j = 0, idx = 0; i < m && j < n; i++, j++) {
+                        temp_v[idx++] = temp(i, j);
+                    }
+                } else if (k > 0 && k < n) {
+                    for (int i = 0, j = k, idx = k; i < m && j < n; i++, j++) {
+                        temp_v[idx++] = temp(i, j);
+                    }
+                }
+                res_v.push_back(temp_v);
+            }
+            Matrix<double> res(res_v);
+            return res.T();
+        }
+
+        template<typename T, typename FT>
+        auto funm(const Matrix<T> &A, FT matrix_fun, const string &fun_name) -> Matrix<T> {
+            vector<Matrix<T>> V_D_W = eig(A);
+            auto inter_m = diag(V_D_W[1]);
+            matrix_fun(inter_m, fun_name);
+            return mmul(mmul(inv(V_D_W[0]), diag(inter_m)), (V_D_W[0]));
         }
     }
 }
