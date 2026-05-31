@@ -26,7 +26,8 @@ jobs:
       - name: Install OpenBLAS (vcpkg)
         run: vcpkg install openblas:x64-windows
       - name: Configure
-        run: cmake -B build -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_APPLOCAL_DEPS=ON
+        shell: pwsh
+        run: cmake -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DVCPKG_APPLOCAL_DEPS=ON
       - name: Build
         run: cmake --build build --config Debug
       - name: Test
@@ -48,6 +49,7 @@ jobs:
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-ninja
             mingw-w64-x86_64-openblas
+            mingw-w64-x86_64-gcc-fortran
             mingw-w64-x86_64-pkgconf
       - name: Configure
         run: cmake -G Ninja -B build
