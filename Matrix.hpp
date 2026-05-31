@@ -35,8 +35,6 @@
 using msize_type = MATRIX_SIZE_TYPE;
 using mshape_type = std::vector<msize_type>;
 
-#define OPENBLAS_USE64BITINT
-
 #include "include/cblas.h"
 
 #include <complex>
@@ -267,12 +265,20 @@ namespace MatSAR {
                 *left++ -= tmp;
         }
 
+        /// Narrowing guard: BLAS dimensions must fit the library's native blasint.
+        static blasint to_blasint(size_type v) {
+            if (v < 0 || v > static_cast<size_type>(std::numeric_limits<blasint>::max()))
+                throw_value_error("matrix dimension exceeds BLAS index range");
+            return static_cast<blasint>(v);
+        }
+
         ///NO CHECK!
         static void MMul(float32 *left, float32 *right, float32 *dst, size_type m, size_type n, size_type k,
                          size_type unit_times) {
+            const blasint bm = to_blasint(m), bn = to_blasint(n), bk = to_blasint(k);
             while (unit_times-- > 0) {
                 cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                            m, n, k, 1, left, m, right, k, 0, dst, m);
+                            bm, bn, bk, 1, left, bm, right, bk, 0, dst, bm);
                 left += m * k;
                 right += k * n;
                 dst += m * n;
@@ -282,9 +288,10 @@ namespace MatSAR {
         ///NO CHECK!
         static void MMul(float64 *left, float64 *right, float64 *dst, size_type m, size_type n, size_type k,
                          size_type unit_times) {
+            const blasint bm = to_blasint(m), bn = to_blasint(n), bk = to_blasint(k);
             while (unit_times-- > 0) {
                 cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                            m, n, k, 1., left, m, right, k, 0, dst, m);
+                            bm, bn, bk, 1., left, bm, right, bk, 0, dst, bm);
                 left += m * k;
                 right += k * n;
                 dst += m * n;
@@ -296,9 +303,10 @@ namespace MatSAR {
                          size_type unit_times) {
             complex64 one(1);
             complex64 zero;
+            const blasint bm = to_blasint(m), bn = to_blasint(n), bk = to_blasint(k);
             while (unit_times-- > 0) {
                 cblas_cgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                            m, n, k, &one, left, m, right, k, &zero, dst, m);
+                            bm, bn, bk, &one, left, bm, right, bk, &zero, dst, bm);
                 left += m * k;
                 right += k * n;
                 dst += m * n;
@@ -310,9 +318,10 @@ namespace MatSAR {
                          size_type unit_times) {
             complex128 one(1);
             complex128 zero;
+            const blasint bm = to_blasint(m), bn = to_blasint(n), bk = to_blasint(k);
             while (unit_times-- > 0) {
                 cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                            m, n, k, &one, left, m, right, k, &zero, dst, m);
+                            bm, bn, bk, &one, left, bm, right, bk, &zero, dst, bm);
                 left += m * k;
                 right += k * n;
                 dst += m * n;
