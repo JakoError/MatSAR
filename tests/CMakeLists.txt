@@ -1,6 +1,7 @@
 # Each *.cpp here becomes one CTest test. doctest.h is in this dir.
 set(MATSAR_TESTS
         test_smoke
+        test_core
 )
 
 foreach(t IN LISTS MATSAR_TESTS)

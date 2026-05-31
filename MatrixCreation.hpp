@@ -154,7 +154,7 @@ namespace MatSAR {
         auto r = zeros<RT>({r_size});
         RT value = start;
         auto iter_r = r.begin();
-        for (typeof(r_size) i = 0; i < r_size; ++i) {
+        for (decltype(r_size) i = 0; i < r_size; ++i) {
             *iter_r = value;
             value += step;
             iter_r++;
