@@ -1,4 +1,3 @@
-/build/
-/build-noblas/
+/build*/
 /cmake-build-*/
 /.idea/

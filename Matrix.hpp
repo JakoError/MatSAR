@@ -1552,8 +1552,10 @@ namespace MatSAR {
 
         virtual auto operator-() const -> Matrix<dType> {
             Matrix<dType> m(*this);
-            for (auto &i: m)
-                i = -i;
+            // Negating a bool is identity; skip it (also avoids MSVC C4804 on Matrix<bool>).
+            if constexpr (!std::is_same<dType, bool>::value)
+                for (auto &i: m)
+                    i = -i;
             return m;
         }
 
