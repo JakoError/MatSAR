@@ -35,11 +35,11 @@
 using msize_type = MATRIX_SIZE_TYPE;
 using mshape_type = std::vector<msize_type>;
 
-#define OPENBLAS_USE64BITINT
+#include <complex>
+
+#ifdef MATSAR_WITH_BLAS
 
 #include "include/cblas.h"
-
-#include <complex>
 
 #define LAPACK_COMPLEX_CUSTOM
 #define lapack_complex_float std::complex<float>
@@ -53,6 +53,8 @@ using mshape_type = std::vector<msize_type>;
 #include "include/lapacke.h"
 
 #endif
+
+#endif // MATSAR_WITH_BLAS
 
 #define LIST_CONSTRUCTOR_MAKER(LIST_n) \
 Matrix(LIST_n list) {\
@@ -106,7 +108,7 @@ using namespace MatSAR::Util::Exception;
 
 namespace MatSAR {
     template<typename dType>
-    void swap(dType &left, dType &right) {
+    void swap(dType &left, dType &right) noexcept {
         auto tmp = left;
         left = right;
         right = tmp;
@@ -138,14 +140,14 @@ namespace MatSAR {
             return new_shape;
         }
 
-        static auto newAxis(const mshape_type &shape, size_type dim) -> mshape_type {
+        static auto newAxis(const mshape_type &shape, const size_type dim) -> mshape_type {
             checkShape(shape);
             if (shape.empty())
                 return {};
             if (shape.size() > dim)
                 return shape;
             mshape_type new_shape(shape);
-            MatSAR::Util::VectorUtil::alignNum(new_shape, dim, (size_type) 1);
+            alignNum(new_shape, dim, static_cast<size_type>(1));
             return new_shape;
         }
 
@@ -169,7 +171,7 @@ namespace MatSAR {
             msize_type idx = 0;
             for (msize_type i = 0; i < shape.size(); ++i)
                 if (shape[shape.size() - i - 1] != 1) {
-                    idx = (msize_type) shape.size() - i - 1;
+                    idx = static_cast<msize_type>(shape.size()) - i - 1;
                     break;
                 }
             for (msize_type i = 0; i <= idx; ++i)
@@ -179,13 +181,13 @@ namespace MatSAR {
             return squeezed_shape;
         }
 
-        static auto broadcastShape(mshape_type shape1, mshape_type shape2, msize_type dim = 1) -> mshape_type {
+        static auto broadcastShape(mshape_type shape1, mshape_type shape2, const msize_type dim = 1) -> mshape_type {
             checkShape(shape1);
             checkShape(shape2);
-            auto dim_idx = dim - 1;
-            msize_type shape_dim = (msize_type) max(shape1.size(), shape2.size());
-            alignNum(shape1, shape_dim, (msize_type) 1);
-            alignNum(shape2, shape_dim, (msize_type) 1);
+            const auto dim_idx = dim - 1;
+            const msize_type shape_dim = static_cast<msize_type>(max(shape1.size(), shape2.size()));
+            alignNum(shape1, shape_dim, static_cast<msize_type>(1));
+            alignNum(shape2, shape_dim, static_cast<msize_type>(1));
             mshape_type shape(shape_dim);
             for (msize_type i = dim_idx; i < shape1.size(); ++i)
                 if (shape1[i] == shape2[i] || shape2[i] == 1)
@@ -267,12 +269,21 @@ namespace MatSAR {
                 *left++ -= tmp;
         }
 
+#ifdef MATSAR_WITH_BLAS
+        /// Narrowing guard: BLAS dimensions must fit the library's native blasint.
+        static blasint to_blasint(size_type v) {
+            if (v < 0 || v > static_cast<size_type>(std::numeric_limits<blasint>::max()))
+                throw_value_error("matrix dimension exceeds BLAS index range");
+            return static_cast<blasint>(v);
+        }
+
         ///NO CHECK!
         static void MMul(float32 *left, float32 *right, float32 *dst, size_type m, size_type n, size_type k,
                          size_type unit_times) {
+            const blasint bm = to_blasint(m), bn = to_blasint(n), bk = to_blasint(k);
             while (unit_times-- > 0) {
                 cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                            m, n, k, 1, left, m, right, k, 0, dst, m);
+                            bm, bn, bk, 1, left, bm, right, bk, 0, dst, bm);
                 left += m * k;
                 right += k * n;
                 dst += m * n;
@@ -282,9 +293,10 @@ namespace MatSAR {
         ///NO CHECK!
         static void MMul(float64 *left, float64 *right, float64 *dst, size_type m, size_type n, size_type k,
                          size_type unit_times) {
+            const blasint bm = to_blasint(m), bn = to_blasint(n), bk = to_blasint(k);
             while (unit_times-- > 0) {
                 cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                            m, n, k, 1., left, m, right, k, 0, dst, m);
+                            bm, bn, bk, 1., left, bm, right, bk, 0, dst, bm);
                 left += m * k;
                 right += k * n;
                 dst += m * n;
@@ -296,9 +308,10 @@ namespace MatSAR {
                          size_type unit_times) {
             complex64 one(1);
             complex64 zero;
+            const blasint bm = to_blasint(m), bn = to_blasint(n), bk = to_blasint(k);
             while (unit_times-- > 0) {
                 cblas_cgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                            m, n, k, &one, left, m, right, k, &zero, dst, m);
+                            bm, bn, bk, &one, left, bm, right, bk, &zero, dst, bm);
                 left += m * k;
                 right += k * n;
                 dst += m * n;
@@ -310,14 +323,17 @@ namespace MatSAR {
                          size_type unit_times) {
             complex128 one(1);
             complex128 zero;
+            const blasint bm = to_blasint(m), bn = to_blasint(n), bk = to_blasint(k);
             while (unit_times-- > 0) {
                 cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans,
-                            m, n, k, &one, left, m, right, k, &zero, dst, m);
+                            bm, bn, bk, &one, left, bm, right, bk, &zero, dst, bm);
                 left += m * k;
                 right += k * n;
                 dst += m * n;
             }
         }
+
+#endif // MATSAR_WITH_BLAS
 
         ///NO CHECK!
         template<typename leftT, typename rightT>
@@ -962,8 +978,9 @@ namespace MatSAR {
         [[nodiscard]] auto conj() const -> Matrix<TargetType> {
             Matrix<TargetType> r(shape, TargetType());
             auto iter_c = getData();
-            for (auto *iter = r.getData(), *end = r.getDataEnd(); iter != end; ++iter, ++iter_c)
+            for (auto *iter = r.getData(), *end = r.getDataEnd(); iter != end; ++iter, ++iter_c) {
                 *iter = MatSAR::conj(*iter_c);
+            }
             return r;
         }
 
@@ -1490,9 +1507,9 @@ namespace MatSAR {
             size_type dim = 0;
             shape_type r_shape;
             for (auto &v: svec) {
-                if (v.size() == 1 && std::abs(v[0]) == shape[dim])
+                if (v.size() == 1 && std::abs(v[0]) == shape[dim]) {
                     v = Util::VectorUtil::Range(shape[dim]);
-                else
+                } else {
                     for (auto &i: v) {
                         if (i < -shape[dim] || i >= shape[dim]) {
                             stringstream ss;
@@ -1502,17 +1519,19 @@ namespace MatSAR {
                             throw_out_of_range_error(ss.str());
                         }
                     }
+                }
                 r_shape.push_back((size_type) v.size());
                 dim++;
             }
-            Matrix<dType> r(r_shape, 0.);
+            Matrix<dType> r(r_shape, dType(0), this->getData());
             shape_type tracker(dim, 0);
             shape_type selector(dim, 0);
             auto iter_r = r.data, end_r = r.getDataEnd();
             size_type fresh = dim - 1;
             while (iter_r != end_r) {
-                for (size_type i = 0; i <= fresh; ++i)
+                for (size_type i = 0; i <= fresh; ++i) {
                     selector[i] = svec[i][tracker[i]];
+                }
                 *iter_r = (*this)(selector);
                 iter_r++;
                 for (size_type i = 0; i < dim; ++i) {
@@ -1533,8 +1552,10 @@ namespace MatSAR {
 
         virtual auto operator-() const -> Matrix<dType> {
             Matrix<dType> m(*this);
-            for (auto &i: m)
-                i = -i;
+            // Negating a bool is identity; skip it (also avoids MSVC C4804 on Matrix<bool>).
+            if constexpr (!std::is_same<dType, bool>::value)
+                for (auto &i: m)
+                    i = -i;
             return m;
         }
 
@@ -1921,7 +1942,7 @@ namespace MatSAR {
                 auto b_right = right;
                 broadcast(b_left, b_right);
                 Matrix<bool> r(b_left.shape, false);
-                Base::Less(b_left.getData(), b_right.getData(), b_left.getData(), r.getData());
+                Base::Less(b_left.getData(), b_right.getData(), b_left.size, r.getData());
                 return r;
             } else {
                 Matrix<bool> r(shape, false);
@@ -2299,7 +2320,7 @@ namespace MatSAR {
                 for (size_type i = 0; i < unit_shape[0]; ++i) {
                     for (size_type j = 0; j < unit_shape[1]; ++j) {
                         auto p = getEle(i, j);
-                        ss << dataToString(p) << ' ';
+                        ss << dataToString(p, dataSpace) << ' ';
                     }
                     ss << "\n";
                 }
@@ -2318,7 +2339,7 @@ namespace MatSAR {
                     for (size_type i = 0; i < unit_shape[0]; ++i) {
                         for (size_type j = 0; j < unit_shape[1]; ++j) {
                             auto p = getEle(n, i, j);
-                            ss << dataToString(p) << ' ';
+                            ss << dataToString(p, dataSpace) << ' ';
                         }
                         ss << "\n";
                     }
@@ -2397,7 +2418,7 @@ namespace MatSAR {
     template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() * std::declval<rT>())>
     auto mul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
-        MatrixBase::Mul(tmp.getData(), right.getData(), tmp.getSize());
+        tmp *= right;   // element-wise with broadcasting (consistent with operator*)
         return tmp;
     }
 
@@ -2420,11 +2441,12 @@ namespace MatSAR {
     template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
                                                                     (std::declval<rT>() + 0.))>
     auto operator*(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
-        Matrix<TargetType> tmp(right);
-        tmp *= TargetType{left + 0.};
+        Matrix<TargetType> tmp(left);
+        tmp *= right;   // element-wise with broadcasting; matrix product is mmul()/operator%
         return tmp;
     }
 
+#ifdef MATSAR_WITH_BLAS
     /**
      * Matrix Multiplication
      */
@@ -2447,6 +2469,7 @@ namespace MatSAR {
     auto operator%(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         return mmul<lT, rT, TargetType>(left, right);
     }
+#endif // MATSAR_WITH_BLAS
 
     /**
      * Vector Dot Product

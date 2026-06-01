@@ -15,6 +15,7 @@
 #include <bitset>
 #include <numeric>
 #include <list>
+#include <cstring>
 
 //using namespace MatSAR;
 //using namespace std;

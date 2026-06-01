@@ -5,9 +5,9 @@
 #ifndef MATSAR_PROBABILITY_HPP
 #define MATSAR_PROBABILITY_HPP
 
-#ifndef _USE_MATH_DEFINES
-#define _USE_MATH_DEFINES
-#endif //_USE_MATH_DEFINES
+//#ifndef _USE_MATH_DEFINES
+//#define _USE_MATH_DEFINES
+//#endif //_USE_MATH_DEFINES
 
 #ifndef MATSAR_MATRIX_HPP
 
@@ -31,13 +31,13 @@
 #include <algorithm>
 
 namespace MatSAR {
-///¾ØÕó¸ÅÂÊ¼ÆËãº¯Êı
+///çŸ©é˜µæ¦‚ç‡è®¡ç®—å‡½æ•°
     namespace Math {
         /**
-         * ·µ»Ø¾ØÕó¶ÔÓ¦Î¬¶È×î´óÖµ
-         * @param m Ö§³ÖËùÓĞCalculable¾ØÕó
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         * @return ¾ØÕó¶ÔÓ¦Î¬¶È×î´óÖµ
+         * è¿”å›çŸ©é˜µå¯¹åº”ç»´åº¦æœ€å¤§å€¼
+         * @param m æ”¯æŒæ‰€æœ‰CalculableçŸ©é˜µ
+         * @param dim ä¸ºè´Ÿæˆ–0æ—¶è¿›è¡Œå…¨å±€æ±‚å€¼ï¼Œåœ¨ç»´åº¦èŒƒå›´å†…è¿”å›æ²¿ç€è¯¥ç»´åº¦çš„æ±‚å€¼ï¼Œè¶…è¿‡ç»´åº¦é•¿åº¦æ—¶èŒƒå›´è¿”å›çŸ©é˜µæœ¬èº«
+         * @return çŸ©é˜µå¯¹åº”ç»´åº¦æœ€å¤§å€¼
          */
         template<Calculable dType>
         auto max(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
@@ -73,10 +73,10 @@ namespace MatSAR {
         }
 
         /**
-         * ·µ»Ø¾ØÕó¶ÔÓ¦Î¬¶È×îĞ¡Öµ
-         * @param m Ö§³ÖËùÓĞCalculable¾ØÕó
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         * @return ¾ØÕó¶ÔÓ¦Î¬¶È×îĞ¡Öµ
+         * è¿”å›çŸ©é˜µå¯¹åº”ç»´åº¦æœ€å°å€¼
+         * @param m æ”¯æŒæ‰€æœ‰CalculableçŸ©é˜µ
+         * @param dim ä¸ºè´Ÿæˆ–0æ—¶è¿›è¡Œå…¨å±€æ±‚å€¼ï¼Œåœ¨ç»´åº¦èŒƒå›´å†…è¿”å›æ²¿ç€è¯¥ç»´åº¦çš„æ±‚å€¼ï¼Œè¶…è¿‡ç»´åº¦é•¿åº¦æ—¶èŒƒå›´è¿”å›çŸ©é˜µæœ¬èº«
+         * @return çŸ©é˜µå¯¹åº”ç»´åº¦æœ€å°å€¼
          */
         template<Calculable dType>
         auto min(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
@@ -112,7 +112,7 @@ namespace MatSAR {
         }
 
         /**
-         * @related rangeº¯ÊıµÈ¼ÛÓÚµ÷ÓÃminºÍmaxº¯Êı
+         * @related rangeå‡½æ•°ç­‰ä»·äºè°ƒç”¨minå’Œmaxå‡½æ•°
          */
         template<Calculable dType>
         auto range(const Matrix<dType> &m, msize_type dim = 1) -> tuple<Matrix<dType>, Matrix<dType>> {
@@ -120,10 +120,10 @@ namespace MatSAR {
         }
 
         /**
-         * ·µ»Ø¾ØÕó¶ÔÓ¦Î¬¶ÈÖĞÎ»Êı
-         * @param m Ö§³ÖËùÓĞCalculable¾ØÕó
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
-         * @return ¾ØÕó¶ÔÓ¦Î¬¶ÈÖĞÎ»Êı
+         * è¿”å›çŸ©é˜µå¯¹åº”ç»´åº¦ä¸­ä½æ•°
+         * @param m æ”¯æŒæ‰€æœ‰CalculableçŸ©é˜µ
+         * @param dim ä¸ºè´Ÿæˆ–0æ—¶è¿›è¡Œå…¨å±€æ±‚å€¼ï¼Œåœ¨ç»´åº¦èŒƒå›´å†…è¿”å›æ²¿ç€è¯¥ç»´åº¦çš„æ±‚å€¼ï¼Œè¶…è¿‡ç»´åº¦é•¿åº¦æ—¶èŒƒå›´è¿”å›çŸ©é˜µæœ¬èº«
+         * @return çŸ©é˜µå¯¹åº”ç»´åº¦ä¸­ä½æ•°
          */
         template<Calculable TargetType, Calculable dType>
         auto median(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<TargetType> {
@@ -190,8 +190,8 @@ namespace MatSAR {
         }
 
         /**
-         * meanÇón¸öÊıµÄÆ½¾ùÖµ
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
+         * meanæ±‚nä¸ªæ•°çš„å¹³å‡å€¼
+         * @param dim ä¸ºè´Ÿæˆ–0æ—¶è¿›è¡Œå…¨å±€æ±‚å€¼ï¼Œåœ¨ç»´åº¦èŒƒå›´å†…è¿”å›æ²¿ç€è¯¥ç»´åº¦çš„æ±‚å€¼ï¼Œè¶…è¿‡ç»´åº¦é•¿åº¦æ—¶èŒƒå›´è¿”å›çŸ©é˜µæœ¬èº«
          */
         template<Calculable TargetType, Calculable dType>
         auto mean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<TargetType> {
@@ -215,7 +215,7 @@ namespace MatSAR {
     }
     namespace Math {
         /**
-         * @param dim Îª¸º»ò0Ê±½øĞĞÈ«¾ÖÇóÖµ£¬ÔÚÎ¬¶È·¶Î§ÄÚ·µ»ØÑØ×Å¸ÃÎ¬¶ÈµÄÇóÖµ£¬³¬¹ıÎ¬¶È³¤¶ÈÊ±·¶Î§·µ»Ø¾ØÕó±¾Éí
+         * @param dim ä¸ºè´Ÿæˆ–0æ—¶è¿›è¡Œå…¨å±€æ±‚å€¼ï¼Œåœ¨ç»´åº¦èŒƒå›´å†…è¿”å›æ²¿ç€è¯¥ç»´åº¦çš„æ±‚å€¼ï¼Œè¶…è¿‡ç»´åº¦é•¿åº¦æ—¶èŒƒå›´è¿”å›çŸ©é˜µæœ¬èº«
          */
         template<Calculable TargetType, Calculable dType>
         auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1) -> Matrix<TargetType> {
@@ -237,16 +237,16 @@ namespace MatSAR {
             return var<complex_max, CT>(m, w, dim);
         }
     }
-    ///·Ö²¼º¯Êı
+    ///åˆ†å¸ƒå‡½æ•°
     namespace Math {
-        static const float_max PI = static_cast<float_max>(3.14159265358979323846);
+//        static const float_max PI = static_cast<float_max>(3.14159265358979323846);
 
         /**
-         * ½«¾ØÕóÄÚµÄËùÓĞÔªËØ¾­¹ıÕıÌ¬·Ö²¼Ó³Éä
-         * @param m ÒªÇóÎªÊµÊı¾ØÕó
-         * @param mu ÕıÌ¬·Ö²¼µÄ¾ùÖµ
-         * @param sigma ÕıÌ¬·Ö²¼µÄ·½²î
-         * @return ¸¡µã¾ØÕó£º¾ØÕóÔªËØÕıÌ¬·Ö²¼Ó³Éä
+         * å°†çŸ©é˜µå†…çš„æ‰€æœ‰å…ƒç´ ç»è¿‡æ­£æ€åˆ†å¸ƒæ˜ å°„
+         * @param m è¦æ±‚ä¸ºå®æ•°çŸ©é˜µ
+         * @param mu æ­£æ€åˆ†å¸ƒçš„å‡å€¼
+         * @param sigma æ­£æ€åˆ†å¸ƒçš„æ–¹å·®
+         * @return æµ®ç‚¹çŸ©é˜µï¼šçŸ©é˜µå…ƒç´ æ­£æ€åˆ†å¸ƒæ˜ å°„
          */
         template<RealType RT>
         auto normpdf(const Matrix<RT> &m, float_max mu = 0., float_max sigma = 1.) -> Matrix<real_max> {
@@ -260,11 +260,11 @@ namespace MatSAR {
         }
 
         /**
-         * ½«¾ØÕóÄÚµÄËùÓĞÔªËØ¾­¹ıÕıÌ¬·Ö²¼Ó³Éä
-         * @param m ÒªÇó¾ØÕóÎªÊµÊı¾ØÕó
-         * @param mu¾ØÕó ÕıÌ¬·Ö²¼µÄ¾ùÖµ£¬»á¶Ômu¾ØÕó½øĞĞbroadcast²Ù×÷
-         * @param sigma¾ØÕó ÕıÌ¬·Ö²¼µÄ·½²î£¬»á¶Ôsigma¾ØÕó½øĞĞbroadcast²Ù×÷
-         * @return ¸¡µã¾ØÕó£º¾ØÕóÔªËØÕıÌ¬·Ö²¼Ó³Éä
+         * å°†çŸ©é˜µå†…çš„æ‰€æœ‰å…ƒç´ ç»è¿‡æ­£æ€åˆ†å¸ƒæ˜ å°„
+         * @param m è¦æ±‚çŸ©é˜µä¸ºå®æ•°çŸ©é˜µ
+         * @param muçŸ©é˜µ æ­£æ€åˆ†å¸ƒçš„å‡å€¼ï¼Œä¼šå¯¹muçŸ©é˜µè¿›è¡Œbroadcastæ“ä½œ
+         * @param sigmaçŸ©é˜µ æ­£æ€åˆ†å¸ƒçš„æ–¹å·®ï¼Œä¼šå¯¹sigmaçŸ©é˜µè¿›è¡Œbroadcastæ“ä½œ
+         * @return æµ®ç‚¹çŸ©é˜µï¼šçŸ©é˜µå…ƒç´ æ­£æ€åˆ†å¸ƒæ˜ å°„
          */
         template<RealType RT>
         auto normpdf(const Matrix<RT> &m, Matrix<float_max> mu, Matrix<float_max> sigma) -> Matrix<real_max> {
@@ -281,11 +281,11 @@ namespace MatSAR {
         }
 
         /**
-         * Éú³ÉÕıÌ¬·Ö²¼µÄËæ»ú¾ØÕó
-         * @param mu ÕıÌ¬·Ö²¼µÄ¾ùÖµ
-         * @param sigma ÕıÌ¬·Ö²¼µÄ·½²î
-         * @param shape Ä¿±ê¾ØÕóµÄshape
-         * @return ¸¡µã¾ØÕó£ºÕıÌ¬·Ö²¼µÄËæ»ú¾ØÕó
+         * ç”Ÿæˆæ­£æ€åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
+         * @param mu æ­£æ€åˆ†å¸ƒçš„å‡å€¼
+         * @param sigma æ­£æ€åˆ†å¸ƒçš„æ–¹å·®
+         * @param shape ç›®æ ‡çŸ©é˜µçš„shape
+         * @return æµ®ç‚¹çŸ©é˜µï¼šæ­£æ€åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
          */
         auto normrnd(float_max mu = 0., float_max sigma = 1., const mshape_type &shape = {1}) -> Matrix<real_max> {
             Matrix<real_max> r(shape, 0.);
@@ -298,16 +298,16 @@ namespace MatSAR {
         }
 
         /**
-         * Éú³ÉÕıÌ¬·Ö²¼µÄËæ»ú¾ØÕó
-         * @param mu¾ØÕó ÕıÌ¬·Ö²¼µÄ¾ùÖµ£¬»á¶Ômu¾ØÕó½øĞĞbroadcast²Ù×÷
-         * @param sigma¾ØÕó ÕıÌ¬·Ö²¼µÄ·½²î£¬»á¶Ôsigma¾ØÕó½øĞĞbroadcast²Ù×÷
-         * @param shape Ä¿±ê¾ØÕóµÄshape
-         * @return ¸¡µã¾ØÕó£ºÕıÌ¬·Ö²¼µÄËæ»ú¾ØÕó
+         * ç”Ÿæˆæ­£æ€åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
+         * @param muçŸ©é˜µ æ­£æ€åˆ†å¸ƒçš„å‡å€¼ï¼Œä¼šå¯¹muçŸ©é˜µè¿›è¡Œbroadcastæ“ä½œ
+         * @param sigmaçŸ©é˜µ æ­£æ€åˆ†å¸ƒçš„æ–¹å·®ï¼Œä¼šå¯¹sigmaçŸ©é˜µè¿›è¡Œbroadcastæ“ä½œ
+         * @param shape ç›®æ ‡çŸ©é˜µçš„shape
+         * @return æµ®ç‚¹çŸ©é˜µï¼šæ­£æ€åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
          */
         auto normrnd(const Matrix<float_max> &mu, const Matrix<float_max> &sigma,
                      const mshape_type &shape = {1}) -> Matrix<real_max> {
             if (mu.getShape() != shape || sigma.getShape() != shape)
-                throw_shape_exception("mu¾ØÕó»òsigma¾ØÕó´óĞ¡ÓëÖ¸¶¨shape²»Í¬");
+                throw_shape_exception("muçŸ©é˜µæˆ–sigmaçŸ©é˜µå¤§å°ä¸æŒ‡å®šshapeä¸åŒ");
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -320,8 +320,8 @@ namespace MatSAR {
         }
 
         /**
-         * ÕıÌ¬·Ö²¼µÄ¾ùÖµºÍ·½²î
-         * @return ¸¡µã¾ØÕótuple {mu,sigma*sigma}
+         * æ­£æ€åˆ†å¸ƒçš„å‡å€¼å’Œæ–¹å·®
+         * @return æµ®ç‚¹çŸ©é˜µtuple {mu,sigma*sigma}
          */
         template<RealType RT1, RealType RT2>
         auto normstat(RT1 mu, RT2 sigma) -> tuple<real_max, real_max> {
@@ -329,8 +329,8 @@ namespace MatSAR {
         }
 
         /**
-         * ÕıÌ¬·Ö²¼µÄ¾ùÖµºÍ·½²î
-         * @return ¸¡µã¾ØÕótuple {mu,sigma*sigma}
+         * æ­£æ€åˆ†å¸ƒçš„å‡å€¼å’Œæ–¹å·®
+         * @return æµ®ç‚¹çŸ©é˜µtuple {mu,sigma*sigma}
          */
         template<RealType RT1, RealType RT2>
         auto normstat(const Matrix<RT1> &mu, const Matrix<RT2> &sigma) -> tuple<Matrix<real_max>, Matrix<real_max>> {
@@ -342,11 +342,11 @@ namespace MatSAR {
     }
     namespace Math {
         /**
-         * ½«¾ØÕóÄÚµÄËùÓĞÔªËØ¾­¹ı¶şÏî·Ö²¼Ó³Éä
-         * @param m ÒªÇóÎªÊµÊı¾ØÕó£¬Èô¸¡µãËÄÉáÎåÈë
-         * @param n ¶şÏî·Ö²¼µÄÊµÑé´ÎÊı
-         * @param p ¶şÏî·Ö²¼µÄ·¢Éú¸ÅÂÊ
-         * @return ¸¡µã¾ØÕó£º¾ØÕóÔªËØ¶şÏî·Ö²¼Ó³Éä
+         * å°†çŸ©é˜µå†…çš„æ‰€æœ‰å…ƒç´ ç»è¿‡äºŒé¡¹åˆ†å¸ƒæ˜ å°„
+         * @param m è¦æ±‚ä¸ºå®æ•°çŸ©é˜µï¼Œè‹¥æµ®ç‚¹å››èˆäº”å…¥
+         * @param n äºŒé¡¹åˆ†å¸ƒçš„å®éªŒæ¬¡æ•°
+         * @param p äºŒé¡¹åˆ†å¸ƒçš„å‘ç”Ÿæ¦‚ç‡
+         * @return æµ®ç‚¹çŸ©é˜µï¼šçŸ©é˜µå…ƒç´ äºŒé¡¹åˆ†å¸ƒæ˜ å°„
          */
         template<RealType RT>
         auto binopdf(const Matrix<RT> &m, float64 n, float64 p) -> Matrix<float64> {
@@ -361,11 +361,11 @@ namespace MatSAR {
         }
 
         /**
-         * ½«¾ØÕóÄÚµÄËùÓĞÔªËØ¾­¹ı¶şÏî·Ö²¼Ó³Éä
-         * @param m ÒªÇóÎªÊµÊı¾ØÕó£¬Èô¸¡µãËÄÉáÎåÈë
-         * @param n matrix ¶şÏî·Ö²¼µÄÊµÑé´ÎÊı
-         * @param p matrix ¶şÏî·Ö²¼µÄ·¢Éú¸ÅÂÊ
-         * @return ¸¡µã¾ØÕó£º¾ØÕóÔªËØ¶şÏî·Ö²¼Ó³Éä
+         * å°†çŸ©é˜µå†…çš„æ‰€æœ‰å…ƒç´ ç»è¿‡äºŒé¡¹åˆ†å¸ƒæ˜ å°„
+         * @param m è¦æ±‚ä¸ºå®æ•°çŸ©é˜µï¼Œè‹¥æµ®ç‚¹å››èˆäº”å…¥
+         * @param n matrix äºŒé¡¹åˆ†å¸ƒçš„å®éªŒæ¬¡æ•°
+         * @param p matrix äºŒé¡¹åˆ†å¸ƒçš„å‘ç”Ÿæ¦‚ç‡
+         * @return æµ®ç‚¹çŸ©é˜µï¼šçŸ©é˜µå…ƒç´ äºŒé¡¹åˆ†å¸ƒæ˜ å°„
          */
         template<RealType RT>
         auto binopdf(const Matrix<RT> &m, Matrix<float64> n, Matrix<float64> p) -> Matrix<float64> {
@@ -388,11 +388,11 @@ namespace MatSAR {
         }
 
         /**
-         * Éú³É¶şÏî·Ö²¼µÄËæ»ú¾ØÕó
-         * @param mu ¶şÏî·Ö²¼µÄ¾ùÖµ
-         * @param sigma ¶şÏî·Ö²¼µÄ·½²î
-         * @param shape Ä¿±ê¾ØÕóµÄshape
-         * @return ¸¡µã¾ØÕó£º¶şÏî·Ö²¼µÄËæ»ú¾ØÕó
+         * ç”ŸæˆäºŒé¡¹åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
+         * @param mu äºŒé¡¹åˆ†å¸ƒçš„å‡å€¼
+         * @param sigma äºŒé¡¹åˆ†å¸ƒçš„æ–¹å·®
+         * @param shape ç›®æ ‡çŸ©é˜µçš„shape
+         * @return æµ®ç‚¹çŸ©é˜µï¼šäºŒé¡¹åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
          */
         auto binornd(float64 n = 1, float64 p = 0.5, const mshape_type &shape = {1}) -> Matrix<real_max> {
             if (std::round(n) != n || p < 0 || p > 1)
@@ -407,14 +407,14 @@ namespace MatSAR {
         }
 
         /**
-         * Éú³É¶à¸ö¶şÏî·Ö²¼µÄËæ»ú¾ØÕó
-         * @param mu¾ØÕó ¶şÏî·Ö²¼µÄ¾ùÖµ
-         * @param sigma¾ØÕó ¶şÏî·Ö²¼µÄ·½²î
-         * @return ¸¡µã¾ØÕó£º¶şÏî·Ö²¼µÄËæ»ú¾ØÕó
+         * ç”Ÿæˆå¤šä¸ªäºŒé¡¹åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
+         * @param muçŸ©é˜µ äºŒé¡¹åˆ†å¸ƒçš„å‡å€¼
+         * @param sigmaçŸ©é˜µ äºŒé¡¹åˆ†å¸ƒçš„æ–¹å·®
+         * @return æµ®ç‚¹çŸ©é˜µï¼šäºŒé¡¹åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
          */
         auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p) -> Matrix<real_max> {
             if (n.getShape() != p.getShape())
-                throw_shape_exception("n¾ØÕóºÍp¾ØÕó´óĞ¡²»Í¬");
+                throw_shape_exception("nçŸ©é˜µå’ŒpçŸ©é˜µå¤§å°ä¸åŒ");
             Matrix<real_max> r(n.getShape(), 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -431,16 +431,16 @@ namespace MatSAR {
         }
 
         /**
-         * Éú³É¶à¸ö¶şÏî·Ö²¼µÄËæ»ú¾ØÕó
-         * @param mu¾ØÕó ¶şÏî·Ö²¼µÄ¾ùÖµ
-         * @param sigma¾ØÕó ¶şÏî·Ö²¼µÄ·½²î
-         * @param shape Ä¿±ê¾ØÕóµÄ´óĞ¡
-         * @return ¸¡µã¾ØÕó£º¶şÏî·Ö²¼µÄËæ»ú¾ØÕó
+         * ç”Ÿæˆå¤šä¸ªäºŒé¡¹åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
+         * @param muçŸ©é˜µ äºŒé¡¹åˆ†å¸ƒçš„å‡å€¼
+         * @param sigmaçŸ©é˜µ äºŒé¡¹åˆ†å¸ƒçš„æ–¹å·®
+         * @param shape ç›®æ ‡çŸ©é˜µçš„å¤§å°
+         * @return æµ®ç‚¹çŸ©é˜µï¼šäºŒé¡¹åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
          */
         auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p,
                      const mshape_type &shape = {1}) -> Matrix<real_max> {
             if (n.getShape() != shape || p.getShape() != shape)
-                throw_shape_exception("n¾ØÕó»òp¾ØÕóÓëÖ¸¶¨¾ØÕóĞÎ×´´óĞ¡²»Í¬");
+                throw_shape_exception("nçŸ©é˜µæˆ–pçŸ©é˜µä¸æŒ‡å®šçŸ©é˜µå½¢çŠ¶å¤§å°ä¸åŒ");
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -457,8 +457,8 @@ namespace MatSAR {
         }
 
         /**
-         * ¶şÏî·Ö²¼µÄ¾ùÖµºÍ·½²î
-         * @return ¸¡µã¾ØÕótuple {n*p,n*p*(1-p)}
+         * äºŒé¡¹åˆ†å¸ƒçš„å‡å€¼å’Œæ–¹å·®
+         * @return æµ®ç‚¹çŸ©é˜µtuple {n*p,n*p*(1-p)}
          */
         template<RealType RT1, RealType RT2>
         auto binostat(RT1 n, RT2 p) -> tuple<real_max, real_max> {
@@ -470,8 +470,8 @@ namespace MatSAR {
         }
 
         /**
-         * ¶şÏî·Ö²¼µÄ¾ùÖµºÍ·½²î
-         * @return ¸¡µã¾ØÕótuple {mu,sigma*sigma}
+         * äºŒé¡¹åˆ†å¸ƒçš„å‡å€¼å’Œæ–¹å·®
+         * @return æµ®ç‚¹çŸ©é˜µtuple {mu,sigma*sigma}
          */
         template<RealType RT1, RealType RT2>
         auto binostat(const Matrix<RT1> &n, const Matrix<RT2> &p) -> tuple<Matrix<real_max>, Matrix<real_max>> {
@@ -480,12 +480,12 @@ namespace MatSAR {
         }
     }
     namespace Math {
-        //Á¬Ğø¾ùÔÈ·Ö²¼
+        //è¿ç»­å‡åŒ€åˆ†å¸ƒ
         /**
-         * ÇóÁ¬Ğø¾ùÔÈ·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ£¬xÖµĞèÔÚ[a,b]ÄÚ
-         * @param a Á¬Ğø¾ùÔÈº¯Êı×ó±ß½çÖµ£¬Ä¬ÈÏÎª±ê×¼·Ö²¼0
-         * @param b Á¬Ğø¾ùÔÈº¯ÊıÓÒ±ß½çÖµ£¬Ä¬ÈÏÎª±ê×¼·Ö²¼1
+         * æ±‚è¿ç»­å‡åŒ€åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼ï¼Œxå€¼éœ€åœ¨[a,b]å†…
+         * @param a è¿ç»­å‡åŒ€å‡½æ•°å·¦è¾¹ç•Œå€¼ï¼Œé»˜è®¤ä¸ºæ ‡å‡†åˆ†å¸ƒ0
+         * @param b è¿ç»­å‡åŒ€å‡½æ•°å³è¾¹ç•Œå€¼ï¼Œé»˜è®¤ä¸ºæ ‡å‡†åˆ†å¸ƒ1
          */
         auto unifpdf(float64 x, float64 a = 0, float64 b = 1) -> float64 {
             if (x < a || x > b)
@@ -494,10 +494,10 @@ namespace MatSAR {
         }
 
         /**
-         * ÇóÁ¬Ğø¾ùÔÈ·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ£¬xÖµĞèÔÚ[a,b]ÄÚ
-         * @param a Á¬Ğø¾ùÔÈº¯Êı×ó±ß½çÖµ£¬Ä¬ÈÏÎª±ê×¼·Ö²¼0
-         * @param b Á¬Ğø¾ùÔÈº¯ÊıÓÒ±ß½çÖµ£¬Ä¬ÈÏÎª±ê×¼·Ö²¼1
+         * æ±‚è¿ç»­å‡åŒ€åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼ï¼Œxå€¼éœ€åœ¨[a,b]å†…
+         * @param a è¿ç»­å‡åŒ€å‡½æ•°å·¦è¾¹ç•Œå€¼ï¼Œé»˜è®¤ä¸ºæ ‡å‡†åˆ†å¸ƒ0
+         * @param b è¿ç»­å‡åŒ€å‡½æ•°å³è¾¹ç•Œå€¼ï¼Œé»˜è®¤ä¸ºæ ‡å‡†åˆ†å¸ƒ1
          */
         auto unifpdf(const Matrix<float64> &x, const Matrix<float64> &a = {0},
                      const Matrix<float64> &b = {1}) -> Matrix<float64> {
@@ -505,7 +505,7 @@ namespace MatSAR {
             bool a_single = a.isSingle();
             bool b_single = b.isSingle();
             if (a.getShape() != b.getShape() || (x.getShape() != a.getShape() && !a_single))
-                throw_shape_exception("unifpdf: a,bÁ½¾ØÕó´óĞ¡Ó¦¸ÃÏàÍ¬£¬²¢ÇÒµÈÓÚx¾ØÕó´óĞ¡");
+                throw_shape_exception("unifpdf: a,bä¸¤çŸ©é˜µå¤§å°åº”è¯¥ç›¸åŒï¼Œå¹¶ä¸”ç­‰äºxçŸ©é˜µå¤§å°");
             mshape_type shape;
             if (!x.isSingle())
                 shape = x.getShape();
@@ -528,31 +528,31 @@ namespace MatSAR {
         }
 
         /**
-        * ÇóÁ¬Ğø¾ùÔÈ·Ö²¼ÆÚÍûÓë·½²î
-        * @param a Á¬Ğø¾ùÔÈº¯Êı×ó±ß½çÖµ£¬Ä¬ÈÏÎª±ê×¼·Ö²¼0
-        * @param b Á¬Ğø¾ùÔÈº¯ÊıÓÒ±ß½çÖµ£¬Ä¬ÈÏÎª±ê×¼·Ö²¼1
+        * æ±‚è¿ç»­å‡åŒ€åˆ†å¸ƒæœŸæœ›ä¸æ–¹å·®
+        * @param a è¿ç»­å‡åŒ€å‡½æ•°å·¦è¾¹ç•Œå€¼ï¼Œé»˜è®¤ä¸ºæ ‡å‡†åˆ†å¸ƒ0
+        * @param b è¿ç»­å‡åŒ€å‡½æ•°å³è¾¹ç•Œå€¼ï¼Œé»˜è®¤ä¸ºæ ‡å‡†åˆ†å¸ƒ1
         */
         auto unifstat(float64 a, float64 b) -> tuple<float64, float64> {
             return {(a + b) / 2, pow((a - b), 2) / 12};
         }
 
         /**
-        * ÇóÁ¬Ğø¾ùÔÈ·Ö²¼ÆÚÍûÓë·½²î
-        * @param a Á¬Ğø¾ùÔÈº¯Êı×ó±ß½çÖµ£¬Ä¬ÈÏÎª±ê×¼·Ö²¼0
-        * @param b Á¬Ğø¾ùÔÈº¯ÊıÓÒ±ß½çÖµ£¬Ä¬ÈÏÎª±ê×¼·Ö²¼1
+        * æ±‚è¿ç»­å‡åŒ€åˆ†å¸ƒæœŸæœ›ä¸æ–¹å·®
+        * @param a è¿ç»­å‡åŒ€å‡½æ•°å·¦è¾¹ç•Œå€¼ï¼Œé»˜è®¤ä¸ºæ ‡å‡†åˆ†å¸ƒ0
+        * @param b è¿ç»­å‡åŒ€å‡½æ•°å³è¾¹ç•Œå€¼ï¼Œé»˜è®¤ä¸ºæ ‡å‡†åˆ†å¸ƒ1
         */
         auto unifstat(const Matrix<float64> &a, const Matrix<float64> &b) -> tuple<Matrix<float64>, Matrix<float64>> {
             if (a.getShape() != b.getShape())
-                throw_shape_exception("unifstat: a bÁ½¾ØÕóÓ¦¸ÃÓĞÏàÍ¬µÄ´óĞ¡");
+                throw_shape_exception("unifstat: a bä¸¤çŸ©é˜µåº”è¯¥æœ‰ç›¸åŒçš„å¤§å°");
             return {(a + b) / 2, ((a - b) ^ 2) / 12};
         }
     }
 
     namespace Math {
         /**
-         * Éú³É(0,1)¾ùÔÈ·Ö²¼µÄËæ»ú¾ØÕó
-         * @param shape Ä¿±ê¾ØÕóÎ¬¶È
-         * @return ¸¡µã¾ØÕó£º(0,1)¾ùÔÈ·Ö²¼µÄËæ»ú¾ØÕó
+         * ç”Ÿæˆ(0,1)å‡åŒ€åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
+         * @param shape ç›®æ ‡çŸ©é˜µç»´åº¦
+         * @return æµ®ç‚¹çŸ©é˜µï¼š(0,1)å‡åŒ€åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
          */
         auto rand(const mshape_type &shape) -> Matrix<real_max> {
             Matrix<real_max> r(shape, 0.);
@@ -565,24 +565,24 @@ namespace MatSAR {
         }
 
         /**
-         * Éú³É(0£¬1)¾ùÔÈ·Ö²¼¾ØÕó
-         * @param n ±íÊ¾Éú³Én*nµÄ¾ØÕó
-         * @return ¸¡µã¾ØÕó£º(0,1)¾ùÔÈ·Ö²¼µÄËæ»ú¾ØÕó
+         * ç”Ÿæˆ(0ï¼Œ1)å‡åŒ€åˆ†å¸ƒçŸ©é˜µ
+         * @param n è¡¨ç¤ºç”Ÿæˆn*nçš„çŸ©é˜µ
+         * @return æµ®ç‚¹çŸ©é˜µï¼š(0,1)å‡åŒ€åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
          */
         auto rand(msize_type n) -> Matrix<real_max> {
             return rand({n, n});
         }
 
         /**
-         * Éú³É[imin£¬imax]¾ùÔÈ·Ö²¼¾ØÕó
-         * @param imin ±íÊ¾¾ùÔÈ·Ö²¼×îĞ¡Öµ
-         * @param imax ±íÊ¾¾ùÔÈ·Ö²¼×î´óÖµ
-         * @param shape Ä¿±ê¾ØÕóshape
-         * @return ÕûÊı¾ØÕó£º[imin£¬imax]¾ùÔÈ·Ö²¼µÄËæ»ú¾ØÕó
+         * ç”Ÿæˆ[iminï¼Œimax]å‡åŒ€åˆ†å¸ƒçŸ©é˜µ
+         * @param imin è¡¨ç¤ºå‡åŒ€åˆ†å¸ƒæœ€å°å€¼
+         * @param imax è¡¨ç¤ºå‡åŒ€åˆ†å¸ƒæœ€å¤§å€¼
+         * @param shape ç›®æ ‡çŸ©é˜µshape
+         * @return æ•´æ•°çŸ©é˜µï¼š[iminï¼Œimax]å‡åŒ€åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
          */
         auto randi(int64 imin, int64 imax, const mshape_type &shape) -> Matrix<int64> {
             if (imin > imax)
-                throw_value_error("randiÖĞÒªÇóÕûÊı¾ùÔÈ·Ö²¼×îĞ¡ÖµÓ¦¸ÃĞ¡ÓÚµÈÓÚ×î´óÖµ");
+                throw_value_error("randiä¸­è¦æ±‚æ•´æ•°å‡åŒ€åˆ†å¸ƒæœ€å°å€¼åº”è¯¥å°äºç­‰äºæœ€å¤§å€¼");
             Matrix<int64> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -593,49 +593,49 @@ namespace MatSAR {
         }
 
         /**
-         * Éú³É[1£¬imax]¾ùÔÈ·Ö²¼¾ØÕó
-         * @param imax ±íÊ¾¾ùÔÈ·Ö²¼×îĞ¡Öµ
-         * @param shape Ä¿±ê¾ØÕóshape
-         * @return ÕûÊı¾ØÕó£º[1£¬imax]¾ùÔÈ·Ö²¼¾ØÕó
+         * ç”Ÿæˆ[1ï¼Œimax]å‡åŒ€åˆ†å¸ƒçŸ©é˜µ
+         * @param imax è¡¨ç¤ºå‡åŒ€åˆ†å¸ƒæœ€å°å€¼
+         * @param shape ç›®æ ‡çŸ©é˜µshape
+         * @return æ•´æ•°çŸ©é˜µï¼š[1ï¼Œimax]å‡åŒ€åˆ†å¸ƒçŸ©é˜µ
          */
         auto randi(int64 imax, const mshape_type &shape) -> Matrix<int64> {
             return randi(1, imax, shape);
         }
 
         /**
-         * Éú³É[imin£¬imax]¾ùÔÈ·Ö²¼¾ØÕó
-         * @param imin ±íÊ¾¾ùÔÈ·Ö²¼×îĞ¡Öµ
-         * @param imax ±íÊ¾¾ùÔÈ·Ö²¼×î´óÖµ
-         * @param n ±íÊ¾Éú³Én*nµÄ¾ØÕó
-         * @return ÕûÊı¾ØÕó£º[imin£¬imax]¾ùÔÈ·Ö²¼µÄËæ»ú¾ØÕó
+         * ç”Ÿæˆ[iminï¼Œimax]å‡åŒ€åˆ†å¸ƒçŸ©é˜µ
+         * @param imin è¡¨ç¤ºå‡åŒ€åˆ†å¸ƒæœ€å°å€¼
+         * @param imax è¡¨ç¤ºå‡åŒ€åˆ†å¸ƒæœ€å¤§å€¼
+         * @param n è¡¨ç¤ºç”Ÿæˆn*nçš„çŸ©é˜µ
+         * @return æ•´æ•°çŸ©é˜µï¼š[iminï¼Œimax]å‡åŒ€åˆ†å¸ƒçš„éšæœºçŸ©é˜µ
          */
         auto randi(int64 imin, int64 imax, msize_type n) -> Matrix<int64> {
             return randi(imin, imax, {n, n});
         }
 
         /**
-         * Éú³É[1£¬imax]¾ùÔÈ·Ö²¼¾ØÕó
-         * @param imax ±íÊ¾¾ùÔÈ·Ö²¼×î´óÖµ
-         * @param n ±íÊ¾Éú³Én*nµÄ¾ØÕó
-         * @return ÕûÊı¾ØÕó£º[1£¬imax]¾ùÔÈ·Ö²¼¾ØÕó
+         * ç”Ÿæˆ[1ï¼Œimax]å‡åŒ€åˆ†å¸ƒçŸ©é˜µ
+         * @param imax è¡¨ç¤ºå‡åŒ€åˆ†å¸ƒæœ€å¤§å€¼
+         * @param n è¡¨ç¤ºç”Ÿæˆn*nçš„çŸ©é˜µ
+         * @return æ•´æ•°çŸ©é˜µï¼š[1ï¼Œimax]å‡åŒ€åˆ†å¸ƒçŸ©é˜µ
          */
         auto randi(int64 imax, msize_type n) -> Matrix<int64> {
             return randi(1, imax, {n, n});
         }
 
         /**
-         * Éú³É±ê×¼ÕıÌ¬·Ö²¼¾ØÕó
-         * @param shape Ä¿±ê¾ØÕóshape
-         * @return ¸¡µã¾ØÕó£º±ê×¼ÕıÌ¬·Ö²¼¾ØÕó
+         * ç”Ÿæˆæ ‡å‡†æ­£æ€åˆ†å¸ƒçŸ©é˜µ
+         * @param shape ç›®æ ‡çŸ©é˜µshape
+         * @return æµ®ç‚¹çŸ©é˜µï¼šæ ‡å‡†æ­£æ€åˆ†å¸ƒçŸ©é˜µ
          */
         auto randn(const mshape_type &shape) -> Matrix<real_max> {
             return rand(shape);
         }
 
         /**
-         * Éú³É±ê×¼ÕıÌ¬·Ö²¼¾ØÕó
-         * @param n ±íÊ¾Éú³Én*nµÄ¾ØÕó
-         * @return ¸¡µã¾ØÕó£º±ê×¼ÕıÌ¬·Ö²¼¾ØÕó
+         * ç”Ÿæˆæ ‡å‡†æ­£æ€åˆ†å¸ƒçŸ©é˜µ
+         * @param n è¡¨ç¤ºç”Ÿæˆn*nçš„çŸ©é˜µ
+         * @return æµ®ç‚¹çŸ©é˜µï¼šæ ‡å‡†æ­£æ€åˆ†å¸ƒçŸ©é˜µ
          */
         auto randn(int64 n) -> Matrix<real_max> {
             return randn({n, n});
@@ -655,14 +655,14 @@ namespace MatSAR {
         };
 
         /**
-         * Éú³ÉÕûÊıµÄËæ»úÅÅÁĞ
-         * @param n ²ÉÑù¼ä¸ôÖĞµÄÕûÊıÊıÁ¿
-         * @return ÕûÊıĞĞÊı×é
-         * @hint Ê¹ÓÃÆ«ÒÆÁ¿Ëã·¨
+         * ç”Ÿæˆæ•´æ•°çš„éšæœºæ’åˆ—
+         * @param n é‡‡æ ·é—´éš”ä¸­çš„æ•´æ•°æ•°é‡
+         * @return æ•´æ•°è¡Œæ•°ç»„
+         * @hint ä½¿ç”¨åç§»é‡ç®—æ³•
          */
         template<IntType IT>
         auto randperm(IT n) -> Matrix<IT> {
-            if (n < 0) throw_value_error("randperm: n Ó¦¸ÃÎªÕıÊı");
+            if (n < 0) throw_value_error("randperm: n åº”è¯¥ä¸ºæ­£æ•°");
             unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
             auto rand_seq = rand(mshape_type{n});
             for (IT i = 0; i < n; ++i) {
@@ -678,15 +678,15 @@ namespace MatSAR {
         }
 
         /**
-         * Éú³ÉÕûÊıµÄËæ»úÅÅÁĞ
-         * @param n ²ÉÑù¼ä¸ôÖĞµÄÕûÊıÊıÁ¿
-         * @param k ËùÑ¡ÕûÊıµÄÊıÁ¿
-         * @return ÕûÊıĞĞÊı×é
+         * ç”Ÿæˆæ•´æ•°çš„éšæœºæ’åˆ—
+         * @param n é‡‡æ ·é—´éš”ä¸­çš„æ•´æ•°æ•°é‡
+         * @param k æ‰€é€‰æ•´æ•°çš„æ•°é‡
+         * @return æ•´æ•°è¡Œæ•°ç»„
          */
         template<IntType IT>
         auto randperm(IT n, IT k) -> Matrix<IT> {
-            if (n < 0) throw_value_error("randperm: n Ó¦¸ÃÎªÕıÊı");
-            if (k < 0 || k > n) throw_value_error("randperm: kÖµÓ¦¸Ã´óÓÚµÈÓÚ0»òĞ¡ÓÚµÈÓÚn");
+            if (n < 0) throw_value_error("randperm: n åº”è¯¥ä¸ºæ­£æ•°");
+            if (k < 0 || k > n) throw_value_error("randperm: kå€¼åº”è¯¥å¤§äºç­‰äº0æˆ–å°äºç­‰äºn");
             unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
             auto rand_seq = rand(mshape_type{n});
             for (IT i = 0; i < n; ++i) {
@@ -703,9 +703,9 @@ namespace MatSAR {
     }
 
     namespace Math {
-//        //¿¨·½·Ö²¼
+//        //å¡æ–¹åˆ†å¸ƒ
 //        /**
-//         * Çó¿¨·½·Ö²¼º¯ÊıÖµ
+//         * æ±‚å¡æ–¹åˆ†å¸ƒå‡½æ•°å€¼
 //         * @param x
 //         * @param nu
 //         */
@@ -714,9 +714,9 @@ namespace MatSAR {
 //
 //        }
         /**
-         * Çó¿¨·½·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ
-         * @param nu ¿¨·½·Ö²¼×ÔÓÉ¶È
+         * æ±‚å¡æ–¹åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼
+         * @param nu å¡æ–¹åˆ†å¸ƒè‡ªç”±åº¦
          * @hint std::tgamma function
          */
         auto chi2pdf(float64 x, float64 nu) -> float64 {
@@ -727,14 +727,14 @@ namespace MatSAR {
         }
 
         /**
-         * Çó¿¨·½·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ
-         * @param nu ¿¨·½·Ö²¼×ÔÓÉ¶È
-         * @hint ¿ÉÊ¹ÓÃmatlabÖĞfindÅÅ³ı·¨ÓÅ»¯Ëã·¨
+         * æ±‚å¡æ–¹åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼
+         * @param nu å¡æ–¹åˆ†å¸ƒè‡ªç”±åº¦
+         * @hint å¯ä½¿ç”¨matlabä¸­findæ’é™¤æ³•ä¼˜åŒ–ç®—æ³•
          */
         auto chi2pdf(const Matrix<float64> &x, const Matrix<float64> &nu) -> Matrix<float64> {
             if (x.getShape() != nu.getShape() && !x.isSingle() && !nu.isSingle())
-                throw_shape_exception("poisspdf: x Óë nu Î¬¶È²»Í¬");
+                throw_shape_exception("poisspdf: x ä¸ nu ç»´åº¦ä¸åŒ");
             mshape_type shape = nu.isSingle() ? x.getShape() : nu.getShape();
             Matrix<float64> r(shape, 0.);
             auto iter_x = x.begin();
@@ -750,29 +750,29 @@ namespace MatSAR {
         }
     }
     namespace Math {
-        //Ö¸Êı·Ö²¼
+        //æŒ‡æ•°åˆ†å¸ƒ
         /**
-         * ÇóÖ¸Êı·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ
-         * @param mu Ö¸Êı·Ö²¼Æ½¾ùÖµ
+         * æ±‚æŒ‡æ•°åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼
+         * @param mu æŒ‡æ•°åˆ†å¸ƒå¹³å‡å€¼
          */
         auto exppdf(float64 x, float64 mu = 1) -> float64 {
             return 1 / mu * std::exp(-x / mu);
         }
 
         /**
-         * ÇóÖ¸Êı·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ
-         * @param mu Ö¸Êı·Ö²¼Æ½¾ùÖµ
+         * æ±‚æŒ‡æ•°åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼
+         * @param mu æŒ‡æ•°åˆ†å¸ƒå¹³å‡å€¼
          */
         auto exppdf(const Matrix<float64> &x, const Matrix<float64> &mu = {1}) -> Matrix<float64> {
             return 1 / mu * exp(-x / mu);
         }
 
         /**
-         * Éú³ÉÖ¸Êı·Ö²¼Ëæ»ú¾ØÕó
-         * @param mu Ö¸Êı·Ö²¼Æ½¾ùÖµ
-         * @param shape Ä¿±ê¾ØÕóµÄ´óĞ¡
+         * ç”ŸæˆæŒ‡æ•°åˆ†å¸ƒéšæœºçŸ©é˜µ
+         * @param mu æŒ‡æ•°åˆ†å¸ƒå¹³å‡å€¼
+         * @param shape ç›®æ ‡çŸ©é˜µçš„å¤§å°
          */
         auto exprnd(float64 mu, const mshape_type &shape = {1}) -> Matrix<float64> {
             Matrix<float64> r(shape, 0.);
@@ -785,8 +785,8 @@ namespace MatSAR {
         }
 
         /**
-         * Ö¸Êı·Ö²¼µÄ¾ùÖµºÍ·½²î
-         * @return ¸¡µã¾ØÕótuple {mu,mu*mu}
+         * æŒ‡æ•°åˆ†å¸ƒçš„å‡å€¼å’Œæ–¹å·®
+         * @return æµ®ç‚¹çŸ©é˜µtuple {mu,mu*mu}
          */
         template<RealType RT>
         auto expstat(const RT &mu) -> tuple<real_max, real_max> {
@@ -795,8 +795,8 @@ namespace MatSAR {
         }
 
         /**
-         * Ö¸Êı·Ö²¼µÄ¾ùÖµºÍ·½²î
-         * @return ¸¡µã¾ØÕótuple {mu,mu*mu}
+         * æŒ‡æ•°åˆ†å¸ƒçš„å‡å€¼å’Œæ–¹å·®
+         * @return æµ®ç‚¹çŸ©é˜µtuple {mu,mu*mu}
          */
         template<RealType RT>
         auto expstat(const Matrix<RT> &mu) -> tuple<Matrix<real_max>, Matrix<real_max>> {
@@ -806,11 +806,11 @@ namespace MatSAR {
     }
 
     namespace Math {
-        //²´ËÉ·Ö²¼
+        //æ³Šæ¾åˆ†å¸ƒ
         /**
-         * Çó²´ËÉ·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ£¬ĞèÒªÕûÊıÖµ£¬·ÇÕûÊıÖµ²´ËÉ·Ö²¼Îª0
-         * @param lambda Ö¸Êı·Ö²¼lambdaÖµ£¬ËÙÂÊ²ÎÊı£¬ÎªÕıÊı
+         * æ±‚æ³Šæ¾åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼ï¼Œéœ€è¦æ•´æ•°å€¼ï¼Œéæ•´æ•°å€¼æ³Šæ¾åˆ†å¸ƒä¸º0
+         * @param lambda æŒ‡æ•°åˆ†å¸ƒlambdaå€¼ï¼Œé€Ÿç‡å‚æ•°ï¼Œä¸ºæ­£æ•°
          */
         auto poisspdf(float64 x, float64 lambda) -> float64 {
             if (x < 0 || x != std::round(x))
@@ -821,13 +821,13 @@ namespace MatSAR {
         }
 
         /**
-         * Çó²´ËÉ·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ£¬ĞèÒªÕûÊıÖµ£¬·ÇÕûÊıÖµ²´ËÉ·Ö²¼Îª0
-         * @param lambda Ö¸Êı·Ö²¼lambdaÖµ£¬ËÙÂÊ²ÎÊı£¬ÎªÕıÊı
+         * æ±‚æ³Šæ¾åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼ï¼Œéœ€è¦æ•´æ•°å€¼ï¼Œéæ•´æ•°å€¼æ³Šæ¾åˆ†å¸ƒä¸º0
+         * @param lambda æŒ‡æ•°åˆ†å¸ƒlambdaå€¼ï¼Œé€Ÿç‡å‚æ•°ï¼Œä¸ºæ­£æ•°
          */
         auto poisspdf(const Matrix<float64> &x, const Matrix<float64> &lambda) -> Matrix<float64> {
             if (x.getShape() != lambda.getShape() && !x.isSingle() && !lambda.isSingle())
-                throw_shape_exception("poisspdf: x Óë lambda Î¬¶È²»Í¬");
+                throw_shape_exception("poisspdf: x ä¸ lambda ç»´åº¦ä¸åŒ");
             mshape_type shape;
             if (!x.isSingle())
                 shape = x.getShape();
@@ -847,9 +847,9 @@ namespace MatSAR {
         }
 
         /**
-         * Éú³É²´ËÉ·Ö²¼Ëæ»ú¾ØÕó
-         * @param lambda Ö¸Êı·Ö²¼lambdaÖµ£¬ËÙÂÊ²ÎÊı£¬ÎªÕıÊı
-         * @param shape Ä¿±ê¾ØÕóµÄ´óĞ¡
+         * ç”Ÿæˆæ³Šæ¾åˆ†å¸ƒéšæœºçŸ©é˜µ
+         * @param lambda æŒ‡æ•°åˆ†å¸ƒlambdaå€¼ï¼Œé€Ÿç‡å‚æ•°ï¼Œä¸ºæ­£æ•°
+         * @param shape ç›®æ ‡çŸ©é˜µçš„å¤§å°
          */
         auto poissrnd(float64 lambda, const mshape_type &shape = {1}) -> Matrix<float64> {
             Matrix<float64> r(shape, 0.);
@@ -862,11 +862,11 @@ namespace MatSAR {
         }
     }
     namespace Math {
-        //ÈğÀû·Ö²¼
+        //ç‘åˆ©åˆ†å¸ƒ
         /**
-         * ÇóÈğÀû·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ£¬ĞèÒª·Ç¸ºÖµ£¬¸ºÖµ²´ËÉ·Ö²¼Îª0
-         * @param b ÈğÀû·Ö²¼±ÈÀıÖµ
+         * æ±‚ç‘åˆ©åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼ï¼Œéœ€è¦éè´Ÿå€¼ï¼Œè´Ÿå€¼æ³Šæ¾åˆ†å¸ƒä¸º0
+         * @param b ç‘åˆ©åˆ†å¸ƒæ¯”ä¾‹å€¼
          */
         auto raylpdf(float64 x, float64 b) -> float64 {
             if (x < 0) return 0;
@@ -876,15 +876,15 @@ namespace MatSAR {
         }
 
         /**
-         * ÇóÈğÀû·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ£¬ĞèÒª·Ç¸ºÖµ£¬¸ºÖµ²´ËÉ·Ö²¼Îª0
-         * @param b ÈğÀû·Ö²¼±ÈÀıÖµ
+         * æ±‚ç‘åˆ©åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼ï¼Œéœ€è¦éè´Ÿå€¼ï¼Œè´Ÿå€¼æ³Šæ¾åˆ†å¸ƒä¸º0
+         * @param b ç‘åˆ©åˆ†å¸ƒæ¯”ä¾‹å€¼
          */
         auto raylpdf(const Matrix<float64> &x, const Matrix<float64> &b) -> Matrix<float64> {
             bool x_single = x.isSingle();
             bool b_single = b.isSingle();
             if (x.getShape() != b.getShape() && !x_single && !b_single)
-                throw_shape_exception("raylpdf: x Óë b ´óĞ¡²»Í¬");
+                throw_shape_exception("raylpdf: x ä¸ b å¤§å°ä¸åŒ");
             mshape_type shape;
             if (!x_single)
                 shape = x.getShape();
@@ -904,12 +904,12 @@ namespace MatSAR {
         }
     }
     namespace Math {
-        //Î¤²®·Ö²¼
+        //éŸ¦ä¼¯åˆ†å¸ƒ
         /**
-         * ÇóÎ¤²®·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ£¬ĞèÒª·Ç¸ºÖµ£¬¸ºÖµÎ¤²®·Ö²¼Îª0
-         * @param lambda Î¤²®·Ö²¼±ÈÀı²ÎÊı
-         * @param k Î¤²®·Ö²¼ĞÎ×´²ÎÊı
+         * æ±‚éŸ¦ä¼¯åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼ï¼Œéœ€è¦éè´Ÿå€¼ï¼Œè´Ÿå€¼éŸ¦ä¼¯åˆ†å¸ƒä¸º0
+         * @param lambda éŸ¦ä¼¯åˆ†å¸ƒæ¯”ä¾‹å‚æ•°
+         * @param k éŸ¦ä¼¯åˆ†å¸ƒå½¢çŠ¶å‚æ•°
          */
         auto weibpdf(float64 x, float64 lambda, float64 k) -> float64 {
             if (x < 0) return 0;
@@ -921,17 +921,17 @@ namespace MatSAR {
         }
 
         /**
-         * ÇóÎ¤²®·Ö²¼º¯ÊıÖµ
-         * @param x º¯Êı´«ÈëxÖµ£¬ĞèÒª·Ç¸ºÖµ£¬¸ºÖµÎ¤²®·Ö²¼Îª0
-         * @param lambda Î¤²®·Ö²¼±ÈÀı²ÎÊı
-         * @param k Î¤²®·Ö²¼ĞÎ×´²ÎÊı
+         * æ±‚éŸ¦ä¼¯åˆ†å¸ƒå‡½æ•°å€¼
+         * @param x å‡½æ•°ä¼ å…¥xå€¼ï¼Œéœ€è¦éè´Ÿå€¼ï¼Œè´Ÿå€¼éŸ¦ä¼¯åˆ†å¸ƒä¸º0
+         * @param lambda éŸ¦ä¼¯åˆ†å¸ƒæ¯”ä¾‹å‚æ•°
+         * @param k éŸ¦ä¼¯åˆ†å¸ƒå½¢çŠ¶å‚æ•°
          */
         auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda,const Matrix<float64> &k) -> Matrix<float64> {
             bool x_single = x.isSingle();
             bool lambda_single = lambda.isSingle();
             bool k_single = k.isSingle();
             if (lambda.getShape() != k.getShape() || (!lambda_single && x.getShape() != lambda.getShape()))
-                throw_shape_exception("weibpdf: lambda k Á½¾ØÕóÓ¦¸ÃÓĞÏàÍ¬µÄ´óĞ¡£¬²¢ÇÒÓëx´óĞ¡Æ¥Åä");
+                throw_shape_exception("weibpdf: lambda k ä¸¤çŸ©é˜µåº”è¯¥æœ‰ç›¸åŒçš„å¤§å°ï¼Œå¹¶ä¸”ä¸xå¤§å°åŒ¹é…");
             mshape_type shape;
             if (!x_single)
                 shape = x.getShape();

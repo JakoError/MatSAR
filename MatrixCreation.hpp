@@ -11,6 +11,8 @@
 
 #endif //MATSAR_MATRIX_HPP
 
+#include "util/Compat.hpp"
+
 namespace MatSAR {
     template<typename dType = float_max>
     auto zeros() -> dType {
@@ -24,7 +26,7 @@ namespace MatSAR {
 
     template<typename TargetType, typename dType, class = typename std::enable_if<!std::is_same<dType, TargetType>::value>::type>
     auto zeros_like(const Matrix<dType> &m,
-                    __attribute__((unused)) TargetType data_type = TargetType()) -> Matrix<TargetType> {
+                    MATSAR_UNUSED TargetType data_type = TargetType()) -> Matrix<TargetType> {
         return Matrix<TargetType>(m.getShape(), TargetType(0), m.getData());
     }
 
@@ -45,7 +47,7 @@ namespace MatSAR {
 
     template<typename TargetType, typename dType, class = typename std::enable_if<!std::is_same<dType, TargetType>::value>::type>
     auto ones_like(const Matrix<dType> &m,
-                   __attribute__((unused)) TargetType data_type = TargetType()) -> Matrix<TargetType> {
+                   MATSAR_UNUSED TargetType data_type = TargetType()) -> Matrix<TargetType> {
         return Matrix<TargetType>(m.getShape(), TargetType(1), m.getData());
     }
 
@@ -154,7 +156,7 @@ namespace MatSAR {
         auto r = zeros<RT>({r_size});
         RT value = start;
         auto iter_r = r.begin();
-        for (typeof(r_size) i = 0; i < r_size; ++i) {
+        for (decltype(r_size) i = 0; i < r_size; ++i) {
             *iter_r = value;
             value += step;
             iter_r++;

@@ -10,6 +10,8 @@
 #include <string>
 #include <limits>
 #include <type_traits>
+#include <cstdint>
+#include <cstddef>
 
 #include "UtilHeadCheck.hpp"
 

@@ -228,7 +228,7 @@ namespace MatSAR {
 //                }
 //                vector<int64> r(r_size);
 //                int64 value = start;
-//                for (typeof(r_size) i = 0; i < r_size; ++i) {
+//                for (decltype(r_size) i = 0; i < r_size; ++i) {
 //                    r[i] = value;
 //                    value += step;
 //                }
@@ -253,7 +253,7 @@ namespace MatSAR {
                 }
                 vector<IT> r(r_size);
                 IT value = start;
-                for (typeof(r_size) i = 0; i < r_size; ++i) {
+                for (decltype(r_size) i = 0; i < r_size; ++i) {
                     r[i] = value;
                     value += step;
                 }
@@ -276,7 +276,7 @@ namespace MatSAR {
                 auto r_size = vector<float64>::size_type(std::ceil((end - start) / step));
                 vector<float64> r(r_size);
                 float64 value = start;
-                for (typeof(r_size) i = 0; i < r_size; ++i) {
+                for (decltype(r_size) i = 0; i < r_size; ++i) {
                     r[i] = value;
                     value += step;
                 }

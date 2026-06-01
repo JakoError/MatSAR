@@ -1,53 +1,40 @@
 cmake_minimum_required(VERSION 3.22)
-project(MatSAR)
+project(MatSAR LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(INC_DIR ./include)
-include_directories(${INC_DIR})
-set(LINK_DIR ./lib)
-link_directories(${LINK_DIR})
+option(MATSAR_WITH_BLAS "Enable OpenBLAS-backed matrix multiply (mmul/%)" ON)
+option(MATSAR_ENABLE_EXPERIMENTAL "Include unfinished experimental modules" OFF)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    option(MATSAR_BUILD_TESTS "Build MatSAR tests" ON)
+else()
+    option(MATSAR_BUILD_TESTS "Build MatSAR tests" OFF)
+endif()
 
-set(MATH_DIR ./math)
-include_directories(${MATH_DIR})
+# Header-only interface library
+add_library(matsar INTERFACE)
+add_library(matsar::matsar ALIAS matsar)
+target_include_directories(matsar INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/math)
+target_compile_features(matsar INTERFACE cxx_std_17)
 
-add_executable(MatSAR main.cpp old/Property.h Matrix.hpp
-        util/VectorUtil.hpp util/TypeUtil.hpp util/Utils util/UtilHeadCheck.hpp util/ExceptionUtil.hpp util/IgnoreWarningUtil.hpp
-        math/Trigonometry.hpp math/LinearAlgebra.hpp NumberOperation.hpp math/DigitalSignal.hpp math/MatrixOperation.hpp math/Probability.hpp)
-add_executable(test test/test.cpp old/Property.h Matrix.hpp
-        util/VectorUtil.hpp util/TypeUtil.hpp util/Utils util/UtilHeadCheck.hpp util/ExceptionUtil.hpp util/IgnoreWarningUtil.hpp
-        math/Trigonometry.hpp math/LinearAlgebra.hpp NumberOperation.hpp math/DigitalSignal.hpp math/MatrixOperation.hpp math/Probability.hpp)
+if(MATSAR_ENABLE_EXPERIMENTAL)
+    target_compile_definitions(matsar INTERFACE MATSAR_ENABLE_EXPERIMENTAL)
+endif()
 
-add_executable(Matrix matrix_main.cpp Matrix.hpp util/IgnoreWarningUtil.hpp math/LinearAlgebra.hpp NumberOperation.hpp math/DigitalSignal.hpp math/MatrixOperation.hpp math/Probability.hpp)
-add_executable(pure_test test/pure_test.cpp)
+if(MATSAR_WITH_BLAS)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MatSARBlas.cmake)
+    matsar_find_blas()              # defines MatSAR::blas + MATSAR_BLAS_SOURCE
+    message(STATUS "MatSAR BLAS: ${MATSAR_BLAS_SOURCE}")
+    target_link_libraries(matsar INTERFACE MatSAR::blas)
+    target_compile_definitions(matsar INTERFACE MATSAR_WITH_BLAS)
+endif()
 
-add_executable(broadcast_test test/broadcast_test.cpp)
-add_executable(numberop_test test/numberop_test.cpp)
-
-add_executable(probability_test test/probability_test.cpp)
-target_link_libraries(probability_test libopenblas)
-
-add_executable(linear_algebra_test test/linear_algebra_test.cpp)
-target_link_libraries(linear_algebra_test libopenblas)
-
-add_executable(matrix_operation_test test/matrix_operation_test.cpp)
-add_executable(core_test test/core_test.cpp)
-target_link_libraries(core_test libopenblas)
-
-add_executable(openblas_test test/openblas_test.cpp)
-target_link_libraries(openblas_test libopenblas)
-
-add_executable(trigonometry_test test/trigonometry_test.cpp)
-target_link_libraries(trigonometry_test libopenblas)
-
-add_executable(matrix_operation_test2 test/matrix_operation_test2.cpp)
-target_link_libraries(matrix_operation_test2 libopenblas)
-
-add_executable(linear_algebra_test2 test/linear_algebra_test2.cpp)
-target_link_libraries(linear_algebra_test2 libopenblas)
-
-add_executable(probability_test2 test/probability_test2.cpp)
-target_link_libraries(probability_test2 libopenblas)
-
-add_executable(digital_signal_test test/digital_signal_test.cpp)
-target_link_libraries(digital_signal_test libopenblas)
+if(MATSAR_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

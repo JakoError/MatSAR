@@ -15,52 +15,88 @@ namespace MatSAR {
     namespace Internal {
         template<typename T>
         class DimIter : public std::iterator<std::bidirectional_iterator_tag, T> {
+        protected:
+            T hidden_zero = 0;
         public:
+            virtual ~DimIter() = default;
+
             T *iter = nullptr;
             msize_type step_size = 1;
+            const msize_type length = 0;
+            msize_type position = 0;
 
-            DimIter(T *iter,
-                    const msize_type &stepSize) : iter(iter), step_size(stepSize) {};
+//            std::unique_ptr<T[]> extended_space = nullptr;
+//            msize_type extended_length;
 
-            auto inline operator[](const msize_type &i) -> T & {
+//            DimIter(T *iter, const msize_type &stepSize, const msize_type &length,
+//                    const msize_type &position = 0) : iter(iter), step_size(stepSize),
+//                                                      position(position), length(length), extended_length(length) {};
+//
+//            DimIter(T *iter, const msize_type &stepSize, const msize_type &length,
+//                    const msize_type &position, const msize_type &extendedLength) : iter(iter), step_size(stepSize),
+//                                                      position(position), length(length), extended_length(length) {};
+
+            DimIter(T *iter, const msize_type &stepSize, const msize_type &length,
+                    const msize_type &position = 0) : iter(iter), step_size(stepSize),
+                                                      length(length), position(position) {}
+
+            virtual auto operator[](const msize_type &i) -> T & {
+                auto control_i = position + i;
+                if (control_i >= length || control_i < 0) {
+                    if (hidden_zero != T(0)) {
+                        throw_warning("For DimIter, the access of memory is protected even index is out of range. "
+                                      "The protected zero is changed. Check the algorithm for more information.");
+                        hidden_zero = T(0);
+                    }
+                    return hidden_zero;
+                }
                 return iter[i * step_size];
             }
 
-            auto inline operator*() -> T & {
-                return *iter;
+            auto operator*() -> T & {
+                return this->operator[](0);
             }
 
-            auto inline operator=(const DimIter<T> &another) -> DimIter<T> & = default;
+            auto operator=(const DimIter<T> &another) -> DimIter<T> & = default;
 
-            auto inline operator++() -> DimIter<T> & {
+            auto operator++() -> DimIter<T> & {
                 this->iter += step_size;
+                this->position++;
                 return *this;
             }
 
-            auto inline operator--() -> DimIter<T> & {
+            auto operator--() -> DimIter<T> & {
                 this->iter -= step_size;
+                --this->position;
                 return *this;
             }
 
-            auto inline operator+=(size_t i) -> DimIter<T> & {
+            auto operator+=(size_t i) -> DimIter<T> & {
                 this->iter += i * step_size;
+                this->position += i;
                 return *this;
             }
 
             auto inline operator-=(size_t i) -> DimIter<T> & {
                 this->iter -= i * step_size;
+                this->position -= i;
                 return *this;
             }
 
             auto inline operator+(size_t i) -> DimIter<T> {
-                return {iter + i * step_size, step_size};
+                DimIter<T> result = *this;
+                result += i;
+                return result;
             }
 
             auto inline operator-(size_t i) -> DimIter<T> {
-                return {iter - i * step_size, step_size};
+                DimIter<T> result = *this;
+                result -= i;
+                return result;
             }
 
             auto inline operator-(const DimIter &rhs) -> typeof((this->iter - rhs.iter) / step_size) {
+                assert(this->step_size == rhs.step_size);
                 return (this->iter - rhs.iter) / step_size;
             }
 
@@ -81,19 +117,62 @@ namespace MatSAR {
             }
 
             bool operator<=(const DimIter &rhs) const {
-                return this->iter < rhs.iter;
+                return this->iter <= rhs.iter;
             }
 
             bool operator>=(const DimIter &rhs) const {
-                return this->iter > rhs.iter;
+                return this->iter >= rhs.iter;
             }
         };
 
+//        template<typename T>
+//        class DimIterExtend : DimIter<T> {
+//        public:
+//
+//
+//            auto inline operator[](const msize_type &i) -> T & {
+//                auto control_i = this->position + i;
+//                if (control_i >= extended_length || control_i < 0) {
+//                    if (this->hidden_zero != T(0)) {
+//                        throw_warning("For DimIter, the access of memory is protected even index is out of range. "
+//                                      "The protected zero is changed. Check the algorithm for more information.");
+//                        this->hidden_zero = T(0);
+//                    }
+//                    return this->hidden_zero;
+//                }
+//                if (control_i >= this->length) {
+//                    auto extended_i = i - this->length;
+//                    return extended_space[extended_i];
+//                }
+//                return this->iter[i * this->step_size];
+//            }
+//
+//            DimIterExtend(T *iter, const msize_type &stepSize, const msize_type &length, const msize_type &position,
+//                          const msize_type &extendedLength) : DimIter<T>(iter, stepSize, length, position),
+//                                                              extended_length(extendedLength) {
+//                assert(extendedLength >= length);
+//                extended_space = std::unique_ptr<T[]>(new T[extendedLength - length]);
+//            }
+//        };
+
         template<typename T>
         auto makeDimIter(T *iter,
-                         const msize_type &stepSize) -> DimIter<T> {
-            return {iter, stepSize};
+                         const msize_type &stepSize,
+                         const msize_type &length,
+                         const msize_type &position = 0
+        ) -> DimIter<T> {
+            return {iter, stepSize, length, position};
         }
+
+//        template<typename T>
+//        auto makeDimIterExtend(T *iter,
+//                               const msize_type &stepSize,
+//                               const msize_type &length,
+//                               const msize_type &position,
+//                               const msize_type &extendedLength
+//        ) -> DimIterExtend<T> {
+//            return {iter, stepSize, length, position, extendedLength};
+//        }
     }
 
     /**
@@ -332,8 +411,8 @@ namespace MatSAR {
 
         for (msize_type u = 0; u < unit_num; ++u) {
             for (msize_type i = 0; i < step_size; ++i) {
-                auto inner_iter_r = Internal::makeDimIter(iter_r + i, step_size);
-                auto inner_iter_m = Internal::makeDimIter(iter_m + i, step_size);
+                auto inner_iter_r = Internal::makeDimIter(iter_r + i, step_size, step_num);
+                auto inner_iter_m = Internal::makeDimIter(iter_m + i, step_size, step_num);
                 for (msize_type j = 0; j < step_num; ++j) {
                     auto &r_v = inner_iter_r[j];
                     auto &m_v = inner_iter_m[j];
@@ -363,8 +442,8 @@ namespace MatSAR {
 
         for (msize_type u = 0; u < unit_num; ++u) {
             for (msize_type i = 0; i < step_size; ++i) {
-                auto inner_iter_r = Internal::makeDimIter(iter_r + i, step_size);
-                auto inner_iter_m = Internal::makeDimIter(iter_m + i, step_size);
+                auto inner_iter_r = Internal::makeDimIter(iter_r + i, step_size, step_num);
+                auto inner_iter_m = Internal::makeDimIter(iter_m + i, step_size, step_num);
                 for (msize_type j = 0; j < step_num; ++j) {
                     auto &r_v = inner_iter_r[j];
                     auto &m_v = inner_iter_m[j];
@@ -405,9 +484,9 @@ namespace MatSAR {
         }
         for (msize_type u = 0; u < unit_num; ++u) {
             for (msize_type i = 0; i < step_size; ++i) {
-                auto inner_iter_m = Internal::makeDimIter(iter_m + i, step_size);
-                auto inner_iter_r = Internal::makeDimIter(iter_r + i, step_size);
-                fun_1d(inner_iter_r, inner_iter_m, k, work.get());
+                auto inner_iter_m = Internal::makeDimIter(iter_m + i, step_size, step_num);
+                auto inner_iter_r = Internal::makeDimIter(iter_r + i, step_size, k);
+                fun_1d(inner_iter_m, inner_iter_r, k, work.get());
             }
             iter_m += unit_size;
             iter_r += r_unit_size;
@@ -441,8 +520,8 @@ namespace MatSAR {
         }
         for (msize_type u = 0; u < unit_num; ++u) {
             for (msize_type i = 0; i < step_size; ++i) {
-                auto inner_iter_m = Internal::makeDimIter(iter_m + i, step_size);
-                auto inner_iter_r = Internal::makeDimIter(iter_r + i, step_size);
+                auto inner_iter_m = Internal::makeDimIter(iter_m + i, step_size, step_num);
+                auto inner_iter_r = Internal::makeDimIter(iter_r + i, step_size, k);
                 F<typeof(inner_iter_m), typeof(inner_iter_r), typeof(work.get())>()(inner_iter_m, inner_iter_r, k,
                                                                                     work.get());
             }
@@ -478,8 +557,8 @@ namespace MatSAR {
         }
         for (msize_type u = 0; u < unit_num; ++u) {
             for (msize_type i = 0; i < step_size; ++i) {
-                auto inner_iter_m = Internal::makeDimIter(iter_m + i, step_size);
-                auto inner_iter_r = Internal::makeDimIter(iter_r + i, step_size);
+                auto inner_iter_m = Internal::makeDimIter(iter_m + i, step_size, n);
+                auto inner_iter_r = Internal::makeDimIter(iter_r + i, step_size, k);
                 F<typeof(inner_iter_m), typeof(inner_iter_r), typeof(work.get())>()(inner_iter_m, inner_iter_r, n, k,
                                                                                     work.get());
             }
