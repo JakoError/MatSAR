@@ -84,7 +84,6 @@ Matrix(VEC_n vec) {\
 }
 
 #define VEC_CONSTRUCTOR_MAKER_N \
-VEC_CONSTRUCTOR_MAKER(VEC##2)\
 VEC_CONSTRUCTOR_MAKER(VEC##3)\
 VEC_CONSTRUCTOR_MAKER(VEC##4)\
 VEC_CONSTRUCTOR_MAKER(VEC##5)\
@@ -1143,6 +1142,22 @@ namespace MatSAR {
             return fromColumns(list).T();
         }
 
+        /// vector<vector> overloads of the explicit builders (same semantics as the
+        /// initializer-list versions): fromColumns = column-wise, fromRows = transpose.
+        static auto fromColumns(VEC2 vec) -> Matrix<dType> {
+            Matrix<dType> m;
+            Util::VectorUtil::checkVecFix(vec);
+            m.size = Util::VectorUtil::getFixVecSize(vec);
+            m.shape = Util::VectorUtil::getVecDimSize(vec);
+            m.allocate(m.size);
+            Util::VectorUtil::VecCopy(vec, m.data);
+            return m;
+        }
+
+        static auto fromRows(VEC2 vec) -> Matrix<dType> {
+            return fromColumns(vec).T();
+        }
+
         /// 2-D nested initializer list. Default = row-wise (fromRows). Define
         /// MATSAR_LEGACY_COLUMN_INITIALIZER_LIST for legacy column-wise layout
         /// (temporary migration aid -- prefer fromRows()/fromColumns()).
@@ -1161,6 +1176,16 @@ namespace MatSAR {
             uninitialized_copy(vec.begin(), vec.end(), this->data);
             this->size = vec.size();
             this->shape = {this->size};
+        }
+
+        /// 2-D nested vector. Default = row-wise (fromRows); legacy column-wise under
+        /// MATSAR_LEGACY_COLUMN_INITIALIZER_LIST (consistent with the initializer-list ctor).
+        Matrix(VEC2 vec) {
+#ifdef MATSAR_LEGACY_COLUMN_INITIALIZER_LIST
+            *this = fromColumns(vec);
+#else
+            *this = fromRows(vec);
+#endif
         }
 
         VEC_CONSTRUCTOR_MAKER_N

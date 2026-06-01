@@ -1,6 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
+#include <vector>
 #include <Matrix.hpp>
 
 using namespace MatSAR;
@@ -55,4 +56,31 @@ TEST_CASE("flat 1-D initializer list is unchanged (shape {N})") {
     CHECK(v.getShape()[0] == 3);
     CHECK(v(0) == 1);
     CHECK(v(2) == 3);
+}
+
+TEST_CASE("vector<vector> constructor matches the row-wise default") {
+    std::vector<std::vector<int64>> vv = {{1, 2, 3}, {4, 5, 6}};
+    Matrix<int64> m(vv);
+#ifdef MATSAR_LEGACY_COLUMN_INITIALIZER_LIST
+    CHECK(m.getShape()[0] == 3);   // legacy column-wise -> 3x2
+    CHECK(m.getShape()[1] == 2);
+    CHECK(m(0, 1) == 4);
+#else
+    CHECK(m.getShape()[0] == 2);   // row-wise -> 2x3 (consistent with the init-list)
+    CHECK(m.getShape()[1] == 3);
+    CHECK(m(0, 1) == 2);
+    CHECK(m(1, 0) == 4);
+#endif
+}
+
+TEST_CASE("fromRows / fromColumns accept vector<vector>") {
+    std::vector<std::vector<int64>> vv = {{1, 2, 3}, {4, 5, 6}};
+    auto r = Matrix<int64>::fromRows(vv);
+    auto c = Matrix<int64>::fromColumns(vv);
+    CHECK(r.getShape()[0] == 2);   // rows -> 2x3
+    CHECK(r.getShape()[1] == 3);
+    CHECK(r(1, 0) == 4);
+    CHECK(c.getShape()[0] == 3);   // columns -> 3x2
+    CHECK(c.getShape()[1] == 2);
+    CHECK(c(0, 1) == 4);
 }
