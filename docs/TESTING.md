@@ -79,11 +79,22 @@ ctest --test-dir build -C Debug --output-on-failure
 
 ### Linux / WSL (Ninja)
 
+Use a build directory **separate** from any Windows one (see the note below):
+
 ```bash
-cmake -G Ninja -B build
-cmake --build build
-ctest --test-dir build --output-on-failure
+cmake -G Ninja -B build-wsl
+cmake --build build-wsl
+ctest --test-dir build-wsl --output-on-failure
 ```
+
+> **Sharing a checkout between Windows and WSL/MSVC/MinGW:** a build directory is
+> **not** portable across them — the CMake cache stores absolute paths (`E:\…` vs
+> `/mnt/e/…`) and a specific compiler. Reusing Windows' `build/` from WSL fails with
+> *"The source … does not match the source … used to generate cache."* Use a distinct
+> directory per environment: `build/` (MinGW), `build-wsl/` (WSL), `build-msvc/` (MSVC),
+> etc. All `build*/` dirs are git-ignored.
+> Tip: building under `/mnt/e` from WSL is slow (9p filesystem); for speed, build inside
+> the WSL filesystem, e.g. `-B ~/matsar-build`.
 
 ---
 
