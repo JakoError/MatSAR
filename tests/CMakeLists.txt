@@ -7,6 +7,7 @@ set(MATSAR_TESTS
         test_comparison
         test_build_config
         test_print
+        test_construct
 )
 
 foreach(t IN LISTS MATSAR_TESTS)

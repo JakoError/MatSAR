@@ -1120,6 +1120,24 @@ namespace MatSAR {
             this->shape = {this->size};
         }
 
+        /// Build a matrix from explicit COLUMNS: each inner list is one column
+        /// (this is the legacy nested-initializer-list layout). Column-major stored.
+        static auto fromColumns(LIST2 list) -> Matrix<dType> {
+            Matrix<dType> m;
+            Util::VectorUtil::checkListFix(list);
+            m.size = Util::VectorUtil::getFixListSize(list);
+            m.shape = Util::VectorUtil::getDimSize(list);
+            m.allocate(m.size);
+            Util::VectorUtil::uninitListCopy(list, m.data);
+            return m;
+        }
+
+        /// Build a matrix from explicit ROWS: each inner list is one row
+        /// (NumPy/MATLAB-literal layout). Implemented as fromColumns(list).T().
+        static auto fromRows(LIST2 list) -> Matrix<dType> {
+            return fromColumns(list).T();
+        }
+
         LIST_CONSTRUCTOR_MAKER_N
 
         Matrix(VEC1 vec) {
