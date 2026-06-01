@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(MATSAR_WITH_BLAS "Enable OpenBLAS-backed matrix multiply (mmul/%)" ON)
 option(MATSAR_ENABLE_EXPERIMENTAL "Include unfinished experimental modules" OFF)
+option(MATSAR_LEGACY_COLUMN_INITIALIZER_LIST "Revert nested {{...}} to legacy column-wise construction (temporary migration aid)" OFF)
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     option(MATSAR_BUILD_TESTS "Build MatSAR tests" ON)
 else()
@@ -24,6 +25,10 @@ target_compile_features(matsar INTERFACE cxx_std_17)
 
 if(MATSAR_ENABLE_EXPERIMENTAL)
     target_compile_definitions(matsar INTERFACE MATSAR_ENABLE_EXPERIMENTAL)
+endif()
+
+if(MATSAR_LEGACY_COLUMN_INITIALIZER_LIST)
+    target_compile_definitions(matsar INTERFACE MATSAR_LEGACY_COLUMN_INITIALIZER_LIST)
 endif()
 
 if(MATSAR_WITH_BLAS)

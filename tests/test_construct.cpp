@@ -34,3 +34,25 @@ TEST_CASE("fromRows equals fromColumns transposed") {
     CHECK(r(0, 2) == ct(0, 2));
     CHECK(r(1, 0) == ct(1, 0));
 }
+
+TEST_CASE("default nested initializer list is row-wise (unless legacy flag)") {
+    Matrix<int64> m = {{1, 2, 3}, {4, 5, 6}};
+#ifdef MATSAR_LEGACY_COLUMN_INITIALIZER_LIST
+    CHECK(m.getShape()[0] == 3);   // legacy: column-wise -> 3x2
+    CHECK(m.getShape()[1] == 2);
+    CHECK(m(0, 1) == 4);
+#else
+    CHECK(m.getShape()[0] == 2);   // default: row-wise -> 2x3
+    CHECK(m.getShape()[1] == 3);
+    CHECK(m(0, 1) == 2);
+    CHECK(m(1, 0) == 4);
+#endif
+}
+
+TEST_CASE("flat 1-D initializer list is unchanged (shape {N})") {
+    Matrix<int64> v = {1, 2, 3};
+    CHECK(v.getSize() == 3);
+    CHECK(v.getShape()[0] == 3);
+    CHECK(v(0) == 1);
+    CHECK(v(2) == 3);
+}

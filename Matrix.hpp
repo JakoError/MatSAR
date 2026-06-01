@@ -66,7 +66,6 @@ Matrix(LIST_n list) {\
 }
 
 #define LIST_CONSTRUCTOR_MAKER_N \
-LIST_CONSTRUCTOR_MAKER(LIST##2)\
 LIST_CONSTRUCTOR_MAKER(LIST##3)\
 LIST_CONSTRUCTOR_MAKER(LIST##4)\
 LIST_CONSTRUCTOR_MAKER(LIST##5)\
@@ -1136,6 +1135,17 @@ namespace MatSAR {
         /// (NumPy/MATLAB-literal layout). Implemented as fromColumns(list).T().
         static auto fromRows(LIST2 list) -> Matrix<dType> {
             return fromColumns(list).T();
+        }
+
+        /// 2-D nested initializer list. Default = row-wise (fromRows). Define
+        /// MATSAR_LEGACY_COLUMN_INITIALIZER_LIST for legacy column-wise layout
+        /// (temporary migration aid -- prefer fromRows()/fromColumns()).
+        Matrix(LIST2 list) {
+#ifdef MATSAR_LEGACY_COLUMN_INITIALIZER_LIST
+            *this = fromColumns(list);
+#else
+            *this = fromRows(list);
+#endif
         }
 
         LIST_CONSTRUCTOR_MAKER_N
