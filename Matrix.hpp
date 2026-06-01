@@ -648,17 +648,23 @@ namespace MatSAR {
             return ss.str();
         }
 
-        auto arrayToString(dType *&p, msize_type dim, int align = 0) const -> string {
-            if (!p || dim < 0 || dim >= shape.size())
+        /// Logical (row-major) braced rendering: outermost brace = axis 0, innermost =
+        /// last axis, elements accessed by column-major offset so the printout matches
+        /// operator()/toRowColString. `base` is the storage offset of the current slice.
+        auto arrayToString(msize_type dim, size_type base, int align = 0) const -> string {
+            if (!data || shape.empty() || dim < 0 || dim >= static_cast<msize_type>(shape.size()))
                 return "{}";
             stringstream ss;
             string spaces(static_cast<std::basic_string<char>::size_type>((align + 1) * 2), ' ');
-            if (dim == 0) {
+            // column-major stride of axis `dim` = product(shape[0..dim-1])
+            size_type stride = 1;
+            for (msize_type d = 0; d < dim; ++d)
+                stride *= shape[d];
+            if (dim == static_cast<msize_type>(shape.size()) - 1) {
                 ss << spaces << "{";
-                dType *end = p + shape[0];
-                while (p != end) {
-                    ss << dataToString(*p) << ' ';
-                    if (++p == end)
+                for (size_type k = 0; k < shape[dim]; ++k) {
+                    ss << dataToString(data[base + k * stride]) << ' ';
+                    if (k + 1 == shape[dim])
                         ss << "}";
                     else
                         ss << ", ";
@@ -667,10 +673,10 @@ namespace MatSAR {
             }
             ss << spaces << "{\n";
             for (size_type i = 0; i < shape[dim]; ++i) {
-                ss << arrayToString(p, dim - 1, align + 1);
+                ss << arrayToString(dim + 1, base + i * stride, align + 1);
                 if (i != shape[dim] - 1) {
                     ss << ",\n";
-                    if (dim == 2)
+                    if (dim == static_cast<msize_type>(shape.size()) - 3)
                         ss << "\n";
                 }
             }
@@ -2326,8 +2332,7 @@ namespace MatSAR {
                 ss << shapeToString();
                 ss << " =\n";
             }
-            dType *p = this->data;
-            ss << arrayToString(p, shape.size() - 1) << ";\n";
+            ss << arrayToString(0, 0) << ";\n";
             return ss.str();
         }
 

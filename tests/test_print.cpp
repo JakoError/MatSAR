@@ -66,3 +66,13 @@ TEST_CASE("float matrix prints fixed-point values") {
     CHECK(has(s, "float64"));
     CHECK(has(s, "1.0000"));          // fixed-point formatting
 }
+
+TEST_CASE("toString prints logical row-major (matches operator()/toRowColString)") {
+    auto m = Matrix<int64>::fromRows({{1, 2, 3}, {4, 5, 6}});  // rows [1,2,3],[4,5,6]
+    const string s = m.toString("m", /*printMessage=*/false);  // braces only, no shape header
+    // Row-major reading is 1,2,3,4,5,6 -> values appear in that position order.
+    // The (buggy) column-major print would be 1,4,2,5,3,6 (so "4" before "3").
+    CHECK(s.find("3") < s.find("4"));   // end of row 0 precedes start of row 1
+    CHECK(s.find("2") < s.find("4"));
+    CHECK(s.find("4") < s.find("6"));
+}
