@@ -52,6 +52,8 @@ using mshape_type = std::vector<msize_type>;
 
 #endif // MATSAR_WITH_BLAS
 
+// Hand-laid-out code-generation macros below; keep their exact layout.
+// clang-format off
 #define LIST_CONSTRUCTOR_MAKER(LIST_n) \
 Matrix(LIST_n list) {\
     Util::VectorUtil::checkListFix(list);\
@@ -86,6 +88,7 @@ VEC_CONSTRUCTOR_MAKER(VEC##5)\
 VEC_CONSTRUCTOR_MAKER(VEC##6)\
 VEC_CONSTRUCTOR_MAKER(VEC##7)\
 VEC_CONSTRUCTOR_MAKER(VEC##8)
+// clang-format on
 
 //using namespace std;
 
@@ -559,7 +562,6 @@ namespace matsar {
             while (n-- > 0)
                 *dst++ = std::pow(left, *right++);
         }
-
     };
 
     /**
@@ -583,8 +585,10 @@ namespace matsar {
     public:
         using size_type = msize_type;
         using shape_type = mshape_type;
+
     private:
         using alloc_trait = allocator_traits<allocator<dType>>;
+
     protected:
         using Base = MatrixBase;
         allocator<dType> alloc;
@@ -605,9 +609,7 @@ namespace matsar {
                 last = data + n;
                 return data;
             } catch (const bad_alloc &e) {
-                cerr << e.what() << ": " << "Unable to allocate" + to_string(n * sizeof(dType)) +
-                                            "B memory for an array with shape " +
-                                            matsar::Util::VectorUtil::toString(shape) + " and data type "
+                cerr << e.what() << ": " << "Unable to allocate" + to_string(n * sizeof(dType)) + "B memory for an array with shape " + matsar::Util::VectorUtil::toString(shape) + " and data type "
                      << typeid(dType).name() << endl;
                 debug();
             } catch (const exception &e) {
@@ -694,7 +696,8 @@ namespace matsar {
                         ss << "\n";
                 }
             }
-            ss << "\n" << spaces << "}";
+            ss << "\n"
+               << spaces << "}";
             return ss.str();
         }
 
@@ -931,13 +934,13 @@ namespace matsar {
         ///unit-Two-dimensional matrix unit
         [[nodiscard]] auto getUnitSize() const -> size_type {
             switch (getDims()) {
-                case 0:
-                    return 0;
-                case 1:
-                    return shape[0];
-                default:
-                case 2:
-                    return shape[0] * shape[1];
+            case 0:
+                return 0;
+            case 1:
+                return shape[0];
+            default:
+            case 2:
+                return shape[0] * shape[1];
             }
         }
 
@@ -951,13 +954,13 @@ namespace matsar {
         ///unit-Two-dimensional matrix unit
         [[nodiscard]] auto getUnitShape() const -> shape_type {
             switch (getDims()) {
-                case 0:
-                    return {0, 0};
-                case 1:
-                    return {shape[0], 1};
-                default:
-                case 2:
-                    return {shape[0], shape[1]};
+            case 0:
+                return {0, 0};
+            case 1:
+                return {shape[0], 1};
+            default:
+            case 2:
+                return {shape[0], shape[1]};
             }
         }
 
@@ -970,7 +973,7 @@ namespace matsar {
             shape = new_shape;
         }
 
-        template<typename TargetType=decltype(std::real(std::declval<dType>()))>
+        template<typename TargetType = decltype(std::real(std::declval<dType>()))>
         [[nodiscard]] auto real() const -> Matrix<TargetType> {
             Matrix<TargetType> r(shape, TargetType());
             auto iter_c = getData();
@@ -979,7 +982,7 @@ namespace matsar {
             return r;
         }
 
-        template<typename TargetType=decltype(std::imag(std::declval<dType>()))>
+        template<typename TargetType = decltype(std::imag(std::declval<dType>()))>
         [[nodiscard]] auto image() const -> Matrix<TargetType> {
             Matrix<TargetType> r(shape, TargetType());
             auto iter_c = getData();
@@ -988,12 +991,12 @@ namespace matsar {
             return r;
         }
 
-        template<typename TargetType=decltype(std::imag(std::declval<dType>()))>
+        template<typename TargetType = decltype(std::imag(std::declval<dType>()))>
         [[nodiscard]] auto imag() const -> Matrix<TargetType> {
             return this->image<TargetType>();
         }
 
-        template<typename TargetType=decltype(std::conj(std::declval<dType>()))>
+        template<typename TargetType = decltype(std::conj(std::declval<dType>()))>
         [[nodiscard]] auto conj() const -> Matrix<TargetType> {
             Matrix<TargetType> r(shape, TargetType());
             auto iter_c = getData();
@@ -1320,8 +1323,10 @@ namespace matsar {
             auto shape2 = newAxis(m2.getShape(), 2);
 
             if (shape1[1] != shape2[0]) {
-                if (shape1[1] == 1) shape1[1] = shape2[0];
-                else if (shape2[0] == 1) shape2[0] = shape1[1];
+                if (shape1[1] == 1)
+                    shape1[1] = shape2[0];
+                else if (shape2[0] == 1)
+                    shape2[0] = shape1[1];
                 else
                     throw_broadcast_exception(MatrixBase::shapeToString(shape1), MatrixBase::shapeToString(shape2));
             }
@@ -1393,8 +1398,6 @@ namespace matsar {
 //            return data[pos];
 //        }
 
-
-
         virtual auto operator()(size_type offset) -> dType & {
             if (offset < 0 || offset > size) {
                 stringstream ss;
@@ -1423,7 +1426,8 @@ namespace matsar {
          * @param j j-th column (support negative index)
          * @return single element (reference)
          */
-        auto operator()(size_type n, size_type i, size_type j) -> dType & {
+                auto
+                operator()(size_type n, size_type i, size_type j) -> dType & {
             auto shape2d = newAxis(shape, 2);
             if (i < 0) i += shape2d[0];
             if (j < 0) j += shape2d[1];
@@ -1516,7 +1520,6 @@ namespace matsar {
 //            }
 //            return data[pos];
 //        }
-
 
         virtual auto operator()(shape_type pvec) -> dType & {
             if (pvec.size() != this->shape.size()) {
@@ -1681,7 +1684,6 @@ namespace matsar {
             return *this;
         }
 
-
 //        ///Matirx Mul Special BroadCast!
 //        template<typename Other>
 //        auto operator*=(const Matrix<Other> &right) -> Matrix & {
@@ -1831,7 +1833,6 @@ namespace matsar {
 //            }
 //            return *this;
 //        }
-
 
 //        /**
 //         * @redefine ^ not represent xor but power
@@ -2366,7 +2367,7 @@ namespace matsar {
          * This is different from regular row and column printing.
          * This is printed in the form of data structure.
          */
-        [[nodiscard]]auto toString(const string &matrixName = "Matrix", bool printMessage = true) const -> string {
+        [[nodiscard]] auto toString(const string &matrixName = "Matrix", bool printMessage = true) const -> string {
             stringstream ss;
             if (printMessage) {
                 ss << matrixName << "<" + getCalculableString<dType>() + ">  ";
@@ -2446,21 +2447,21 @@ namespace matsar {
 namespace matsar {
     /// Element-wise `+` with broadcasting (matrix+matrix, matrix+scalar, scalar+matrix).
     /// `-`, `*`, `/` follow the same pattern; `*` is element-wise, not a matrix product.
-    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() + std::declval<rT>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() + std::declval<rT>())>
     auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp += right;
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() + std::declval<rT>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() + std::declval<rT>())>
     auto operator+(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp += right;
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() + std::declval<rT>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() + std::declval<rT>())>
     auto operator+(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(right);
         tmp += left;
@@ -2469,21 +2470,21 @@ namespace matsar {
 }
 
 namespace matsar {
-    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() - std::declval<rT>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() - std::declval<rT>())>
     auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp -= right;
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() - std::declval<rT>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() - std::declval<rT>())>
     auto operator-(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp -= right;
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() - std::declval<rT>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() - std::declval<rT>())>
     auto operator-(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(-right);
         tmp += left;
@@ -2491,31 +2492,28 @@ namespace matsar {
     }
 }
 namespace matsar {
-    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() * std::declval<rT>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() * std::declval<rT>())>
     auto mul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp *= right;   // element-wise with broadcasting (consistent with operator*)
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
-                                                                    (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
     auto operator*(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp *= TargetType{right + 0.};
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
-                                                                    (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
     auto operator*(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(right);
         tmp *= TargetType{left + 0.};
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
-                                                                    (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
     auto operator*(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp *= right;   // element-wise with broadcasting; matrix product is mmul()/operator%
@@ -2531,8 +2529,7 @@ namespace matsar {
      * Note: `operator*` between two matrices is ELEMENT-wise (see operator+), not
      * this matrix product.
      */
-    template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
-                                                                    (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
     auto mmul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         auto b_left = Matrix<TargetType>(left);
         auto b_right = Matrix<TargetType>(right);
@@ -2546,8 +2543,7 @@ namespace matsar {
     }
 
     /// Alias for mmul(): the BLAS-backed matrix product.
-    template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
-                                                                    (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
     auto operator%(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         return mmul<lT, rT, TargetType>(left, right);
     }
@@ -2557,7 +2553,7 @@ namespace matsar {
      * Vector Dot Product
      * Vector horizontal input, one row represents a vector X or Y
      */
-    template<typename dType, typename TargetType=decltype(std::declval<dType>() + std::declval<real_max>())>
+    template<typename dType, typename TargetType = decltype(std::declval<dType>() + std::declval<real_max>())>
     auto dot(Matrix<dType> A, Matrix<dType> B) -> Matrix<TargetType> {
         A = A.squeeze();
         B = B.squeeze();
@@ -2652,24 +2648,21 @@ namespace matsar {
     }
 }
 namespace matsar {
-    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() / std::declval<rT>() +
-                                                                    std::declval<real_max>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() / std::declval<rT>() + std::declval<real_max>())>
     auto operator/(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp /= right;
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() / std::declval<rT>() +
-                                                                    std::declval<real_max>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() / std::declval<rT>() + std::declval<real_max>())>
     auto operator/(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp /= right;
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() / std::declval<rT>() +
-                                                                    std::declval<real_max>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() / std::declval<rT>() + std::declval<real_max>())>
     auto operator/(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(right.getShape(), static_cast<TargetType>(left));
         tmp /= right;
@@ -2677,49 +2670,49 @@ namespace matsar {
     }
 }
 namespace matsar {
-    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() & std::declval<T2>())>
+    template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() & std::declval<T2>())>
     auto operator&(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp &= right;
         return tmp;
     }
 
-    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() & std::declval<T2>())>
+    template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() & std::declval<T2>())>
     auto operator&(const Matrix<T1> &left, const T2 &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp &= right;
         return tmp;
     }
 
-    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() & std::declval<T2>())>
+    template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() & std::declval<T2>())>
     auto operator&(const T1 &left, const Matrix<T2> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(right);
         tmp &= left;
         return tmp;
     }
 
-    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() | std::declval<T2>())>
+    template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() | std::declval<T2>())>
     auto operator|(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp |= right;
         return tmp;
     }
 
-    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() | std::declval<T2>())>
+    template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() | std::declval<T2>())>
     auto operator|(const Matrix<T1> &left, const T2 &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp |= right;
         return tmp;
     }
 
-    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() | std::declval<T2>())>
+    template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() | std::declval<T2>())>
     auto operator|(const T1 &left, const Matrix<T2> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(right);
         tmp |= left;
         return tmp;
     }
 
-    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() ^ std::declval<T2>())>
+    template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() ^ std::declval<T2>())>
     auto bitxor(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<TargetType> {
         if (left.getShape() == right.getShape()) {
             Matrix<TargetType> tmp(left);
@@ -2734,14 +2727,14 @@ namespace matsar {
         }
     }
 
-    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() ^ std::declval<T2>())>
+    template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() ^ std::declval<T2>())>
     auto bitxor(const Matrix<T1> &left, const T2 &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         MatrixBase::Xor(tmp.getData(), right, tmp.getSize());
         return tmp;
     }
 
-    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() ^ std::declval<T2>())>
+    template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() ^ std::declval<T2>())>
     auto bitxor(const T1 &left, const Matrix<T2> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(right);
         MatrixBase::Xor(tmp.getData(), left, tmp.getSize());
@@ -2750,7 +2743,7 @@ namespace matsar {
 }
 
 namespace matsar {
-    template<typename lT, typename rT, typename TargetType=decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
     auto operator^(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         if (left.getShape() == right.getShape()) {
             Matrix<TargetType> r(left.getShape(), 0.);
@@ -2766,14 +2759,14 @@ namespace matsar {
         }
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
     auto operator^(const Matrix<lT> &left, const rT &right) -> Matrix<real_max> {
         Matrix<TargetType> r(left.getShape(), 0.);
         MatrixBase::Pow(left.getData(), right, r.getSize(), r.getData());
         return r;
     }
 
-    template<typename lT, typename rT, typename TargetType=decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
     auto operator^(const lT &left, const Matrix<rT> &right) -> Matrix<real_max> {
         Matrix<TargetType> r(right.getShape(), 0.);
         MatrixBase::Pow(left, right.getData(), r.getSize(), r.getData());

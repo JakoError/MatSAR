@@ -64,7 +64,6 @@ namespace matsar {
         return Matrix<dType>(m.getShape(), dType(1), m.getData());
     }
 
-
     /**
      * If the matrix is 1-dimensional, it is expanded to 2-dimensional.
      * If the matrix is 2-dimensional, it is extracted diagonally to 1-dimensional.
@@ -253,7 +252,6 @@ namespace matsar {
     auto flipud(const Matrix<dType> &m) -> Matrix<dType> {
         return flip(m, 1);
     }
-
 
     /**
      * 逆时针旋转k*90度

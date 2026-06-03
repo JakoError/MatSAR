@@ -40,6 +40,8 @@ using namespace matsar::Util::Exception;
 //
 //#endif
 
+// Hand-laid-out code-generation macros below; keep their exact layout.
+// clang-format off
 #define CHECK_LIST_FIX_MAKER(LIST_n, LIST_n_1) \
 template<class dType>\
 bool checkListFix(LIST_n list_n) {\
@@ -214,7 +216,7 @@ namespace matsar{namespace Util{namespace VectorUtil {\
     GET_FIX_VEC_SIZE_MAKER_N\
     GET_VEC_DIM_SIZE_MAKER_N \
     }}}
-
+// clang-format on
 
 namespace matsar {
     namespace Util {
@@ -243,7 +245,7 @@ namespace matsar {
 //                return Range(0, end, 1);
 //            }
 
-            template<IntType IT=int64 CheckInt(IT)>
+            template<IntType IT = int64 CheckInt(IT)>
             auto Range(const IT &start, const IT &end, const IT &step) -> vector<IT> {
                 if (start >= end - step)
                     return {};
@@ -260,12 +262,12 @@ namespace matsar {
                 return r;
             }
 
-            template<IntType IT=int64 CheckInt(IT)>
+            template<IntType IT = int64 CheckInt(IT)>
             auto Range(const IT &start, const IT &end) -> vector<IT> {
                 return Range(start, end, IT(1));
             }
 
-            template<IntType IT=int64 CheckInt(IT)>
+            template<IntType IT = int64 CheckInt(IT)>
             auto Range(const IT &end) -> vector<IT> {
                 return Range(IT(0), end, IT(1));
             }
@@ -374,7 +376,7 @@ namespace matsar {
             }
 
             template<typename T>
-            auto (mul)(const vector<T> &v) -> T {
+            auto(mul)(const vector<T> &v) -> T {
                 T s = 1;
                 for (const auto &i: v)
                     s *= i;
@@ -393,13 +395,12 @@ namespace matsar {
              * times from [begin:end)
              */
             template<typename T>
-            auto
-            (mul)(const vector<T> &v,
-                  const typename vector<T>::size_type begin, const typename vector<T>::size_type end) -> T {
+            auto(mul)(const vector<T> &v,
+                      const typename vector<T>::size_type begin, const typename vector<T>::size_type end) -> T {
                 if (!inRange(v, begin))
                     throw_out_of_range_error(
                             "mul: begin = " + std::to_string(begin) + " out of vector Range = " +
-                            std::to_string(v.size()),
+                                    std::to_string(v.size()),
                             true);
                 if (begin == end) return 1;
 
@@ -410,8 +411,9 @@ namespace matsar {
                 if (begin > end)
                     throw_out_of_range_error(
                             "mul: begin index should be lower than end index (begin = " + std::to_string(begin) +
-                            " end = " +
-                            std::to_string(end), true);
+                                    " end = " +
+                                    std::to_string(end),
+                            true);
                 T s = 1;
                 for (auto i = v.begin() + begin; i != v.begin() + end; ++i)
                     s *= *i;
@@ -432,7 +434,7 @@ namespace matsar {
             //    }
 
             template<typename T>
-            auto (sum)(const vector<T> &v) -> T {
+            auto(sum)(const vector<T> &v) -> T {
                 T s = 0;
                 for (const auto &i: v)
                     s += i;
@@ -443,13 +445,13 @@ namespace matsar {
              * sum from [begin:end-1]
              */
             template<typename T>
-            auto
-            (sum)(const vector<T> &v,
-                  const typename vector<T>::size_type begin, const typename vector<T>::size_type end) -> T {
+            auto(sum)(const vector<T> &v,
+                      const typename vector<T>::size_type begin, const typename vector<T>::size_type end) -> T {
                 if (!inRange(v, begin))
                     throw_out_of_range_error(
                             "sum: begin =" + std::to_string(begin) + " out of vector Range size =" +
-                            to_string(v.size()), true);
+                                    to_string(v.size()),
+                            true);
                 if (!inRange(v, end - 1))
                     throw_out_of_range_error(
                             "sum: end =" + std::to_string(begin) + " out of vector Range size =" + to_string(v.size()),
@@ -457,8 +459,9 @@ namespace matsar {
                 if (begin > end)
                     throw_out_of_range_error(
                             "sum: begin index should be lower than end index (begin = " + std::to_string(begin) +
-                            " end = " +
-                            std::to_string(end), true);
+                                    " end = " +
+                                    std::to_string(end),
+                            true);
                 T s = 0;
                 for (auto i = v.begin() + begin; i != v.begin() + end; ++i)
                     s += *i;
@@ -479,7 +482,7 @@ namespace matsar {
 //            }
 
             template<class T>
-            auto (max)(const vector<T> &v) -> T {
+            auto(max)(const vector<T> &v) -> T {
                 if (v.empty()) return 0;
                 T s = v[0];
                 for (const auto &ele: v) {
@@ -490,7 +493,7 @@ namespace matsar {
             }
 
             template<class T, class Pr>
-            auto (max)(const vector<T> &v, Pr pred) -> T {
+            auto(max)(const vector<T> &v, Pr pred) -> T {
                 if (v.empty()) return 0;
                 T s = v[0];
                 for (const auto &ele: v) {
@@ -501,7 +504,7 @@ namespace matsar {
             }
 
             template<class T>
-            auto (min)(const vector<T> &v) -> T {
+            auto(min)(const vector<T> &v) -> T {
                 if (v.empty()) return 0;
                 T s = v[0];
                 for (const auto &ele: v) {
@@ -512,7 +515,7 @@ namespace matsar {
             }
 
             template<class T, class Pr>
-            auto (min)(const vector<T> &v, Pr pred) -> T {
+            auto(min)(const vector<T> &v, Pr pred) -> T {
                 if (v.empty()) return 0;
                 T s = v[0];
                 for (const auto &ele: v) {
@@ -538,7 +541,6 @@ namespace matsar {
                     vec.insert(vec.end(), length - vec.size(), num);
                 }
             }
-
 
             /**
              * aline 2dim vector
