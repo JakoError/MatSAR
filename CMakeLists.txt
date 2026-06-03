@@ -11,6 +11,7 @@ option(MATSAR_WITH_BLAS "Enable OpenBLAS-backed matrix multiply (mmul/%)" ON)
 option(MATSAR_ENABLE_EXPERIMENTAL "Include unfinished experimental modules" OFF)
 option(MATSAR_LEGACY_COLUMN_INITIALIZER_LIST "Revert nested {{...}} to legacy column-wise construction (temporary migration aid)" OFF)
 option(MATSAR_BUILD_TESTS "Build MatSAR tests" ${_matsar_is_top_level})
+option(MATSAR_BUILD_EXAMPLES "Build MatSAR examples" ${_matsar_is_top_level})
 option(MATSAR_INSTALL "Generate MatSAR install + package-config rules" ${_matsar_is_top_level})
 
 # Header-only interface library
@@ -40,6 +41,10 @@ endif()
 if(MATSAR_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+if(MATSAR_BUILD_EXAMPLES)
+    add_subdirectory(examples)
 endif()
 
 # ---- install + package config (find_package(MatSAR) / FetchContent) ----

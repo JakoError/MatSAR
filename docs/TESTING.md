@@ -13,7 +13,7 @@ cmake --build build                              # 2. compile the tests
 ctest --test-dir build --output-on-failure       # 3. run the tests
 ```
 
-Expected: `100% tests passed, 0 tests failed out of 8` (or `7` with BLAS off).
+Expected: `100% tests passed, 0 tests failed out of 10` (or `9` with BLAS off).
 
 ---
 
@@ -106,6 +106,7 @@ ctest --test-dir build-wsl --output-on-failure
 | `MATSAR_ENABLE_EXPERIMENTAL` | `OFF` | Include unfinished modules (advanced LinearAlgebra, Probability, …). Not expected to build yet. |
 | `MATSAR_LEGACY_COLUMN_INITIALIZER_LIST` | `OFF` | Temporary migration aid: makes `{{...}}` column-wise again. Prefer `fromRows`/`fromColumns`. |
 | `MATSAR_BUILD_TESTS` | `ON` (top-level) | Build the test suite. |
+| `MATSAR_BUILD_EXAMPLES` | `ON` (top-level) | Build the runnable programs in `examples/`. |
 
 Pass options at configure time, e.g. core-only without BLAS:
 

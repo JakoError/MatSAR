@@ -108,6 +108,9 @@ namespace matsar {
         right = tmp;
     }
 
+    /// Internal, element-type-erased base for Matrix: shape/broadcast math and the
+    /// low-level kernels. The `///NO CHECK!` helpers are unchecked and not part of
+    /// the public API -- use Matrix<dType> directly.
     class MatrixBase {
     protected:
         using size_type = msize_type;
@@ -559,6 +562,22 @@ namespace matsar {
 
     };
 
+    /**
+     * N-dimensional, header-only matrix container templated on the element type
+     * `dType` (e.g. int64, float64, complex128).
+     *
+     * Construction from nested initializer lists is ROW-wise by default
+     * (`{{1,2,3},{4,5,6}}` is 2x3); `fromRows`/`fromColumns` build explicitly.
+     * `operator()` and the `toString`/`toRowColString` views are row-wise too.
+     *
+     * Internal storage is COLUMN-major: iteration (`begin`/`end`, range-for),
+     * `getData()`, and `reshape()` follow storage order, which does NOT match the
+     * row-wise reading. See docs/usage.md for the full layout note.
+     *
+     * Arithmetic and comparisons (`+ - * /`, `< <= > >= == !=`) are element-wise
+     * with broadcasting. Note `*` is element-wise -- the matrix product is
+     * `mmul(a, b)` / `a % b`.
+     */
     template<typename dType>
     class Matrix : public MatrixBase {
     public:
@@ -2200,6 +2219,7 @@ namespace matsar {
             return {squeezeShapeHigh(shape), data};
         }
 
+        /// Transpose: swaps the first two axes (applied to each 2-D page for N-D).
         [[nodiscard]] auto T() const -> Matrix<dType> {
             auto t_shape = shape;
             swap(t_shape[0], t_shape[1]);
@@ -2424,6 +2444,8 @@ namespace matsar {
 //    };
 }
 namespace matsar {
+    /// Element-wise `+` with broadcasting (matrix+matrix, matrix+scalar, scalar+matrix).
+    /// `-`, `*`, `/` follow the same pattern; `*` is element-wise, not a matrix product.
     template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() + std::declval<rT>())>
     auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
@@ -2518,6 +2540,7 @@ namespace matsar {
         return r;
     }
 
+    /// Alias for mmul(): the BLAS-backed matrix product.
     template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
                                                                     (std::declval<rT>() + 0.))>
     auto operator%(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {

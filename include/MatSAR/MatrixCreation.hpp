@@ -13,12 +13,19 @@
 
 #include "util/Compat.hpp"
 
+//
+// Creation helpers -- all return matsar::Matrix<dType> (element type defaults to
+// float_max): zeros / ones (+ *_like), eye, diag, arange, and the structural ops
+// flip / fliplr / flipud / rot90 / tril / triu.
+//
+
 namespace matsar {
     template<typename dType = float_max>
     auto zeros() -> dType {
         return 0;
     }
 
+    /// Matrix of the given shape filled with 0.
     template<typename dType = float_max>
     auto zeros(const mshape_type &shape) -> Matrix<dType> {
         return Matrix<dType>(shape, dType(0));
@@ -40,6 +47,7 @@ namespace matsar {
         return 1;
     }
 
+    /// Matrix of the given shape filled with 1.
     template<typename dType = float_max>
     auto ones(const mshape_type &shape) -> Matrix<dType> {
         return Matrix<dType>(shape, dType(1));
@@ -105,6 +113,8 @@ namespace matsar {
         }
     }
 
+    /// Identity-like matrix: n x m (m defaults to n) with ones on the k-th diagonal
+    /// (k>0 above the main diagonal, k<0 below).
     template<typename dType = float_max>
     auto eye(const msize_type &n, Container<msize_type> m = none, const msize_type &k = 0) -> Matrix<dType> {
         if (m == none) {
