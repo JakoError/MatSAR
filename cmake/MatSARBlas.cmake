@@ -66,7 +66,7 @@ function(matsar_find_blas)
 
     # 4) Bundled fallback (binaries shipped in the repo)
     add_library(MatSAR::blas INTERFACE IMPORTED GLOBAL)
-    target_include_directories(MatSAR::blas INTERFACE ${_root}/include)
+    target_include_directories(MatSAR::blas INTERFACE ${_root}/third_party/openblas/include)
     if(WIN32)
         if(MSVC)
             target_link_libraries(MatSAR::blas INTERFACE ${_root}/lib/libopenblas.lib)

@@ -1,8 +1,8 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
-#include <Matrix.hpp>
-#include <MatrixCreation.hpp>
+#include <MatSAR/Matrix.hpp>
+#include <MatSAR/MatrixCreation.hpp>
 
 using namespace MatSAR;
 

@@ -2,7 +2,7 @@
 #include "doctest.h"
 
 #include <vector>
-#include <Matrix.hpp>
+#include <MatSAR/Matrix.hpp>
 
 using namespace MatSAR;
 

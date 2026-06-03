@@ -31,6 +31,27 @@
 
 #endif //MATSAR_MATHEMATICALFUNCTION_HPP
 
+#ifdef MATSAR_WITH_BLAS
+
+// LAPACKE is used by this module's SVD / LU / inv / eig routines. Configure the
+// complex types and integer width, then pull in the header. (Relocated here from
+// Matrix.hpp so the core depends only on CBLAS; <lapacke.h> lives with the code
+// that actually uses it.)
+#define LAPACK_COMPLEX_CUSTOM
+#define lapack_complex_float std::complex<float>
+#define lapack_complex_double std::complex<double>
+
+// have to be int
+#define lapack_int int
+
+#ifndef _LAPACKE_H_
+
+#include <lapacke.h>
+
+#endif
+
+#endif // MATSAR_WITH_BLAS
+
 using MatSAR::Util::TypeUtil::eps;
 
 using MatSAR::Util::VectorUtil::Range;

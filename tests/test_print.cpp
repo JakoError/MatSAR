@@ -4,8 +4,8 @@
 #include <iostream>
 #include <string>
 
-#include <Matrix.hpp>
-#include <MatrixCreation.hpp>
+#include <MatSAR/Matrix.hpp>
+#include <MatSAR/MatrixCreation.hpp>
 
 using namespace MatSAR;
 using std::string;

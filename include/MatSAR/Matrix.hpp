@@ -39,20 +39,16 @@ using mshape_type = std::vector<msize_type>;
 
 #ifdef MATSAR_WITH_BLAS
 
-#include "include/cblas.h"
+#include <cblas.h>
 
-#define LAPACK_COMPLEX_CUSTOM
-#define lapack_complex_float std::complex<float>
-#define lapack_complex_double std::complex<double>
-
-// have to be int
-#define lapack_int int
-
-#ifndef _LAPACKE_H_
-
-#include "include/lapacke.h"
-
-#endif
+// NOTE: <lapacke.h> and its lapack_* configuration macros are intentionally NOT
+// included here. The core (mmul / operator%) uses only CBLAS, which every BLAS
+// implementation provides. LAPACKE is required solely by the experimental
+// linear-algebra module, which now includes <lapacke.h> itself (see
+// math/LinearAlgebra.hpp). Keeping it out of the core lets the core build with
+// any OpenBLAS on every platform -- notably Debian/Ubuntu, where lapacke.h ships
+// in a separate liblapacke-dev package and is NOT exposed by OpenBLAS's
+// pkg-config include path.
 
 #endif // MATSAR_WITH_BLAS
 

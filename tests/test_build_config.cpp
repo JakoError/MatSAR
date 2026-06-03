@@ -1,7 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
-#include <MatSAR.hpp>   // must compile whether or not MATSAR_WITH_BLAS is set
+#include <MatSAR/MatSAR.hpp>   // must compile whether or not MATSAR_WITH_BLAS is set
 
 using namespace MatSAR;
 
