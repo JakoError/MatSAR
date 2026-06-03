@@ -57,3 +57,40 @@ jobs:
         run: cmake --build build
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  # Core path with no OpenBLAS dependency (mmul/% disabled, test_mmul skipped).
+  linux-noblas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Configure (no BLAS)
+        run: cmake -G Ninja -B build -DMATSAR_WITH_BLAS=OFF
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # Formatting gate. clang-format is pinned (pip) so the result is identical to
+  # what contributors get locally; see .clang-format for the (no-reflow) style.
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install clang-format (pinned for reproducibility)
+        run: pip install clang-format==22.1.4
+      - name: Check formatting
+        run: |
+          clang-format --version
+          clang-format --dry-run --Werror \
+            include/MatSAR/Matrix.hpp \
+            include/MatSAR/MatrixCreation.hpp \
+            include/MatSAR/NumberOperation.hpp \
+            include/MatSAR/MatSAR.hpp \
+            include/MatSAR/util/*.hpp \
+            tests/*.cpp \
+            examples/*.cpp
