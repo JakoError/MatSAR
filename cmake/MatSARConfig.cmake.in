@@ -1,0 +1,16 @@
+@PACKAGE_INIT@
+
+# MatSAR is header-only. If it was built WITH OpenBLAS, the installed `matsar`
+# target carries an INTERFACE link to the imported `MatSAR::blas` target, so we
+# must recreate that target here BEFORE loading MatSARTargets.cmake. We reuse the
+# exact same discovery chain (pkg-config -> FindBLAS -> OpenBLAS CONFIG -> error)
+# the project builds with, rather than a bare find_dependency(OpenBLAS).
+set(MATSAR_WITH_BLAS @MATSAR_WITH_BLAS@)
+if(MATSAR_WITH_BLAS)
+    include("${CMAKE_CURRENT_LIST_DIR}/MatSARBlas.cmake")
+    matsar_find_blas()   # defines MatSAR::blas, or FATAL_ERRORs with guidance
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/MatSARTargets.cmake")
+
+check_required_components(MatSAR)

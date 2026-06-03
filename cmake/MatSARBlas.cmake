@@ -64,19 +64,31 @@ function(matsar_find_blas)
         return()
     endif()
 
-    # 4) Bundled fallback (binaries shipped in the repo)
-    add_library(MatSAR::blas INTERFACE IMPORTED GLOBAL)
-    target_include_directories(MatSAR::blas INTERFACE ${_root}/third_party/openblas/include)
-    if(WIN32)
-        if(MSVC)
-            target_link_libraries(MatSAR::blas INTERFACE ${_root}/lib/libopenblas.lib)
-        else() # MinGW links the DLL directly
-            target_link_libraries(MatSAR::blas INTERFACE ${_root}/bin/libopenblas.dll)
+    # 4) Bundled fallback (binaries shipped in the PRIVATE repo only; absent in an
+    #    installed or public tree). Existence-guarded so installed consumers fall
+    #    through to a clear error instead of referencing non-existent paths.
+    if(EXISTS "${_root}/third_party/openblas/include/cblas.h")
+        add_library(MatSAR::blas INTERFACE IMPORTED GLOBAL)
+        target_include_directories(MatSAR::blas INTERFACE ${_root}/third_party/openblas/include)
+        if(WIN32)
+            if(MSVC)
+                target_link_libraries(MatSAR::blas INTERFACE ${_root}/lib/libopenblas.lib)
+            else() # MinGW links the DLL directly
+                target_link_libraries(MatSAR::blas INTERFACE ${_root}/bin/libopenblas.dll)
+            endif()
+            set(MATSAR_BLAS_DLL ${_root}/bin/libopenblas.dll CACHE INTERNAL "bundled DLL to stage")
+            set(MATSAR_BLAS_SOURCE "bundled bin/libopenblas.dll" PARENT_SCOPE)
+        else() # Linux/Unix: bundled static ELF archive
+            target_link_libraries(MatSAR::blas INTERFACE ${_root}/lib/libopenblas.a pthread)
+            set(MATSAR_BLAS_SOURCE "bundled lib/libopenblas.a" PARENT_SCOPE)
         endif()
-        set(MATSAR_BLAS_DLL ${_root}/bin/libopenblas.dll CACHE INTERNAL "bundled DLL to stage")
-        set(MATSAR_BLAS_SOURCE "bundled bin/libopenblas.dll" PARENT_SCOPE)
-    else() # Linux/Unix: bundled static ELF archive
-        target_link_libraries(MatSAR::blas INTERFACE ${_root}/lib/libopenblas.a pthread)
-        set(MATSAR_BLAS_SOURCE "bundled lib/libopenblas.a" PARENT_SCOPE)
+        return()
     endif()
+
+    # 5) Nothing found anywhere -- fail with actionable guidance.
+    message(FATAL_ERROR
+            "MatSAR: OpenBLAS not found (pkg-config, FindBLAS, OpenBLAS CONFIG, and the "
+            "bundled fallback all failed). Install OpenBLAS -- e.g. 'apt install libopenblas-dev', "
+            "MSYS2 'pacman -S mingw-w64-x86_64-openblas', or 'vcpkg install openblas' -- or "
+            "configure MatSAR with -DMATSAR_WITH_BLAS=OFF.")
 endfunction()
