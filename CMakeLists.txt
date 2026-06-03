@@ -18,9 +18,7 @@ endif()
 add_library(matsar INTERFACE)
 add_library(matsar::matsar ALIAS matsar)
 target_include_directories(matsar INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/math)
+        ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(matsar INTERFACE cxx_std_17)
 
 if(MATSAR_ENABLE_EXPERIMENTAL)

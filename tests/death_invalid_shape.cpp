@@ -3,7 +3,7 @@
 // exception (see ExceptionUtil.hpp; "better exception handling" is future work),
 // so this is verified as a death test via CTest PASS_REGULAR_EXPRESSION, not
 // doctest CHECK_THROWS.
-#include <Matrix.hpp>
+#include <MatSAR/Matrix.hpp>
 
 using namespace MatSAR;
 
