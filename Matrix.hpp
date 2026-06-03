@@ -39,7 +39,7 @@ using mshape_type = std::vector<msize_type>;
 
 #ifdef MATSAR_WITH_BLAS
 
-#include "include/cblas.h"
+#include <cblas.h>
 
 #define LAPACK_COMPLEX_CUSTOM
 #define lapack_complex_float std::complex<float>
@@ -50,7 +50,7 @@ using mshape_type = std::vector<msize_type>;
 
 #ifndef _LAPACKE_H_
 
-#include "include/lapacke.h"
+#include <lapacke.h>
 
 #endif
 
