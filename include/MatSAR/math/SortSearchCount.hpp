@@ -17,7 +17,7 @@
 
 #endif //MATSAR_UNIVERSALFUNCTIONS_HPP
 
-namespace MatSAR {
+namespace matsar {
     namespace Math {
         namespace Internal {
             template<typename ITER_SRC_T, typename ITER_DST_T, typename WORT_T=void>
@@ -44,10 +44,10 @@ namespace MatSAR {
             template<typename dType, typename TargetType>
             auto do_global_sort(const Matrix<dType> &m, const bool &up) -> Matrix<TargetType> {
                 if (up) {
-                    return MatSAR::apply_tfunction_global_all_k<dType, TargetType, dType, Internal::SORT_UP>(m,
+                    return matsar::apply_tfunction_global_all_k<dType, TargetType, dType, Internal::SORT_UP>(m,
                                                                                                              m.getSize());
                 } else {
-                    return MatSAR::apply_tfunction_global_all_k<dType, TargetType, dType, Internal::SORT_DOWN>(m,
+                    return matsar::apply_tfunction_global_all_k<dType, TargetType, dType, Internal::SORT_DOWN>(m,
                                                                                                                m.getSize());
                 }
             }
@@ -56,11 +56,11 @@ namespace MatSAR {
             auto
             do_sort(const Matrix<dType> &m, const msize_type &dim_idx, const bool &up) -> Matrix<TargetType> {
                 if (up) {
-                    return MatSAR::apply_tfunction_all_k<dType, TargetType, dType, Internal::SORT_UP>(m,
+                    return matsar::apply_tfunction_all_k<dType, TargetType, dType, Internal::SORT_UP>(m,
                                                                                                dim_idx,
                                                                                                m.getShape()[dim_idx]);
                 } else {
-                    return MatSAR::apply_tfunction_all_k<dType, TargetType, dType, Internal::SORT_DOWN>(m,
+                    return matsar::apply_tfunction_all_k<dType, TargetType, dType, Internal::SORT_DOWN>(m,
                                                                                                  dim_idx,
                                                                                                  m.getShape()[dim_idx]);
                 }

@@ -11,7 +11,7 @@
 
 #endif //MATSAR_MATRIX_HPP
 
-namespace MatSAR {
+namespace matsar {
     namespace Internal {
         template<typename T>
         class DimIter : public std::iterator<std::bidirectional_iterator_tag, T> {

@@ -30,7 +30,7 @@
 #include <random>
 #include <algorithm>
 
-namespace MatSAR {
+namespace matsar {
 ///矩阵概率计算函数
     namespace Math {
         /**
@@ -47,7 +47,7 @@ namespace MatSAR {
             if (dim_idx < 0)
                 return {m.max()};
             auto shape = m.getShape();
-            auto step_size = MatSAR::Util::VectorUtil::mul(shape, 0, dim_idx);
+            auto step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
             auto unit_size = step_size * shape[dim_idx];
             auto step_num = shape[dim_idx];
             auto unit_num = m.getSize() / unit_size;
@@ -86,7 +86,7 @@ namespace MatSAR {
             if (dim_idx < 0)
                 return {m.min()};
             auto shape = m.getShape();
-            auto step_size = MatSAR::Util::VectorUtil::mul(shape, 0, dim_idx);
+            auto step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
             auto unit_size = step_size * shape[dim_idx];
             auto step_num = shape[dim_idx];
             auto unit_num = m.getSize() / unit_size;
@@ -140,12 +140,12 @@ namespace MatSAR {
                 }
             }
             auto shape = m.getShape();
-            auto step_size = MatSAR::Util::VectorUtil::mul(shape, 0, dim_idx);
+            auto step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
             auto unit_size = step_size * shape[dim_idx];
             auto step_num = shape[dim_idx];
             auto unit_num = m.getSize() / unit_size;
 
-            auto sort_m = MatSAR::Math::sort(m, dim);
+            auto sort_m = matsar::Math::sort(m, dim);
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
             Matrix<TargetType> r(r_shape, 0., m.getData());

@@ -5,7 +5,7 @@
 // doctest CHECK_THROWS.
 #include <MatSAR/Matrix.hpp>
 
-using namespace MatSAR;
+using namespace matsar;
 
 int main() {
     Matrix<int64> a = {{1, 2, 3}, {4, 5, 6}};  // shape {3,2}

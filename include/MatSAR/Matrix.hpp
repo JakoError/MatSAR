@@ -89,18 +89,18 @@ VEC_CONSTRUCTOR_MAKER(VEC##8)
 
 //using namespace std;
 
-using namespace MatSAR::Util::TypeUtil;
-using MatSAR::Util::TypeUtil::getCalculableString;
-using MatSAR::Util::TypeUtil::typeHigher;
+using namespace matsar::Util::TypeUtil;
+using matsar::Util::TypeUtil::getCalculableString;
+using matsar::Util::TypeUtil::typeHigher;
 
-using namespace MatSAR::Util::VectorUtil;
-using MatSAR::Util::VectorUtil::mul;
-using MatSAR::Util::VectorUtil::toString;
-using MatSAR::Util::VectorUtil::to_string;
+using namespace matsar::Util::VectorUtil;
+using matsar::Util::VectorUtil::mul;
+using matsar::Util::VectorUtil::toString;
+using matsar::Util::VectorUtil::to_string;
 
-using namespace MatSAR::Util::Exception;
+using namespace matsar::Util::Exception;
 
-namespace MatSAR {
+namespace matsar {
     template<typename dType>
     void swap(dType &left, dType &right) noexcept {
         auto tmp = left;
@@ -199,10 +199,10 @@ namespace MatSAR {
                 if (std::find(iter + 1, shape.end(), -1) != shape.end())//find second -1
                     throw_value_error("Matrix dimensions can only declare one unknown dimension (-1)");
 //                //Potential flaw exceed the INT64_MAX
-//                msize_type exist_size = -MatSAR::Util::VectorUtil::mul(shape);
+//                msize_type exist_size = -matsar::Util::VectorUtil::mul(shape);
 //                if (target_size % exist_size != 0) //indivisible
 //                    throw_value_error("Cannot be refactored shape size=" + std::to_string(target_size) + "to shape=" +
-//                                      MatSAR::Util::VectorUtil::toString(shape));
+//                                      matsar::Util::VectorUtil::toString(shape));
 //                *iter = target_size / exist_size;
                 auto predict_dim_size = target_size;
                 for (const auto &i: shape) {
@@ -211,7 +211,7 @@ namespace MatSAR {
                     if (predict_dim_size % i != 0)
                         throw_value_error(
                                 "Cannot be refactored shape size=" + std::to_string(target_size) + "to shape=" +
-                                MatSAR::Util::VectorUtil::toString(shape));
+                                matsar::Util::VectorUtil::toString(shape));
                     predict_dim_size /= i;
                 }
                 *iter = static_cast<size_type>(predict_dim_size);
@@ -588,7 +588,7 @@ namespace MatSAR {
             } catch (const bad_alloc &e) {
                 cerr << e.what() << ": " << "Unable to allocate" + to_string(n * sizeof(dType)) +
                                             "B memory for an array with shape " +
-                                            MatSAR::Util::VectorUtil::toString(shape) + " and data type "
+                                            matsar::Util::VectorUtil::toString(shape) + " and data type "
                      << typeid(dType).name() << endl;
                 debug();
             } catch (const exception &e) {
@@ -867,7 +867,7 @@ namespace MatSAR {
         void debug() const {
             stringstream ss;
             ss << "Matrix debug message: "
-               << " shape = " << MatSAR::Util::VectorUtil::toString(shape)
+               << " shape = " << matsar::Util::VectorUtil::toString(shape)
                << " size = " << size
                << " data = " << data
                << " matrix * = " << this;
@@ -956,7 +956,7 @@ namespace MatSAR {
             Matrix<TargetType> r(shape, TargetType());
             auto iter_c = getData();
             for (auto *iter = r.getData(), *end = r.getDataEnd(); iter != end; ++iter, ++iter_c)
-                *iter = MatSAR::real(*iter_c);
+                *iter = matsar::real(*iter_c);
             return r;
         }
 
@@ -965,7 +965,7 @@ namespace MatSAR {
             Matrix<TargetType> r(shape, TargetType());
             auto iter_c = getData();
             for (auto *iter = r.getData(), *end = r.getDataEnd(); iter != end; ++iter, ++iter_c)
-                *iter = MatSAR::imag(*iter_c);
+                *iter = matsar::imag(*iter_c);
             return r;
         }
 
@@ -979,7 +979,7 @@ namespace MatSAR {
             Matrix<TargetType> r(shape, TargetType());
             auto iter_c = getData();
             for (auto *iter = r.getData(), *end = r.getDataEnd(); iter != end; ++iter, ++iter_c) {
-                *iter = MatSAR::conj(*iter_c);
+                *iter = matsar::conj(*iter_c);
             }
             return r;
         }
@@ -2423,7 +2423,7 @@ namespace MatSAR {
 //
 //    };
 }
-namespace MatSAR {
+namespace matsar {
     template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() + std::declval<rT>())>
     auto operator+(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
@@ -2446,7 +2446,7 @@ namespace MatSAR {
     }
 }
 
-namespace MatSAR {
+namespace matsar {
     template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() - std::declval<rT>())>
     auto operator-(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
@@ -2468,7 +2468,7 @@ namespace MatSAR {
         return tmp;
     }
 }
-namespace MatSAR {
+namespace matsar {
     template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() * std::declval<rT>())>
     auto mul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
@@ -2623,7 +2623,7 @@ namespace MatSAR {
         }
     }
 }
-namespace MatSAR {
+namespace matsar {
     template<typename lT, typename rT, typename TargetType=decltype(std::declval<lT>() / std::declval<rT>() +
                                                                     std::declval<real_max>())>
     auto operator/(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
@@ -2648,7 +2648,7 @@ namespace MatSAR {
         return tmp;
     }
 }
-namespace MatSAR {
+namespace matsar {
     template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() & std::declval<T2>())>
     auto operator&(const Matrix<T1> &left, const Matrix<T2> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
@@ -2721,7 +2721,7 @@ namespace MatSAR {
     }
 }
 
-namespace MatSAR {
+namespace matsar {
     template<typename lT, typename rT, typename TargetType=decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
     auto operator^(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         if (left.getShape() == right.getShape()) {
@@ -2753,7 +2753,7 @@ namespace MatSAR {
     }
 }
 
-namespace MatSAR {
+namespace matsar {
     template<typename T>
     auto operator+(const Matrix<T> &left, const Matrix<bool> &right) -> Matrix<T> {
         Matrix<T> tmp_l(left), tmp_r(right);
@@ -2773,7 +2773,7 @@ namespace MatSAR {
     }
 }
 
-namespace MatSAR {
+namespace matsar {
     template<typename T>
     auto operator-(const Matrix<T> &left, const Matrix<bool> &right) -> Matrix<T> {
         Matrix<T> tmp_l(left), tmp_r(right);
@@ -2793,7 +2793,7 @@ namespace MatSAR {
     }
 }
 
-namespace MatSAR {
+namespace matsar {
     template<typename T>
     auto operator*(const Matrix<T> &left, const Matrix<bool> &right) -> Matrix<T> {
         Matrix<T> tmp_l(left), tmp_r(right);

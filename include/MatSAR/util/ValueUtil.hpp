@@ -5,7 +5,7 @@
 #ifndef MATSAR_VALUEUTIL_H
 #define MATSAR_VALUEUTIL_H
 
-namespace MatSAR {
+namespace matsar {
     namespace Util {
         namespace ValueUtil {
             template<typename DimType1, typename DimType2>

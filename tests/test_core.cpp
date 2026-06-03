@@ -4,7 +4,7 @@
 #include <MatSAR/Matrix.hpp>
 #include <MatSAR/MatrixCreation.hpp>
 
-using namespace MatSAR;
+using namespace matsar;
 
 TEST_CASE("core container constructs and indexes") {
     Matrix<int64> a = {{1, 2}, {3, 4}};      // 2x2, row-major

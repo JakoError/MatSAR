@@ -3,7 +3,7 @@
 
 #include <MatSAR/MatSAR.hpp>   // must compile whether or not MATSAR_WITH_BLAS is set
 
-using namespace MatSAR;
+using namespace matsar;
 
 // Exercises only the BLAS-free core (element-wise, scalar, comparison, creation).
 TEST_CASE("core works without BLAS") {

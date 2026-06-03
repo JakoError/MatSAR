@@ -3,7 +3,7 @@
 
 #include <MatSAR/Matrix.hpp>
 
-using namespace MatSAR;
+using namespace matsar;
 
 // Uses explicit fromRows so the layout is fixed regardless of the
 // MATSAR_LEGACY_COLUMN_INITIALIZER_LIST flag. fromRows({{1,2},{3,4}}) = rows

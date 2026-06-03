@@ -4,7 +4,7 @@
 #include <vector>
 #include <MatSAR/Matrix.hpp>
 
-using namespace MatSAR;
+using namespace matsar;
 
 TEST_CASE("fromColumns: inner brace = column (legacy layout)") {
     auto c = Matrix<int64>::fromColumns({{1, 2, 3}, {4, 5, 6}});  // columns [1,2,3],[4,5,6]

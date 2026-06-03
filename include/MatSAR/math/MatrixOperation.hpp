@@ -29,7 +29,7 @@
 
 #endif
 
-namespace MatSAR {
+namespace matsar {
     ///complex
     namespace Math {
         template<typename dType>
@@ -49,33 +49,33 @@ namespace MatSAR {
     }
 
     namespace Math {
-        template<typename dType, typename TargetType=decltype(MatSAR::ceil(std::declval<dType>()))>
+        template<typename dType, typename TargetType=decltype(matsar::ceil(std::declval<dType>()))>
         static auto ceil(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::ceil);
+            return apply_function<dType, TargetType>(m, matsar::ceil);
         }
 
-        template<typename dType, typename TargetType=decltype(MatSAR::floor(std::declval<dType>()))>
+        template<typename dType, typename TargetType=decltype(matsar::floor(std::declval<dType>()))>
         static auto floor(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::floor);
+            return apply_function<dType, TargetType>(m, matsar::floor);
         }
 
-        template<typename dType, typename TargetType=decltype(MatSAR::round(std::declval<dType>()))>
+        template<typename dType, typename TargetType=decltype(matsar::round(std::declval<dType>()))>
         static auto round(const Matrix<dType> &m, int n = 0) -> Matrix<TargetType> {
             if (n == 0) {
-                return apply_function<dType, TargetType>(m, MatSAR::round);
+                return apply_function<dType, TargetType>(m, matsar::round);
             } else {
-                return apply_function<dType, TargetType>(m * pow(10, n), MatSAR::round) * pow(0.1, n);
+                return apply_function<dType, TargetType>(m * pow(10, n), matsar::round) * pow(0.1, n);
             }
         }
 
-        template<typename dType, typename TargetType=decltype(MatSAR::fix(std::declval<dType>()))>
+        template<typename dType, typename TargetType=decltype(matsar::fix(std::declval<dType>()))>
         static auto fix(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::fix);
+            return apply_function<dType, TargetType>(m, matsar::fix);
         }
 
         template<IntType IT CheckInt(IT)>
         static auto isPrime(const Matrix<IT> &m) -> Matrix<bool> {
-            return apply_function<IT, bool>(m, MatSAR::isPrime);
+            return apply_function<IT, bool>(m, matsar::isPrime);
         }
 
         template<IntType IT1, IntType IT2 CheckInt(IT1)CheckInt(IT2)>
@@ -84,7 +84,7 @@ namespace MatSAR {
             Matrix<int64> r2(m2);
             Matrix<int64>::broadcast(r1, r2);
             for (auto iter1 = r1.begin(), iter2 = r2.begin(); iter1 != r1.end(); ++iter1, ++iter2) {
-                auto values = MatSAR::numden(*iter1, *iter2);
+                auto values = matsar::numden(*iter1, *iter2);
                 *iter1 = values[0];
                 *iter2 = values[1];
             }
@@ -98,7 +98,7 @@ namespace MatSAR {
         template<typename leftT, typename rightT, class DstT>
         static void Gcd(leftT *left, rightT *right, msize_type n, DstT *dst) {
             while (n-- > 0)
-                *dst++ = MatSAR::gcd(*left++, *right++);
+                *dst++ = matsar::gcd(*left++, *right++);
         }
 
         template<typename IT1, typename IT2, typename TargetType=decltype(gcd(declval<IT1>(), declval<IT2>()))>
@@ -122,7 +122,7 @@ namespace MatSAR {
         auto factorial(const Matrix<IT> &m) -> Matrix<TargetType> {
             Matrix<TargetType> r(m);
             for (auto &i: r)
-                i = MatSAR::factorial<TargetType>(i);
+                i = matsar::factorial<TargetType>(i);
             return r;
         }
 
@@ -130,7 +130,7 @@ namespace MatSAR {
         template<typename leftT, typename rightT, class DstT>
         static void Nchoosek(leftT *left, rightT *right, msize_type n, DstT *dst) {
             while (n-- > 0)
-                *dst++ = MatSAR::nchoosek<leftT, rightT, DstT>(*left++, *right++);
+                *dst++ = matsar::nchoosek<leftT, rightT, DstT>(*left++, *right++);
         }
 
         template<typename IT1, typename IT2, typename TargetType=float_max>
@@ -152,64 +152,64 @@ namespace MatSAR {
 
     ///logx exp
     namespace Math {
-        template<typename dType, typename TargetType = decltype(MatSAR::log(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::log(std::declval<dType>()))>
         auto log(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::log);
+            return apply_function<dType, TargetType>(m, matsar::log);
         }
 
-        template<typename dType, typename TargetType = decltype(MatSAR::log(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::log(std::declval<dType>()))>
         auto logm(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::log);
+            return apply_function<dType, TargetType>(m, matsar::log);
         }
 
-        template<typename dType, typename TargetType = decltype(MatSAR::log(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::log(std::declval<dType>()))>
         auto ln(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::log);
+            return apply_function<dType, TargetType>(m, matsar::log);
         }
 
-        template<typename dType, typename TargetType = decltype(MatSAR::log2(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::log2(std::declval<dType>()))>
         auto log2(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::log2);
+            return apply_function<dType, TargetType>(m, matsar::log2);
         }
 
-        template<typename dType, typename TargetType = decltype(MatSAR::log10(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::log10(std::declval<dType>()))>
         auto log10(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::log10);
+            return apply_function<dType, TargetType>(m, matsar::log10);
         }
 
-        template<typename dType, typename TargetType = decltype(MatSAR::exp(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::exp(std::declval<dType>()))>
         auto exp(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::exp);
+            return apply_function<dType, TargetType>(m, matsar::exp);
         }
 
-        template<typename dType, typename TargetType = decltype(MatSAR::exp(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::exp(std::declval<dType>()))>
         auto expm(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::exp);
+            return apply_function<dType, TargetType>(m, matsar::exp);
         }
 
-        template<typename dType, typename TargetType = decltype(MatSAR::exp2(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::exp2(std::declval<dType>()))>
         auto exp2(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::exp2);
+            return apply_function<dType, TargetType>(m, matsar::exp2);
         }
     }
     ///gamma
     namespace Math {
-        template<typename dType, typename TargetType = decltype(MatSAR::gamma(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::gamma(std::declval<dType>()))>
         auto gamma(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::gamma);
+            return apply_function<dType, TargetType>(m, matsar::gamma);
         }
 
-        template<typename dType, typename TargetType = decltype(MatSAR::gammaln(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::gammaln(std::declval<dType>()))>
         auto gammaln(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::gammaln);
+            return apply_function<dType, TargetType>(m, matsar::gammaln);
         }
     }
 
     ///mpower sqrt
     namespace Math {
-        template<typename dType, typename TargetType = decltype(MatSAR::sqrt(std::declval<dType>()))>
+        template<typename dType, typename TargetType = decltype(matsar::sqrt(std::declval<dType>()))>
         auto sqrt(const Matrix<dType> &m) -> Matrix<TargetType> {
-            return apply_function<dType, TargetType>(m, MatSAR::sqrt);
+            return apply_function<dType, TargetType>(m, matsar::sqrt);
         }
 
         template<typename lT, typename rT>
@@ -235,9 +235,9 @@ namespace MatSAR {
             return m.T();
         }
 
-        template<typename T, typename TargetType=decltype(MatSAR::abs(std::declval<T>()))>
+        template<typename T, typename TargetType=decltype(matsar::abs(std::declval<T>()))>
         auto abs(const Matrix<T> &m) -> Matrix<TargetType> {
-            return apply_function(m, MatSAR::abs);
+            return apply_function(m, matsar::abs);
         }
 
 //        template<Calculable dType>
