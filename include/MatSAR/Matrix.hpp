@@ -2524,7 +2524,12 @@ namespace matsar {
 
 #ifdef MATSAR_WITH_BLAS
     /**
-     * Matrix Multiplication
+     * Matrix product (linear algebra), BLAS-backed via OpenBLAS `*gemm`. Available
+     * only when MATSAR_WITH_BLAS is defined. Inner dimensions must agree:
+     * (m x k) * (k x n) -> (m x n). `operator%` is an alias for this.
+     *
+     * Note: `operator*` between two matrices is ELEMENT-wise (see operator+), not
+     * this matrix product.
      */
     template<typename lT, typename rT, typename TargetType=decltype((std::declval<lT>() + 0.) *
                                                                     (std::declval<rT>() + 0.))>
