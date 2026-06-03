@@ -104,6 +104,7 @@ ctest --test-dir build-wsl --output-on-failure
 |---|---|---|
 | `MATSAR_WITH_BLAS` | `ON` | Enable OpenBLAS-backed `mmul()` / `operator%`. `OFF` builds the core with **no** OpenBLAS dependency (and skips `test_mmul`). |
 | `MATSAR_ENABLE_EXPERIMENTAL` | `OFF` | Include unfinished modules (advanced LinearAlgebra, Probability, …). Not expected to build yet. |
+| `MATSAR_LEGACY_COLUMN_INITIALIZER_LIST` | `OFF` | Temporary migration aid: makes `{{...}}` column-wise again. Prefer `fromRows`/`fromColumns`. |
 | `MATSAR_BUILD_TESTS` | `ON` (top-level) | Build the test suite. |
 
 Pass options at configure time, e.g. core-only without BLAS:
@@ -154,10 +155,26 @@ exe automatically for BLAS-enabled builds.
 | `test_build_config` | core compiles/runs with `MATSAR_WITH_BLAS=OFF` |
 | `death_invalid_shape` | incompatible shapes are reported (process exits) |
 | `test_mmul` | OpenBLAS-backed `mmul()` / `%` (BLAS builds only) |
+| `test_print` | `toString` / `toRowColString` output (name, dtype, shape, values) |
+| `test_construct` | row-wise default `{{...}}` + `vector<vector>` ctor, `fromRows`/`fromColumns` (list & vector), 1-D, legacy flag |
 
-> **Note on layout:** nested initializer lists are **column-major** — `{{1,2},{3,4}}`
-> has columns `[1,2]` and `[3,4]`, so `m(0,1) == 3`. Matrix product is `mmul()` /
-> `operator%`; `*` is element-wise.
+> **Note on layout (row-wise construction):** nested initializer lists **and**
+> nested `vector<vector<T>>` are **row-wise** by default — `{{1,2},{3,4}}` has rows
+> `[1,2]`,`[3,4]`, so `m(0,1) == 2`. Build explicitly with `Matrix<T>::fromRows(...)`
+> (same as the default) or `Matrix<T>::fromColumns(...)` (column-wise); both accept an
+> initializer list or a `vector<vector<T>>`. `-DMATSAR_LEGACY_COLUMN_INITIALIZER_LIST=ON`
+> is a temporary migration aid that reverts both default nested constructors to
+> column-wise. Matrix product is `mmul()` / `operator%`; `*` is element-wise.
+>
+> **Storage boundary (still column-major):** only *construction*, `operator()`, and the
+> *display* functions (`toString`/`toRowColString`) are row-wise. Internal storage stays
+> column-major, so these remain **column-major / storage-order** and do **not** match the
+> row-wise reading:
+> - **iteration** (`begin()`/`end()`, range-`for`) and **`getData()`** yield column-major order;
+> - **`reshape`** reinterprets the column-major buffer (not a NumPy row-major reshape);
+> - broadcast alignment and `newAxis` (1-D → `{n,1}`) are column-major-flavored.
+>
+> Full row-wise semantics here would require row-major internals (a larger, separate change).
 
 [doctest]: https://github.com/doctest/doctest
 [vcpkg]: https://github.com/microsoft/vcpkg

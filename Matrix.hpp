@@ -66,7 +66,6 @@ Matrix(LIST_n list) {\
 }
 
 #define LIST_CONSTRUCTOR_MAKER_N \
-LIST_CONSTRUCTOR_MAKER(LIST##2)\
 LIST_CONSTRUCTOR_MAKER(LIST##3)\
 LIST_CONSTRUCTOR_MAKER(LIST##4)\
 LIST_CONSTRUCTOR_MAKER(LIST##5)\
@@ -85,7 +84,6 @@ Matrix(VEC_n vec) {\
 }
 
 #define VEC_CONSTRUCTOR_MAKER_N \
-VEC_CONSTRUCTOR_MAKER(VEC##2)\
 VEC_CONSTRUCTOR_MAKER(VEC##3)\
 VEC_CONSTRUCTOR_MAKER(VEC##4)\
 VEC_CONSTRUCTOR_MAKER(VEC##5)\
@@ -649,17 +647,23 @@ namespace MatSAR {
             return ss.str();
         }
 
-        auto arrayToString(dType *&p, msize_type dim, int align = 0) const -> string {
-            if (!p || dim < 0 || dim >= shape.size())
+        /// Logical (row-major) braced rendering: outermost brace = axis 0, innermost =
+        /// last axis, elements accessed by column-major offset so the printout matches
+        /// operator()/toRowColString. `base` is the storage offset of the current slice.
+        auto arrayToString(msize_type dim, size_type base, int align = 0) const -> string {
+            if (!data || shape.empty() || dim < 0 || dim >= static_cast<msize_type>(shape.size()))
                 return "{}";
             stringstream ss;
             string spaces(static_cast<std::basic_string<char>::size_type>((align + 1) * 2), ' ');
-            if (dim == 0) {
+            // column-major stride of axis `dim` = product(shape[0..dim-1])
+            size_type stride = 1;
+            for (msize_type d = 0; d < dim; ++d)
+                stride *= shape[d];
+            if (dim == static_cast<msize_type>(shape.size()) - 1) {
                 ss << spaces << "{";
-                dType *end = p + shape[0];
-                while (p != end) {
-                    ss << dataToString(*p) << ' ';
-                    if (++p == end)
+                for (size_type k = 0; k < shape[dim]; ++k) {
+                    ss << dataToString(data[base + k * stride]) << ' ';
+                    if (k + 1 == shape[dim])
                         ss << "}";
                     else
                         ss << ", ";
@@ -668,10 +672,10 @@ namespace MatSAR {
             }
             ss << spaces << "{\n";
             for (size_type i = 0; i < shape[dim]; ++i) {
-                ss << arrayToString(p, dim - 1, align + 1);
+                ss << arrayToString(dim + 1, base + i * stride, align + 1);
                 if (i != shape[dim] - 1) {
                     ss << ",\n";
-                    if (dim == 2)
+                    if (dim == static_cast<msize_type>(shape.size()) - 3)
                         ss << "\n";
                 }
             }
@@ -1120,6 +1124,51 @@ namespace MatSAR {
             this->shape = {this->size};
         }
 
+        /// Build a matrix from explicit COLUMNS: each inner list is one column
+        /// (this is the legacy nested-initializer-list layout). Column-major stored.
+        static auto fromColumns(LIST2 list) -> Matrix<dType> {
+            Matrix<dType> m;
+            Util::VectorUtil::checkListFix(list);
+            m.size = Util::VectorUtil::getFixListSize(list);
+            m.shape = Util::VectorUtil::getDimSize(list);
+            m.allocate(m.size);
+            Util::VectorUtil::uninitListCopy(list, m.data);
+            return m;
+        }
+
+        /// Build a matrix from explicit ROWS: each inner list is one row
+        /// (NumPy/MATLAB-literal layout). Implemented as fromColumns(list).T().
+        static auto fromRows(LIST2 list) -> Matrix<dType> {
+            return fromColumns(list).T();
+        }
+
+        /// vector<vector> overloads of the explicit builders (same semantics as the
+        /// initializer-list versions): fromColumns = column-wise, fromRows = transpose.
+        static auto fromColumns(VEC2 vec) -> Matrix<dType> {
+            Matrix<dType> m;
+            Util::VectorUtil::checkVecFix(vec);
+            m.size = Util::VectorUtil::getFixVecSize(vec);
+            m.shape = Util::VectorUtil::getVecDimSize(vec);
+            m.allocate(m.size);
+            Util::VectorUtil::VecCopy(vec, m.data);
+            return m;
+        }
+
+        static auto fromRows(VEC2 vec) -> Matrix<dType> {
+            return fromColumns(vec).T();
+        }
+
+        /// 2-D nested initializer list. Default = row-wise (fromRows). Define
+        /// MATSAR_LEGACY_COLUMN_INITIALIZER_LIST for legacy column-wise layout
+        /// (temporary migration aid -- prefer fromRows()/fromColumns()).
+        Matrix(LIST2 list) {
+#ifdef MATSAR_LEGACY_COLUMN_INITIALIZER_LIST
+            *this = fromColumns(list);
+#else
+            *this = fromRows(list);
+#endif
+        }
+
         LIST_CONSTRUCTOR_MAKER_N
 
         Matrix(VEC1 vec) {
@@ -1127,6 +1176,16 @@ namespace MatSAR {
             uninitialized_copy(vec.begin(), vec.end(), this->data);
             this->size = vec.size();
             this->shape = {this->size};
+        }
+
+        /// 2-D nested vector. Default = row-wise (fromRows); legacy column-wise under
+        /// MATSAR_LEGACY_COLUMN_INITIALIZER_LIST (consistent with the initializer-list ctor).
+        Matrix(VEC2 vec) {
+#ifdef MATSAR_LEGACY_COLUMN_INITIALIZER_LIST
+            *this = fromColumns(vec);
+#else
+            *this = fromRows(vec);
+#endif
         }
 
         VEC_CONSTRUCTOR_MAKER_N
@@ -2298,8 +2357,7 @@ namespace MatSAR {
                 ss << shapeToString();
                 ss << " =\n";
             }
-            dType *p = this->data;
-            ss << arrayToString(p, shape.size() - 1) << ";\n";
+            ss << arrayToString(0, 0) << ";\n";
             return ss.str();
         }
 
