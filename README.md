@@ -1,5 +1,6 @@
 # MatSAR
 
+[![CI](https://github.com/JakoError/MatSAR/actions/workflows/ci.yml/badge.svg)](https://github.com/JakoError/MatSAR/actions/workflows/ci.yml)
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)
 ![header-only](https://img.shields.io/badge/header--only-yes-brightgreen.svg)

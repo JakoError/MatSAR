@@ -49,128 +49,127 @@ namespace matsar {
     // meta float type
     template<typename>
     struct float_type_helper
-            : public std::false_type {
+        : public std::false_type {
     };
 
     template<>
     struct float_type_helper<float32>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<>
     struct float_type_helper<float64>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<typename dType>
     struct float_type
-            : public float_type_helper<dType>::type {
+        : public float_type_helper<dType>::type {
     };
 
     // meta complex type
     template<typename>
     struct complex_type_helper
-            : public std::false_type {
+        : public std::false_type {
     };
 
     template<>
     struct complex_type_helper<complex64>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<>
     struct complex_type_helper<complex128>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<typename dType>
     struct complex_type
-            : public complex_type_helper<dType>::type {
+        : public complex_type_helper<dType>::type {
     };
 
     // meta sint type
     template<typename>
     struct sint_type_helper
-            : public std::false_type {
+        : public std::false_type {
     };
 
     template<>
     struct sint_type_helper<int8>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<>
     struct sint_type_helper<int16>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<>
     struct sint_type_helper<int32>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<>
     struct sint_type_helper<int64>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<typename dType>
     struct sint_type
-            : public sint_type_helper<dType>::type {
+        : public sint_type_helper<dType>::type {
     };
 
     // meta uint type
     template<typename>
     struct uint_type_helper
-            : public std::false_type {
+        : public std::false_type {
     };
 
     template<>
     struct uint_type_helper<uint8>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<>
     struct uint_type_helper<uint16>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<>
     struct uint_type_helper<uint32>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<>
     struct uint_type_helper<uint64>
-            : public std::true_type {
+        : public std::true_type {
     };
 
     template<typename dType>
     struct uint_type
-            : public uint_type_helper<dType>::type {
+        : public uint_type_helper<dType>::type {
     };
 
     // meta int type
     template<typename dType>
     struct int_type
-            : public std::conditional<sint_type<dType>::value || uint_type<dType>::value,
-                    std::true_type, std::false_type>::type {
+        : public std::conditional<sint_type<dType>::value || uint_type<dType>::value,
+                                  std::true_type, std::false_type>::type {
     };
 
     // meta real type
     template<typename dType>
     struct real_type
-            : public std::conditional<int_type<dType>::value || float_type<dType>::value,
-                    std::true_type, std::false_type>::type {
+        : public std::conditional<int_type<dType>::value || float_type<dType>::value,
+                                  std::true_type, std::false_type>::type {
     };
 
     // meta real type
     template<typename dType>
     struct calculable_type
-            : public std::conditional<real_type<dType>::value || complex_type<dType>::value,
-                    std::true_type, std::false_type>::type {
+        : public std::conditional<real_type<dType>::value || complex_type<dType>::value,
+                                  std::true_type, std::false_type>::type {
     };
-
 
 #if (__cplusplus >= 202002L)
 
@@ -256,15 +255,15 @@ namespace matsar {
 
 #else
 
-# define Calculable typename
-# define IntType typename
-# define SIntType typename
-# define UIntType typename
-# define FloatType typename
-# define RealType typename
-# define ComplexType typename
+#define Calculable typename
+#define IntType typename
+#define SIntType typename
+#define UIntType typename
+#define FloatType typename
+#define RealType typename
+#define ComplexType typename
 
-#define CheckType(dType, Type) ,class = typename std::enable_if<matsar::Type<dType>::value>::type
+#define CheckType(dType, Type) , class = typename std::enable_if<matsar::Type<dType>::value>::type
 
 #endif
 
@@ -278,12 +277,18 @@ namespace matsar {
 
     enum CalculableLevel {
         unknown = -1,
-        int8_level, uint8_level,
-        int16_level, uint16_level,
-        int32_level, uint32_level,
-        int64_level, uint64_level,
-        float32_level, float64_level,
-        complex64_level, complex128_level
+        int8_level,
+        uint8_level,
+        int16_level,
+        uint16_level,
+        int32_level,
+        uint32_level,
+        int64_level,
+        uint64_level,
+        float32_level,
+        float64_level,
+        complex64_level,
+        complex128_level
     };
 
     class None {
@@ -296,6 +301,7 @@ namespace matsar {
     private:
         bool none_flag = true;
         dType value = dType();
+
     public:
         Container() : none_flag(true), value(dType()) {}
 
@@ -304,7 +310,7 @@ namespace matsar {
         Container(const dType &v) : none_flag(false), value(v) {}
 
         template<class T>
-        Container(const std::vector<T> &v): none_flag(false) {
+        Container(const std::vector<T> &v) : none_flag(false) {
             this->value = dType(v.size());
             for (typename std::vector<T>::size_type i = 0; i < v.size(); ++i) {
                 this->value[i] = v[i];
@@ -312,7 +318,7 @@ namespace matsar {
         }
 
         template<class T>
-        Container(const std::initializer_list<T> &v): none_flag(false) {
+        Container(const std::initializer_list<T> &v) : none_flag(false) {
             this->value = dType(v.size());
             for (typename std::initializer_list<T>::size_type i = 0; i < v.size(); ++i) {
                 this->value[i] = *(v.begin() + i);

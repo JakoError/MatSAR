@@ -67,14 +67,18 @@ layout and how to run a single test.
 ## Code style
 
 The repository ships a [`.clang-format`](.clang-format) and a
-[`.clang-tidy`](.clang-tidy). Please format changed code before opening a PR:
+[`.clang-tidy`](.clang-tidy). The style is intentionally light-touch (it does not
+reflow your line breaks); a CI check enforces it. clang-format's output varies by
+version, so use the **same pinned version CI uses** to avoid spurious diffs:
 
 ```bash
+pip install clang-format==22.1.4   # the version CI checks against
 clang-format -i path/to/changed_file.hpp
 ```
 
-(A CI check that fails on unformatted diffs is planned.) Match the style of the
-surrounding code; keep diffs focused — avoid reformatting unrelated lines.
+Match the style of the surrounding code; keep diffs focused — avoid reformatting
+unrelated lines. Hand-laid-out blocks (e.g. the code-generation macros) are fenced
+with `// clang-format off` / `// clang-format on`; leave those fences in place.
 
 ## Submitting changes
 

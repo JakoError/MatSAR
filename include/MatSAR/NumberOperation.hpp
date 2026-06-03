@@ -21,7 +21,6 @@
 //using namespace std;
 using namespace matsar::Util::TypeUtil;
 
-
 namespace matsar {
     namespace Math {
 #ifdef M_PI
@@ -303,8 +302,7 @@ namespace matsar {
         return u;
     }
 
-    template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() + std::declval<T2>() +
-                                                                    std::declval<int64>())>
+    template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() + std::declval<T2>() + std::declval<int64>())>
     static auto numden(T1 n, T2 d) -> vector<TargetType> {
         static_assert(Util::TypeUtil::isInt<T1>() && Util::TypeUtil::isInt<T1>(), "require integer");
         bool sign = (n < 0 != d < 0);
@@ -325,7 +323,7 @@ namespace matsar {
      * @param i
      * @return
      */
-    template<typename T, typename TargetType=float_max>
+    template<typename T, typename TargetType = float_max>
     auto factorial(T i) -> TargetType {
         if (i < 0)
             throw_value_error("Factorial cannot be negative");
@@ -337,7 +335,7 @@ namespace matsar {
         return r;
     }
 
-    template<typename RT1, typename RT2, typename TargetType=float_max>
+    template<typename RT1, typename RT2, typename TargetType = float_max>
     auto nchoosek(RT1 n, RT2 k) -> TargetType {
         if (n != matsar::round(n) || k != matsar::round(k))
             return NAN;
@@ -511,7 +509,6 @@ namespace matsar {
     inline static constexpr auto operator>=(const complex<T1> &left, const complex<T2> &right) -> bool {
         return std::abs(left) >= std::abs(right);
     }
-
 
 ///**
 // * Imaginary comparison is modulo (absolute value) comparison

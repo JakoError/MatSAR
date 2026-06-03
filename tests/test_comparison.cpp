@@ -24,7 +24,7 @@ TEST_CASE("other comparisons with broadcasting still correct") {
     auto a = Matrix<int64>::fromRows({{1, 2}, {3, 4}});
     auto b = Matrix<int64>::fromRows({{2, 2}});            // shape {1,2}, value 2
     CHECK((a <= b)(0, 1));                                  // 2 <= 2
-    CHECK((a >  b)(1, 0));                                  // 3 >  2
+    CHECK((a > b)(1, 0));                                  // 3 >  2
     CHECK((a >= b)(0, 1));                                  // 2 >= 2
     CHECK((a == b)(0, 1));                                  // 2 == 2
     CHECK((a != b)(0, 0));                                  // 1 != 2
