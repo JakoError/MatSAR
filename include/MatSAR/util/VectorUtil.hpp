@@ -26,7 +26,7 @@ using std::vector;
 using std::initializer_list;
 using std::string;
 
-using namespace MatSAR::Util::Exception;
+using namespace matsar::Util::Exception;
 
 //#if (__cplusplus < 201703L)
 //
@@ -120,7 +120,7 @@ vector<int64> getDimSize(LIST_n list_n) {\
     GET_DIM_SIZE_MAKER(LIST##8)
 
 #define LIST_FUN_MAKER_N \
-namespace MatSAR{namespace Util{namespace VectorUtil {\
+namespace matsar{namespace Util{namespace VectorUtil {\
     CHECK_LIST_FIX_MAKER_N\
     UNINIT_LIST_COPY_MAKER_N\
     GET_FIX_LIST_SIZE_MAKER_N\
@@ -208,7 +208,7 @@ vector<int64> getVecDimSize(VEC_n vec_n) {\
     GET_VEC_DIM_SIZE_MAKER(VEC##8)
 
 #define VEC_FUN_MAKER_N \
-namespace MatSAR{namespace Util{namespace VectorUtil {\
+namespace matsar{namespace Util{namespace VectorUtil {\
     CHECK_VEC_FIX_MAKER_N\
     VEC_COPY_MAKER_N\
     GET_FIX_VEC_SIZE_MAKER_N\
@@ -216,7 +216,7 @@ namespace MatSAR{namespace Util{namespace VectorUtil {\
     }}}
 
 
-namespace MatSAR {
+namespace matsar {
     namespace Util {
         namespace VectorUtil {
 //            auto Range(int64 start, int64 end, int64 step) -> vector<int64> {
@@ -558,7 +558,7 @@ namespace MatSAR {
                     }
                 }
                 for (auto &v: vec) {
-                    MatSAR::Util::VectorUtil::alignNum(v, targetShape[0], num);
+                    matsar::Util::VectorUtil::alignNum(v, targetShape[0], num);
                 }
                 //handel dim2
                 if (targetShape[1] >= 0) {

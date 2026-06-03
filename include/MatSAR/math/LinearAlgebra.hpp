@@ -52,11 +52,11 @@
 
 #endif // MATSAR_WITH_BLAS
 
-using MatSAR::Util::TypeUtil::eps;
+using matsar::Util::TypeUtil::eps;
 
-using MatSAR::Util::VectorUtil::Range;
+using matsar::Util::VectorUtil::Range;
 
-namespace MatSAR {
+namespace matsar {
     namespace Math {
         template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() * std::declval<T2>())>
         auto kron(Matrix<T1> m1, Matrix<T2> m2) -> Matrix<TargetType> {
@@ -205,7 +205,7 @@ namespace MatSAR {
                 auto &k = min(m, n);
                 mshape_type S_shape = Util::VectorUtil::cut(A.getShape(), 1);
                 S_shape[0] = k;
-                auto S = MatSAR::zeros<T>(S_shape);
+                auto S = matsar::zeros<T>(S_shape);
 
                 char jobu, jobvt;
                 lapack_int lda = m, ldu, ldvt;
@@ -348,16 +348,16 @@ namespace MatSAR {
 
         template<typename dType>
         auto rank(const Matrix<dType> &m, float64 tol) -> msize_type {
-            Matrix<float64> s = MatSAR::Math::svd(m, false, false)[0];
-            return msize_type(MatSAR::Math::sum(s > tol)(0));
+            Matrix<float64> s = matsar::Math::svd(m, false, false)[0];
+            return msize_type(matsar::Math::sum(s > tol)(0));
         }
 
         template<typename dType>
         auto rank(const Matrix<dType> &m) -> msize_type {
-            Matrix<float64> s = MatSAR::Math::svd(m, false, false)[0];
+            Matrix<float64> s = matsar::Math::svd(m, false, false)[0];
             // TODO: Check the integrity
-            auto tol = m.getLength() * MatSAR::Util::TypeUtil::eps(s.Max());
-            return msize_type(MatSAR::Math::sum(s > tol)(0));
+            auto tol = m.getLength() * matsar::Util::TypeUtil::eps(s.Max());
+            return msize_type(matsar::Math::sum(s > tol)(0));
         }
     }
 
@@ -380,7 +380,7 @@ namespace MatSAR {
                 return {pow(mul, 1. / m.getSize())};
             }
             auto shape = m.getShape();
-            msize_type step_size = MatSAR::Util::VectorUtil::mul(shape, 0, dim_idx);
+            msize_type step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
             msize_type unit_size = step_size * shape[dim_idx];
             msize_type step_num = shape[dim_idx];
             msize_type unit_num = m.getSize() / unit_size;
@@ -425,7 +425,7 @@ namespace MatSAR {
                 return {m.getSize() / sum};
             }
             auto shape = m.getShape();
-            auto step_size = MatSAR::Util::VectorUtil::mul(shape, 0, dim_idx);
+            auto step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
             auto unit_size = step_size * shape[dim_idx];
             auto step_num = shape[dim_idx];
             auto unit_num = m.getSize() / unit_size;
@@ -663,10 +663,10 @@ namespace MatSAR {
 //            if (!m.is2D())
 //                throw_value_error("不是二维数组！");
 //            if (n == 2) {
-//                return MatSAR::Math::sqrt(MatSAR::Math::svd(m * m.T())).Max();
+//                return matsar::Math::sqrt(matsar::Math::svd(m * m.T())).Max();
 //            } else if (n == 1) {
 //                auto sp = m.getShape();
-//                m = MatSAR::Math::cumsum(MatSAR::Math::abs(m), 2);
+//                m = matsar::Math::cumsum(matsar::Math::abs(m), 2);
 //                dType max_val = 0;
 //                for (int i = 0; i < sp[0]; i++) {
 //                    if (max_val < m(i, sp[1] - 1))
@@ -674,7 +674,7 @@ namespace MatSAR {
 //                }
 //                return max_val;
 //            } else if (n == 0) {
-//                m = MatSAR::Math::cumsum(MatSAR::Math::abs(m.T()), 2);
+//                m = matsar::Math::cumsum(matsar::Math::abs(m.T()), 2);
 //                auto sp = m.getShape();
 //                dType max_val = 0;
 //                for (int i = 0; i < sp[0]; i++) {

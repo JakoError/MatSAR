@@ -13,7 +13,7 @@
 
 #include "util/Compat.hpp"
 
-namespace MatSAR {
+namespace matsar {
     template<typename dType = float_max>
     auto zeros() -> dType {
         return 0;
@@ -129,7 +129,7 @@ namespace MatSAR {
     }
 }
 
-namespace MatSAR {
+namespace matsar {
     template<typename T>
     auto arange_cal_size(const T &start, const T &stop, const T &step) -> msize_type = delete;
 
@@ -177,7 +177,7 @@ namespace MatSAR {
 }
 
 //Matrix structure function
-namespace MatSAR {
+namespace matsar {
     template<typename dType>
     auto flip(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
         msize_type dim_idx = dim - 1;

@@ -7,7 +7,7 @@
 #include <MatSAR/Matrix.hpp>
 #include <MatSAR/MatrixCreation.hpp>
 
-using namespace MatSAR;
+using namespace matsar;
 using std::string;
 
 // HOW TO TEST PRINTING

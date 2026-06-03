@@ -17,7 +17,7 @@
 
 #endif //MATSAR_UNIVERSALFUNCTIONS_HPP
 
-namespace MatSAR {
+namespace matsar {
     //Matrix Evaluation
     namespace Math {
         namespace Internal {

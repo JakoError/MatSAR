@@ -18,7 +18,7 @@
 
 #endif //MATSAR_UNIVERSALFUNCTIONS_HPP
 
-namespace MatSAR {
+namespace matsar {
     namespace Math {
         template<typename T>
         auto Sin(const T &v) -> decltype(std::sin(v + 0.)) {
@@ -41,23 +41,23 @@ namespace MatSAR {
         }
 
         template<typename T>
-        inline auto sin(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Sin<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Sin<T>);
+        inline auto sin(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sin<T>)) {
+            return matsar::apply_function(m, matsar::Math::Sin<T>);
         }
 
         template<typename T>
-        inline auto sinh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Sinh<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Sinh<T>);
+        inline auto sinh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sinh<T>)) {
+            return matsar::apply_function(m, matsar::Math::Sinh<T>);
         }
 
         template<typename T>
-        inline auto asin(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Asin<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Asin<T>);
+        inline auto asin(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asin<T>)) {
+            return matsar::apply_function(m, matsar::Math::Asin<T>);
         }
 
         template<typename T>
-        inline auto asinh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Asinh<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Asinh<T>);
+        inline auto asinh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asinh<T>)) {
+            return matsar::apply_function(m, matsar::Math::Asinh<T>);
         }
     }
 
@@ -83,23 +83,23 @@ namespace MatSAR {
         }
 
         template<typename T>
-        inline auto cos(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Cos<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Cos<T>);
+        inline auto cos(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Cos<T>)) {
+            return matsar::apply_function(m, matsar::Math::Cos<T>);
         }
 
         template<typename T>
-        inline auto cosh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Cosh<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Cosh<T>);
+        inline auto cosh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Cosh<T>)) {
+            return matsar::apply_function(m, matsar::Math::Cosh<T>);
         }
 
         template<typename T>
-        inline auto acos(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acos<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Acos<T>);
+        inline auto acos(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acos<T>)) {
+            return matsar::apply_function(m, matsar::Math::Acos<T>);
         }
 
         template<typename T>
-        inline auto acosh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acosh<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Acosh<T>);
+        inline auto acosh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acosh<T>)) {
+            return matsar::apply_function(m, matsar::Math::Acosh<T>);
         }
     }
 
@@ -125,35 +125,35 @@ namespace MatSAR {
         }
 
         template<typename T>
-        inline auto tan(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Tan<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Tan<T>);
+        inline auto tan(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Tan<T>)) {
+            return matsar::apply_function(m, matsar::Math::Tan<T>);
         }
 
         template<typename T>
-        inline auto tanh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Tanh<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Tanh<T>);
+        inline auto tanh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Tanh<T>)) {
+            return matsar::apply_function(m, matsar::Math::Tanh<T>);
         }
 
         template<typename T>
-        inline auto atan(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Atan<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Atan<T>);
+        inline auto atan(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Atan<T>)) {
+            return matsar::apply_function(m, matsar::Math::Atan<T>);
         }
 
         template<typename T>
-        inline auto atanh(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Atanh<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Atanh<T>);
+        inline auto atanh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Atanh<T>)) {
+            return matsar::apply_function(m, matsar::Math::Atanh<T>);
         }
     }
 
     namespace Math {
         template<typename T>
-        auto Cot(const T &v) -> decltype(1. / MatSAR::Math::Tan(v)) {
-            return 1. / MatSAR::Math::Tan(v);
+        auto Cot(const T &v) -> decltype(1. / matsar::Math::Tan(v)) {
+            return 1. / matsar::Math::Tan(v);
         }
 
         template<typename T>
-        auto Coth(const T &v) -> decltype(1. / MatSAR::Math::Tanh(v)) {
-            return 1. / MatSAR::Math::Tanh(v);
+        auto Coth(const T &v) -> decltype(1. / matsar::Math::Tanh(v)) {
+            return 1. / matsar::Math::Tanh(v);
         }
 
 //        template<typename T>
@@ -172,35 +172,35 @@ namespace MatSAR {
         }
 
         template<typename T>
-        inline auto cot(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Cot<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Cot<T>);
+        inline auto cot(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Cot<T>)) {
+            return matsar::apply_function(m, matsar::Math::Cot<T>);
         }
 
         template<typename T>
-        inline auto coth(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Coth<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Coth<T>);
+        inline auto coth(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Coth<T>)) {
+            return matsar::apply_function(m, matsar::Math::Coth<T>);
         }
 
         template<typename T>
-        inline auto acot(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acot<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Acot<T>);
+        inline auto acot(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acot<T>)) {
+            return matsar::apply_function(m, matsar::Math::Acot<T>);
         }
 
         template<typename T>
-        inline auto acoth(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acoth<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Acoth<T>);
+        inline auto acoth(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acoth<T>)) {
+            return matsar::apply_function(m, matsar::Math::Acoth<T>);
         }
     }
 
     namespace Math {
         template<typename T>
-        auto Sec(const T &v) -> decltype(1. / MatSAR::Math::Cos(v)) {
-            return 1. / MatSAR::Math::Cos(v);
+        auto Sec(const T &v) -> decltype(1. / matsar::Math::Cos(v)) {
+            return 1. / matsar::Math::Cos(v);
         }
 
         template<typename T>
-        auto Sech(const T &v) -> decltype(1. / MatSAR::Math::Cosh(v)) {
-            return 1. / MatSAR::Math::Cosh(v);
+        auto Sech(const T &v) -> decltype(1. / matsar::Math::Cosh(v)) {
+            return 1. / matsar::Math::Cosh(v);
         }
 
         template<typename T>
@@ -214,35 +214,35 @@ namespace MatSAR {
         }
 
         template<typename T>
-        inline auto sec(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Sec<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Sec<T>);
+        inline auto sec(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sec<T>)) {
+            return matsar::apply_function(m, matsar::Math::Sec<T>);
         }
 
         template<typename T>
-        inline auto sech(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Sech<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Sech<T>);
+        inline auto sech(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sech<T>)) {
+            return matsar::apply_function(m, matsar::Math::Sech<T>);
         }
 
         template<typename T>
-        inline auto asec(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Asec<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Asec<T>);
+        inline auto asec(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asec<T>)) {
+            return matsar::apply_function(m, matsar::Math::Asec<T>);
         }
 
         template<typename T>
-        inline auto asech(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Asech<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Asech<T>);
+        inline auto asech(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asech<T>)) {
+            return matsar::apply_function(m, matsar::Math::Asech<T>);
         }
     }
 
     namespace Math {
         template<typename T>
-        auto Csc(const T &v) -> decltype(1. / MatSAR::Math::Sin(v)) {
-            return 1. / MatSAR::Math::Sin(v);
+        auto Csc(const T &v) -> decltype(1. / matsar::Math::Sin(v)) {
+            return 1. / matsar::Math::Sin(v);
         }
 
         template<typename T>
-        auto Csch(const T &v) -> decltype(1. / MatSAR::Math::Sinh(v)) {
-            return 1. / MatSAR::Math::Sinh(v);
+        auto Csch(const T &v) -> decltype(1. / matsar::Math::Sinh(v)) {
+            return 1. / matsar::Math::Sinh(v);
         }
 
         template<typename T>
@@ -256,23 +256,23 @@ namespace MatSAR {
         }
 
         template<typename T>
-        inline auto csc(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Csc<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Csc<T>);
+        inline auto csc(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Csc<T>)) {
+            return matsar::apply_function(m, matsar::Math::Csc<T>);
         }
 
         template<typename T>
-        inline auto csch(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Csch<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Csch<T>);
+        inline auto csch(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Csch<T>)) {
+            return matsar::apply_function(m, matsar::Math::Csch<T>);
         }
 
         template<typename T>
-        inline auto acsc(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acsc<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Acsc<T>);
+        inline auto acsc(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acsc<T>)) {
+            return matsar::apply_function(m, matsar::Math::Acsc<T>);
         }
 
         template<typename T>
-        inline auto acsch(const Matrix<T> &m) -> decltype(MatSAR::apply_function(m, MatSAR::Math::Acsch<T>)) {
-            return MatSAR::apply_function(m, MatSAR::Math::Acsch<T>);
+        inline auto acsch(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acsch<T>)) {
+            return matsar::apply_function(m, matsar::Math::Acsch<T>);
         }
     }
     namespace Math {
@@ -284,7 +284,7 @@ namespace MatSAR {
         template<typename T1, typename T2>
         auto atan2(Matrix<T1> Y, Matrix<T2> X) -> Matrix<real_max> {
             Matrix<real_max>::broadcast(Y, X);
-            return MatSAR::apply_function(Y, X, MatSAR::Math::Atan2<T1, T2>);
+            return matsar::apply_function(Y, X, matsar::Math::Atan2<T1, T2>);
         }
     }
     namespace Math {

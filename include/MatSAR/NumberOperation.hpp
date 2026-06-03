@@ -17,12 +17,12 @@
 #include <list>
 #include <cstring>
 
-//using namespace MatSAR;
+//using namespace matsar;
 //using namespace std;
-using namespace MatSAR::Util::TypeUtil;
+using namespace matsar::Util::TypeUtil;
 
 
-namespace MatSAR {
+namespace matsar {
     namespace Math {
 #ifdef M_PI
         static const float_max pi = M_PI;
@@ -34,7 +34,7 @@ namespace MatSAR {
     }
 }
 
-namespace MatSAR {
+namespace matsar {
     static auto base2dec(const string &str, int base) -> int64 {
         if (base <= 0 || base > 36)
             throw_value_error("base must be an even number between 1 and 36, got base = " + to_string(base));
@@ -279,7 +279,7 @@ namespace MatSAR {
 
     template<typename T>
     static auto fix(const T &v) -> T {
-        return v < 0 ? MatSAR::ceil(v) : MatSAR::floor(v);
+        return v < 0 ? matsar::ceil(v) : matsar::floor(v);
     }
 
     template<IntType IT CheckInt(IT)>
@@ -339,7 +339,7 @@ namespace MatSAR {
 
     template<typename RT1, typename RT2, typename TargetType=float_max>
     auto nchoosek(RT1 n, RT2 k) -> TargetType {
-        if (n != MatSAR::round(n) || k != MatSAR::round(k))
+        if (n != matsar::round(n) || k != matsar::round(k))
             return NAN;
         if (n < 0 || k < 0) {
             return NAN;
@@ -426,7 +426,7 @@ namespace MatSAR {
         if (right == 0.) return NAN;
         auto left_ = static_cast<float_max>(left);
         auto right_ = static_cast<float_max>(right);
-        return left_ - MatSAR::fix(left_ / right_) * right_;
+        return left_ - matsar::fix(left_ / right_) * right_;
     }
 
     template<typename T1, typename T2>
@@ -449,7 +449,7 @@ namespace MatSAR {
     }
 }
 
-namespace MatSAR {
+namespace matsar {
 //    template<Calculable T CheckCalculable(T)>
 //    inline static constexpr auto operator+(const T &left, const bool &right) -> T {
 //        return left + static_cast<T>(right ? 1 : 0);

@@ -3,7 +3,7 @@
 
 #include <MatSAR/MatSAR.hpp>   // default (experimental OFF) public header must compile
 
-using namespace MatSAR;
+using namespace matsar;
 
 TEST_CASE("public header exposes the core") {
     auto m = ones({2, 2});

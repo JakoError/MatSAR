@@ -23,7 +23,7 @@
 
 #endif //MATSAR_UNIVERSALFUNCTIONS_HPP
 
-namespace MatSAR {
+namespace matsar {
     namespace Math {
         template<typename UT, typename VT, typename TargetType=decltype(std::declval<UT>() * std::declval<VT>())>
         auto conv(const Matrix<UT> &u, const Matrix<VT> &v, const string &mode = "full") -> Matrix<TargetType> {
@@ -272,7 +272,7 @@ namespace MatSAR {
             if (Ns == none && dim_idxs == none) {
 //                throw_value_error("fftn: parameter Ns and dim_idxs cannot be both None.");
                 // auto add each dim to calculate
-                dim_idxs = MatSAR::Util::VectorUtil::Range(m.getDims());
+                dim_idxs = matsar::Util::VectorUtil::Range(m.getDims());
                 Ns = m.getShape();
             }
             if (Ns != none && dim_idxs != none && Ns.data().size() != dim_idxs.data().size()) {
@@ -294,7 +294,7 @@ namespace MatSAR {
                 Ns = Ns_predict;
             } else {
                 if (dim_idxs == none) {
-                    dim_idxs = MatSAR::Util::VectorUtil::Range(n);
+                    dim_idxs = matsar::Util::VectorUtil::Range(n);
                 }
             }
 
@@ -410,7 +410,7 @@ namespace MatSAR {
             if (Ns == none && dim_idxs == none) {
 //                throw_value_error("ifftn: parameter Ns and dim_idxs cannot be both None.");
                 // auto add each dim to calculate
-                dim_idxs = MatSAR::Util::VectorUtil::Range(m.getDims());
+                dim_idxs = matsar::Util::VectorUtil::Range(m.getDims());
                 Ns = m.getShape();
             }
             if (Ns != none && dim_idxs != none && Ns.data().size() != dim_idxs.data().size()) {
@@ -432,7 +432,7 @@ namespace MatSAR {
                 Ns = Ns_predict;
             } else {
                 if (dim_idxs == none) {
-                    dim_idxs = MatSAR::Util::VectorUtil::Range(n);
+                    dim_idxs = matsar::Util::VectorUtil::Range(n);
                 }
             }
 
@@ -554,8 +554,8 @@ namespace MatSAR {
 //            return result;
 //        }
 //
-//        MatSAR::Matrix<complex_max> operatory(const MatSAR::Matrix<complex_max> &matrix, int divisor, int multi) {
-//            MatSAR::Matrix<complex_max> result = matrix;  // 创建一个新的 Matrix 对象，初始化为当前对象的复制品
+//        matsar::Matrix<complex_max> operatory(const matsar::Matrix<complex_max> &matrix, int divisor, int multi) {
+//            matsar::Matrix<complex_max> result = matrix;  // 创建一个新的 Matrix 对象，初始化为当前对象的复制品
 //            for (auto &element: result) {  // 遍历 result 的每个元素
 //                element /= static_cast<complex_max>(divisor);  // 将元素除以 divisor
 //                element *= static_cast<complex_max>(multi);
@@ -621,7 +621,7 @@ namespace MatSAR {
 //
 //            auto X_right = slice(X, right_start, m, dim);
 //
-//            Xzp = MatSAR::Math::mycat<complex128>(dim, {X_left, X_zeros, X_right});
+//            Xzp = matsar::Math::mycat<complex128>(dim, {X_left, X_zeros, X_right});
 //
 //
 //            // 傅立叶逆变换

@@ -27,7 +27,7 @@
 
 using namespace std;
 
-namespace MatSAR {
+namespace matsar {
     namespace Util {
         namespace Exception {
             /**
@@ -136,8 +136,8 @@ namespace MatSAR {
             template<Calculable T1, Calculable T2>
             void throw_type_loss_exception(bool to_exit = false) {
                 try {
-                    string msg = "convert from \"" + MatSAR::Util::TypeUtil::getCalculableString<T1>() + "\" to \"" +
-                                 MatSAR::Util::TypeUtil::getCalculableString<T2>() +
+                    string msg = "convert from \"" + matsar::Util::TypeUtil::getCalculableString<T1>() + "\" to \"" +
+                                 matsar::Util::TypeUtil::getCalculableString<T2>() +
                                  "\" may loss data";
                     throw TypeLossException(msg);
                 } catch (TypeLossException &e) {

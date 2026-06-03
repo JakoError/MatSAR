@@ -45,7 +45,7 @@ typedef float64 float_max;
 typedef float_max real_max;
 
 // define for Global
-namespace MatSAR {
+namespace matsar {
     // meta float type
     template<typename>
     struct float_type_helper
@@ -264,7 +264,7 @@ namespace MatSAR {
 # define RealType typename
 # define ComplexType typename
 
-#define CheckType(dType, Type) ,class = typename std::enable_if<MatSAR::Type<dType>::value>::type
+#define CheckType(dType, Type) ,class = typename std::enable_if<matsar::Type<dType>::value>::type
 
 #endif
 
@@ -417,7 +417,7 @@ namespace MatSAR {
 #define VEC7 vector<VEC6>
 #define VEC8 vector<VEC7>
 
-namespace MatSAR {
+namespace matsar {
     namespace Util {
         namespace TypeUtil {
             template<Calculable dType>

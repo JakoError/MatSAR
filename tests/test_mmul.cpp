@@ -4,7 +4,7 @@
 #include <MatSAR/Matrix.hpp>
 #include <MatSAR/MatrixCreation.hpp>
 
-using namespace MatSAR;
+using namespace matsar;
 
 // diag(2,3,4) is layout-independent; a column-major-aware square product below.
 TEST_CASE("mmul: diagonal * identity == diagonal") {
