@@ -302,7 +302,7 @@ namespace matsar {
                 return true;
             }
 
-            /** 检查该层是不是对应size大小,并且递归地判断内部 */
+            /** Check whether this level matches the given size, then recurse into the inner levels. */
             template<class dType>
             auto checkListFix(initializer_list<dType> list, size_t size) -> bool {
                 return list.size() == size;
@@ -332,7 +332,7 @@ namespace matsar {
                 return true;
             }
 
-            /** 检查该层是不是对应size大小,并且递归地判断内部 */
+            /** Check whether this level matches the given size, then recurse into the inner levels. */
             template<class dType>
             auto checkVecFix(vector<dType> vec, size_t size) -> bool {
                 return vec.size() == size;
@@ -423,7 +423,7 @@ namespace matsar {
             }
 
             //    /**
-            //     * 不包含end位置的元素即：[begin:end-1]相乘
+            //     * Excludes the element at 'end', i.e. multiplies over [begin:end-1]
             //     */
             //    template<Calculable T, class ITER1, class ITER2>
             //    T (mul)(ITER1 begin, const ITER2 &end) {

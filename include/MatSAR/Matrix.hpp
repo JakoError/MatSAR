@@ -1243,7 +1243,7 @@ namespace matsar {
                 for (size_type n = 0; n < getUnitNum(); ++n) {
                     for (size_type j = 0; j < n_t; ++j)
                         for (size_type i = 0; i < m_t; ++i)
-                            *(iter_r++) = *(iter_sqz + i);//重复读取sqz
+                            *(iter_r++) = *(iter_sqz + i);// re-read from sqz
                     iter_sqz += sqz.getUnitSize();
                 }
             } else if (n_s == n_t) {
@@ -1345,9 +1345,9 @@ namespace matsar {
         }
 
 //        /**
-//         * 使用可变参数的重载会对参数要求比较高，不能出现比原有参数少或多的情况，\n
-//         * 否则会出现越界，但这是一种内部可高效的访问方法，出现越界会异常退出\n
-//         * 更加安全请使用Matrix({dim1,dim2,dim3,...,dimn})
+//         * The variadic overload is strict: you must pass exactly as many indices
+//         * as there are dimensions (no fewer, no more), else it reads out of bounds.
+//         * It is fast but unsafe; for safe access use Matrix({dim1,...,dimn}).
 //         * @param i
 //         * @param ...
 //         * @return
@@ -1360,11 +1360,11 @@ namespace matsar {
 //            do {
 //                if (i < 0)
 //                    i += shape[dim];
-//                ///如果该判断影响读取效率可去除，但进行判断很有必要///
+//                /// this check can be dropped if it hurts read performance, but it is worth keeping ///
 //                if (i < 0 || i > this->shape[dim] - 1)
 //                    throw_logical_error(
-//                            "读取矩阵元素，超出矩阵范围 在" + to_string(dim + 1) + "维 (shape)维长=" + " 该维取值i=" + to_string(i) +
-//                            "超出范围");
+//                            "matrix element read out of bounds at dim " + to_string(dim + 1) + " (shape length), index i=" + to_string(i) +
+//                            " is out of range");
 //                idx[dim] = i;
 //            } while (++dim < shape.size());
 //            for (int j = shape.size() - 1; j >= 0; --j)
@@ -1373,9 +1373,9 @@ namespace matsar {
 //        }
 //
 //        /**
-//         * 使用可变参数的重载会对参数要求比较高，不能出现比原有参数少或多的情况，\n
-//         * 否则会出现越界，但这是一种内部可高效的访问方法，出现越界会异常退出\n
-//         * 更加安全请使用Matrix({dim1,dim2,dim3,...,dimn})
+//         * The variadic overload is strict: you must pass exactly as many indices
+//         * as there are dimensions (no fewer, no more), else it reads out of bounds.
+//         * It is fast but unsafe; for safe access use Matrix({dim1,...,dimn}).
 //         * @param i
 //         * @param ...
 //         * @return
@@ -1388,11 +1388,11 @@ namespace matsar {
 //            do {
 //                if (i < 0)
 //                    i += shape[dim];
-//                ///如果该判断影响读取效率可去除，但进行判断很有必要///
+//                /// this check can be dropped if it hurts read performance, but it is worth keeping ///
 //                if (i < 0 || i > this->shape[dim] - 1)
 //                    throw_logical_error(
-//                            "读取矩阵元素，超出矩阵范围 在" + to_string(dim + 1) + "维 (shape)维长=" + " 该维取值i=" + to_string(i) +
-//                            "超出范围");
+//                            "matrix element read out of bounds at dim " + to_string(dim + 1) + " (shape length), index i=" + to_string(i) +
+//                            " is out of range");
 //                idx[dim] = i;
 //            } while (++dim < shape.size());
 //            for (int j = shape.size() - 1; j >= 0; --j)
@@ -1484,12 +1484,12 @@ namespace matsar {
 //        dType operator()(initializer_list<int64> plist) const {
 //            if (plist.size() != this->shape.size())
 //                throw_out_of_range_error(
-//                        "读取矩阵元素维度数不匹配 该矩阵维度:" + to_string(shape.size()) + " 传入维度:" + to_string(plist.size()), true);
+//                        "matrix element read: dimension count mismatch. matrix dims:" + to_string(shape.size()) + " passed dims:" + to_string(plist.size()), true);
 //            int64 dim = 0, pos = 0;
 //            for (const int64 &i: plist) {
 //                if (i < -shape[dim] || i >= shape[dim]) {
 //                    throw_out_of_range_error(
-//                            "读取矩阵元素，超出矩阵范围 在" + to_string(i + 1) + "维 (shape)维长=" + " 该维取值i=" + to_string(i) + "超出范围",
+//                            "matrix element read out of bounds at dim " + to_string(i + 1) + " (shape length), index i=" + to_string(i) + " out of range",
 //                            true);
 //                }
 //                dim++;
@@ -1505,12 +1505,12 @@ namespace matsar {
 //        dType &operator()(initializer_list<int64> plist) {
 //            if (plist.size() != this->shape.size())
 //                throw_out_of_range_error(
-//                        "读取矩阵元素维度数不匹配 该矩阵维度:" + to_string(shape.size()) + " 传入维度:" + to_string(plist.size()), true);
+//                        "matrix element read: dimension count mismatch. matrix dims:" + to_string(shape.size()) + " passed dims:" + to_string(plist.size()), true);
 //            int64 dim = 0, pos = 0;
 //            for (const int64 &i: plist) {
 //                if (i < -shape[dim] || i >= shape[dim]) {
 //                    throw_out_of_range_error(
-//                            "读取矩阵元素，超出矩阵范围 在" + to_string(i + 1) + "维 (shape)维长=" + " 该维取值i=" + to_string(i) + "超出范围",
+//                            "matrix element read out of bounds at dim " + to_string(i + 1) + " (shape length), index i=" + to_string(i) + " out of range",
 //                            true);
 //                }
 //                dim++;
@@ -1692,7 +1692,7 @@ namespace matsar {
 //            if (Util::TypeUtil::typeHigher<Other, dType>())
 //                throw_type_loss_exception<Other, dType>();
 //            if (isEmpty() || right.isEmpty())
-//                throw_value_error("矩阵乘法传入空矩阵");
+//                throw_value_error("matrix multiplication received an empty matrix");
 //            auto left_shape = shape;
 //            auto right_shape = right.getShape();
 //            newAxis(left_shape, 2);
