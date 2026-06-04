@@ -1,3 +1,5 @@
+// Copyright 2026 Zhexian Zhou
+// SPDX-License-Identifier: Apache-2.0
 //
 // Created by JakoError on 2022/7/9.
 //

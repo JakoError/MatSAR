@@ -1,3 +1,5 @@
+// Copyright 2026 Zhexian Zhou
+// SPDX-License-Identifier: Apache-2.0
 // basic.cpp -- constructing, indexing, and printing matrices.
 //
 // Build this example by configuring with -DMATSAR_BUILD_EXAMPLES=ON (the

@@ -1,3 +1,5 @@
+// Copyright 2026 Zhexian Zhou
+// SPDX-License-Identifier: Apache-2.0
 //
 // Portability helpers so the core compiles on MSVC as well as GCC/Clang.
 //

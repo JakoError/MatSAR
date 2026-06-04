@@ -1,3 +1,5 @@
+// Copyright 2026 Zhexian Zhou
+// SPDX-License-Identifier: Apache-2.0
 // matmul.cpp -- the BLAS-backed matrix product, mmul(a, b) and its alias a % b.
 //
 // This example needs the OpenBLAS-backed build (the default, MATSAR_WITH_BLAS

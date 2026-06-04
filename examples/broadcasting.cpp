@@ -1,3 +1,5 @@
+// Copyright 2026 Zhexian Zhou
+// SPDX-License-Identifier: Apache-2.0
 // broadcasting.cpp -- element-wise arithmetic, broadcasting, and comparisons.
 //
 // IMPORTANT: between two matrices, `*` is ELEMENT-WISE (NumPy semantics), not a

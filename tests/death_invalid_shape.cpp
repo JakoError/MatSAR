@@ -1,3 +1,5 @@
+// Copyright 2026 Zhexian Zhou
+// SPDX-License-Identifier: Apache-2.0
 // Death test: an incompatible-shape op prints a "*Exception" message and exit()s.
 // MatSAR's current error handling EXITS rather than throwing a catchable C++
 // exception (see ExceptionUtil.hpp; "better exception handling" is future work),
