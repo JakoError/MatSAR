@@ -145,6 +145,7 @@ should acknowledge dependencies, please cite it using the metadata in
 
 ```yaml
 Zhou, Zhexian. MatSAR: A header-only C++17 matrix library. Version 0.1.0.
+```
 
 ## License
 
