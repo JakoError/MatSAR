@@ -143,7 +143,7 @@ If you use MatSAR in research, publications, academic projects, or software that
 should acknowledge dependencies, please cite it using the metadata in
 [`CITATION.cff`](CITATION.cff).
 
-```yaml
+```text
 Zhou, Zhexian. MatSAR: A header-only C++17 matrix library. Version 0.1.0.
 ```
 
