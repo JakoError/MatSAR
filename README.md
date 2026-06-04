@@ -130,6 +130,22 @@ the option reference are in [`docs/TESTING.md`](docs/TESTING.md).
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to build, the project conventions, and the PR flow.
 - [`CHANGELOG.md`](CHANGELOG.md) — notable changes per release.
 
+## Author
+
+MatSAR is developed and maintained by **Zhexian Zhou**.
+
+- GitHub: [@JakoError](https://github.com/JakoError)
+- ORCID: [0009-0004-8278-1230](https://orcid.org/0009-0004-8278-1230)
+
+## Citation
+
+If you use MatSAR in research, publications, academic projects, or software that
+should acknowledge dependencies, please cite it using the metadata in
+[`CITATION.cff`](CITATION.cff).
+
+```yaml
+Zhou, Zhexian. MatSAR: A header-only C++17 matrix library. Version 0.1.0.
+
 ## License
 
 Licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).
