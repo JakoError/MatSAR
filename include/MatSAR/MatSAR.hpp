@@ -18,7 +18,10 @@
 #include "MatrixCreation.hpp"
 
 // ---- experimental (opt-in) ----
-#ifdef MATSAR_ENABLE_EXPERIMENTAL
+// The experimental headers are excluded from the public mirror; the __has_include
+// guard makes MATSAR_ENABLE_EXPERIMENTAL a clean no-op there (instead of a
+// missing-header error) while still compiling in the full source tree.
+#if defined(MATSAR_ENABLE_EXPERIMENTAL) && __has_include("SparseMatrix.hpp")
 
 #include "SparseMatrix.hpp"
 #include "UniversalFunctions.hpp"
@@ -31,6 +34,6 @@
 //#include "math/Probability.hpp"
 #include "math/DigitalSignal.hpp"
 
-#endif // MATSAR_ENABLE_EXPERIMENTAL
+#endif // experimental (opt-in)
 
 #endif //MATSAR_HPP
