@@ -220,8 +220,9 @@ namespace matsar {
     }
 
     /**
-     * 左右指的是经典行列表达方法中的列向量互相顺序镜像
-     * 即第二维中的一维向量倒置顺序
+     * "Left-right" flip: mirror the order of the column vectors (classic
+     * row/column view) -- i.e. reverse the order of the 1-D vectors along the
+     * second dimension.
      */
     template<typename dType>
     auto fliplr(const Matrix<dType> &m) -> Matrix<dType> {
@@ -246,9 +247,9 @@ namespace matsar {
     }
 
     /**
-     * 上下指的是经典行列表达方法中的列向量内部左右镜像
-     * 即第一维向量内部倒序\n
-     * 等同于flip(Matrix,1)
+     * "Up-down" flip: mirror the contents of each column vector (classic
+     * row/column view) -- i.e. reverse the elements within each first-dimension
+     * vector. Equivalent to flip(Matrix, 1).
      */
     template<typename dType>
     auto flipud(const Matrix<dType> &m) -> Matrix<dType> {
@@ -256,7 +257,7 @@ namespace matsar {
     }
 
     /**
-     * 逆时针旋转k*90度
+     * Rotate counter-clockwise by k*90 degrees.
      */
     template<typename dType>
     auto rot90(const Matrix<dType> &m, msize_type k = 1) -> Matrix<dType> {
@@ -273,7 +274,8 @@ namespace matsar {
     }
 
     /**
-     * @param k 要包括的对角线，指定为标量。k = 0 是主对角线，k > 0 位于主对角线上方，而 k < 0 位于主对角线下方。
+     * @param k the diagonal to include, as a scalar. k = 0 is the main diagonal,
+     *          k > 0 is above the main diagonal, and k < 0 is below it.
      */
     template<typename dType>
     auto tril(const Matrix<dType> &m, msize_type k = 0) -> Matrix<dType> {
@@ -291,7 +293,8 @@ namespace matsar {
     }
 
     /**
-     * @param k 要包括的对角线，指定为标量。k = 0 是主对角线，k > 0 位于主对角线上方，而 k < 0 位于主对角线下方。
+     * @param k the diagonal to include, as a scalar. k = 0 is the main diagonal,
+     *          k > 0 is above the main diagonal, and k < 0 is below it.
      */
     template<typename dType>
     auto triu(const Matrix<dType> &m, msize_type k = 0) -> Matrix<dType> {
