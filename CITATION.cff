@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use MatSAR in your research, software, or publications, please cite it as below."
+type: software
+title: "MatSAR"
+version: "0.1.0dev"
+date-released: 2026-06-03
+
+authors:
+  - family-names: "Zhou"
+    given-names: "Zhexian"
+    orcid: "https://orcid.org/0009-0004-8278-1230"
+
+repository-code: "https://github.com/JakoError/MatSAR"
+license: "Apache-2.0"
+
+abstract: >
+  MatSAR is a C++17 matrix library focused on stable dense matrix operations,
+  row-wise matrix construction, element-wise operations, broadcasting, comparison,
+  printing, and optional BLAS-backed matrix multiplication.
+
+keywords:
+  - C++
+  - matrix
+  - numerical-computing
+  - linear-algebra
+  - BLAS
+  - OpenBLAS
