@@ -1,36 +1,50 @@
+<div align="center">
+
 # MatSAR
 
-[![CI](https://github.com/JakoError/MatSAR/actions/workflows/ci.yml/badge.svg)](https://github.com/JakoError/MatSAR/actions/workflows/ci.yml)
-![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
-![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)
-![header-only](https://img.shields.io/badge/header--only-yes-brightgreen.svg)
+**A header-only C++17 matrix library that reads like the math you write — NumPy/MATLAB feel, no runtime, one `#include`.**
 
-**MatSAR** is a header-only C++17 matrix library with a NumPy/MATLAB-like feel:
+[![CI](https://github.com/JakoError/MatSAR/actions/workflows/ci.yml/badge.svg)](https://github.com/JakoError/MatSAR/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
+![header-only](https://img.shields.io/badge/header--only-yes-brightgreen.svg)
+![platforms](https://img.shields.io/badge/platforms-MSVC%20%7C%20MinGW%20%7C%20Linux-lightgrey.svg)
+
+[**Features**](#-features) · [**Quick start**](#-quick-example) · [**Install**](#-using-matsar-in-your-project) · [**Build options**](#-build-options) · [**Docs**](#-documentation)
+
+</div>
+
+---
+
+MatSAR is a header-only C++17 matrix library with a NumPy/MATLAB-like feel:
 N-dimensional containers, row-wise literal construction, element-wise arithmetic
 with broadcasting, comparisons, and a BLAS-backed matrix product. The goal is an
 expressive, single-`#include` numerical container that stays close to the math
 you write on paper while compiling on MSVC, MinGW-w64, and Linux GCC/Clang.
 
+> [!NOTE]
 > **Project status — early (`0.x`).** The stable core documented here is tested
 > across platforms, but this is a pre-1.0 release: the public API may change
 > between minor versions. Unfinished modules are quarantined behind an opt-in
 > flag and are not part of the supported surface yet.
 
-## Features
+## ✨ Features
 
-- **N-dimensional `matsar::Matrix<T>`** — header-only, templated on the element type.
-- **Row-wise literal construction** — `{{1,2,3},{4,5,6}}` reads as rows (NumPy/MATLAB
-  intuition), with explicit `Matrix<T>::fromRows(...)` / `fromColumns(...)` builders.
-- **Element-wise arithmetic** (`+ - * /`) with **NumPy-style broadcasting** and scalar operands.
-- **Element-wise comparisons** (`< <= > >= == !=`), also broadcasting, yielding a boolean matrix.
-- **BLAS-backed matrix product** — `mmul(a, b)` and its alias `a % b` (OpenBLAS `*gemm`).
-- **Readable printing** — `toString(...)` (braced view) and `toRowColString(...)` (grid view).
-- **Creation helpers** — `zeros`, `ones`, `eye`, `diag`, `arange`, and friends.
+|  |  |
+|---|---|
+| **N-dimensional `matsar::Matrix<T>`** | Header-only, templated on the element type. |
+| **Row-wise literals** | `{{1,2,3},{4,5,6}}` reads as rows; explicit `fromRows` / `fromColumns` builders. |
+| **Broadcasting arithmetic** | `+ - * /` element-wise (NumPy-style), with scalar operands. |
+| **Comparisons** | `< <= > >= == !=`, broadcasting, yielding a boolean matrix. |
+| **BLAS matrix product** | `mmul(a, b)` and its alias `a % b` (OpenBLAS `*gemm`). |
+| **Readable printing** | `toString(...)` (braced view) and `toRowColString(...)` (grid view). |
+| **Creation helpers** | `zeros`, `ones`, `eye`, `diag`, `arange`, and friends. |
 
+> [!TIP]
 > Between two matrices, `*` is **element-wise** (like NumPy), *not* a matrix
 > product. Use `mmul(a, b)` or `a % b` for the matrix product.
 
-## Quick example
+## ⚡ Quick example
 
 ```cpp
 #include <iostream>
@@ -56,7 +70,7 @@ int main() {
 More, runnable, in [`examples/`](examples/) (`basic`, `broadcasting`, `matmul`)
 and a guided tour in [`docs/usage.md`](docs/usage.md).
 
-## Requirements
+## 📦 Requirements
 
 - A **C++17** compiler: MSVC (VS 2019+), MinGW-w64 GCC, or Linux GCC/Clang.
 - **CMake ≥ 3.22**.
@@ -64,12 +78,13 @@ and a guided tour in [`docs/usage.md`](docs/usage.md).
   build with `-DMATSAR_WITH_BLAS=OFF` to drop the dependency and the rest of the
   library still works.
 
-## Using MatSAR in your project
+## 🚀 Using MatSAR in your project
 
 MatSAR ships an `INTERFACE` CMake target, `MatSAR::matsar`, and installs a
 package config, so both `FetchContent` and `find_package` work.
 
-### FetchContent
+<details open>
+<summary><b>FetchContent</b></summary>
 
 ```cmake
 include(FetchContent)
@@ -80,13 +95,16 @@ FetchContent_MakeAvailable(MatSAR)
 
 target_link_libraries(my_app PRIVATE MatSAR::matsar)
 ```
+</details>
 
-### find_package (installed / packaged)
+<details>
+<summary><b>find_package</b> (installed / packaged)</summary>
 
 ```cmake
 find_package(MatSAR 0.1 REQUIRED)
 target_link_libraries(my_app PRIVATE MatSAR::matsar)
 ```
+</details>
 
 Then, in your code:
 
@@ -101,7 +119,7 @@ matrix product, make sure OpenBLAS is installed (a system package, or vcpkg's
 `openblas` on Windows); otherwise configure consumers against a MatSAR built
 with `-DMATSAR_WITH_BLAS=OFF`.
 
-## Build options
+## 🔧 Build options
 
 | Option | Default | Effect |
 |---|---|---|
@@ -111,7 +129,7 @@ with `-DMATSAR_WITH_BLAS=OFF`.
 | `MATSAR_LEGACY_COLUMN_INITIALIZER_LIST` | `OFF` | Temporary migration aid: makes nested `{{...}}` column-wise again. Prefer `fromRows`/`fromColumns`. |
 | `MATSAR_ENABLE_EXPERIMENTAL` | `OFF` | Opt into unfinished modules (not part of the supported API yet). |
 
-## Building & testing this repository
+## 🧪 Building & testing this repository
 
 ```bash
 cmake -G Ninja -B build
@@ -122,22 +140,23 @@ ctest --test-dir build --output-on-failure
 Full platform-by-platform instructions (MSVC/vcpkg, MinGW/MSYS2, Linux/WSL) and
 the option reference are in [`docs/TESTING.md`](docs/TESTING.md).
 
-## Documentation
+## 📚 Documentation
 
-- [`docs/usage.md`](docs/usage.md) — constructing matrices, arithmetic/broadcasting,
-  comparisons, the matrix product, printing, and the column-major storage caveat.
-- [`docs/TESTING.md`](docs/TESTING.md) — building & running the tests on each platform.
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to build, the project conventions, and the PR flow.
-- [`CHANGELOG.md`](CHANGELOG.md) — notable changes per release.
+| Doc | What's inside |
+|---|---|
+| [`docs/usage.md`](docs/usage.md) | Constructing matrices, arithmetic/broadcasting, comparisons, the matrix product, printing, and the column-major storage caveat. |
+| [`docs/TESTING.md`](docs/TESTING.md) | Building & running the tests on each platform. |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to build, the project conventions, and the PR flow. |
+| [`CHANGELOG.md`](CHANGELOG.md) | Notable changes per release. |
 
-## Author
+## 👤 Author
 
 MatSAR is developed and maintained by **Zhexian Zhou**.
 
 - GitHub: [@JakoError](https://github.com/JakoError)
 - ORCID: [0009-0004-8278-1230](https://orcid.org/0009-0004-8278-1230)
 
-## Citation
+## 📖 Citation
 
 If you use MatSAR in research, publications, academic projects, or software that
 should acknowledge dependencies, please cite it using the metadata in
@@ -147,6 +166,12 @@ should acknowledge dependencies, please cite it using the metadata in
 Zhou, Zhexian. MatSAR: A header-only C++17 matrix library. Version 0.1.0.
 ```
 
-## License
+## 📄 License
 
-Licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).
+<div align="center">
+
+Licensed under the **Apache License, Version 2.0** — see [`LICENSE`](LICENSE).
+
+Made by [**Zhexian Zhou**](https://github.com/JakoError)
+
+</div>
