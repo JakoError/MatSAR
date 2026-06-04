@@ -22,9 +22,10 @@ Expected: `100% tests passed, 0 tests failed out of 10` (or `9` with BLAS off).
 You need a C++17 compiler, CMake ≥ 3.22, a build tool (Ninja or Make or MSBuild),
 and — for the BLAS-backed matrix product (`mmul`/`%`) — OpenBLAS.
 
-### Windows · MSYS2 / MinGW-w64  (this machine: `D:\msys64`)
+### Windows · MSYS2 / MinGW-w64
 
-Open **`D:\msys64\mingw64.exe`** (the MinGW-w64 64-bit shell) and install once:
+Open the **MinGW-w64 64-bit shell** (`mingw64.exe` in your MSYS2 install — the
+default location is `C:\msys64`) and install once:
 
 ```bash
 pacman -S --needed mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake \
@@ -88,12 +89,12 @@ ctest --test-dir build-wsl --output-on-failure
 ```
 
 > **Sharing a checkout between Windows and WSL/MSVC/MinGW:** a build directory is
-> **not** portable across them — the CMake cache stores absolute paths (`E:\…` vs
-> `/mnt/e/…`) and a specific compiler. Reusing Windows' `build/` from WSL fails with
+> **not** portable across them — the CMake cache stores absolute paths (`C:\…` vs
+> `/mnt/c/…`) and a specific compiler. Reusing Windows' `build/` from WSL fails with
 > *"The source … does not match the source … used to generate cache."* Use a distinct
 > directory per environment: `build/` (MinGW), `build-wsl/` (WSL), `build-msvc/` (MSVC),
 > etc. All `build*/` dirs are git-ignored.
-> Tip: building under `/mnt/e` from WSL is slow (9p filesystem); for speed, build inside
+> Tip: building under a Windows drive (e.g. `/mnt/c`) from WSL is slow (9p filesystem); for speed, build inside
 > the WSL filesystem, e.g. `-B ~/matsar-build`.
 
 ---

@@ -6,10 +6,6 @@
 #ifndef MATSAR_MATRIX_HPP
 #pragma once
 #define MATSAR_MATRIX_HPP
-//#pragma   push_macro("min")
-//#pragma   push_macro("max")
-//#undef   min
-//#undef   max
 
 #include <cstddef>
 #include <iostream>
@@ -17,7 +13,6 @@
 #include <map>
 #include <algorithm>
 #include <memory>
-//#include <xmemory>
 #include <cstdarg>
 #include <iomanip>
 
@@ -91,8 +86,6 @@ VEC_CONSTRUCTOR_MAKER(VEC##6)\
 VEC_CONSTRUCTOR_MAKER(VEC##7)\
 VEC_CONSTRUCTOR_MAKER(VEC##8)
 // clang-format on
-
-//using namespace std;
 
 using namespace matsar::Util::TypeUtil;
 using matsar::Util::TypeUtil::getCalculableString;
@@ -206,12 +199,6 @@ namespace matsar {
             if (iter != shape.end()) {
                 if (std::find(iter + 1, shape.end(), -1) != shape.end())//find second -1
                     throw_value_error("Matrix dimensions can only declare one unknown dimension (-1)");
-//                //Potential flaw exceed the INT64_MAX
-//                msize_type exist_size = -matsar::Util::VectorUtil::mul(shape);
-//                if (target_size % exist_size != 0) //indivisible
-//                    throw_value_error("Cannot be refactored shape size=" + std::to_string(target_size) + "to shape=" +
-//                                      matsar::Util::VectorUtil::toString(shape));
-//                *iter = target_size / exist_size;
                 auto predict_dim_size = target_size;
                 for (const auto &i: shape) {
                     if (i == -1)
@@ -1090,21 +1077,6 @@ namespace matsar {
             return *data;
         }
 
-//        template<typename T>
-//        explicit operator T() {
-//            return T(*data);
-//        }
-
-//        template<typename T>
-//        Matrix(const vector<T> &vec) {
-//            this->shape = {vec.size()};
-//            this->size = vec.size();
-//            if (size != 0) {
-//                allocate(size);
-//                uninitialized_copy_n(vec.begin(), size, data);
-//            }
-//        }
-
         /**
          * SINGLE VALUE GENERATOR
          * don't set default value for v because there are signatures for direct vector input construction
@@ -1344,62 +1316,6 @@ namespace matsar {
             m2 = m2.broadcast(bShape2);
         }
 
-//        /**
-//         * The variadic overload is strict: you must pass exactly as many indices
-//         * as there are dimensions (no fewer, no more), else it reads out of bounds.
-//         * It is fast but unsafe; for safe access use Matrix({dim1,...,dimn}).
-//         * @param i
-//         * @param ...
-//         * @return
-//         */
-//        dType operator()(int64 i, ...) const {
-//            va_list p;
-//                    va_start(p, i);
-//            int64 dim = 0, pos = 0;
-//            array<int64, shape.size()> idx;
-//            do {
-//                if (i < 0)
-//                    i += shape[dim];
-//                /// this check can be dropped if it hurts read performance, but it is worth keeping ///
-//                if (i < 0 || i > this->shape[dim] - 1)
-//                    throw_logical_error(
-//                            "matrix element read out of bounds at dim " + to_string(dim + 1) + " (shape length), index i=" + to_string(i) +
-//                            " is out of range");
-//                idx[dim] = i;
-//            } while (++dim < shape.size());
-//            for (int j = shape.size() - 1; j >= 0; --j)
-//                pos = idx[j] + pos * shape[j];
-//            return data[pos];
-//        }
-//
-//        /**
-//         * The variadic overload is strict: you must pass exactly as many indices
-//         * as there are dimensions (no fewer, no more), else it reads out of bounds.
-//         * It is fast but unsafe; for safe access use Matrix({dim1,...,dimn}).
-//         * @param i
-//         * @param ...
-//         * @return
-//         */
-//        dType &operator()(int64 i, ...) {
-//            va_list p;
-//                    va_start(p, i);
-//            int64 dim = 0, pos = 0;
-//            array<int64, shape.size()> idx;
-//            do {
-//                if (i < 0)
-//                    i += shape[dim];
-//                /// this check can be dropped if it hurts read performance, but it is worth keeping ///
-//                if (i < 0 || i > this->shape[dim] - 1)
-//                    throw_logical_error(
-//                            "matrix element read out of bounds at dim " + to_string(dim + 1) + " (shape length), index i=" + to_string(i) +
-//                            " is out of range");
-//                idx[dim] = i;
-//            } while (++dim < shape.size());
-//            for (int j = shape.size() - 1; j >= 0; --j)
-//                pos = idx[j] + pos * shape[j];
-//            return data[pos];
-//        }
-
         virtual auto operator()(size_type offset) -> dType & {
             if (offset < 0 || offset > size) {
                 stringstream ss;
@@ -1480,48 +1396,6 @@ namespace matsar {
         virtual auto operator()(size_type i, size_type j) const -> dType {
             return (*this)(0, i, j);
         }
-
-//        dType operator()(initializer_list<int64> plist) const {
-//            if (plist.size() != this->shape.size())
-//                throw_out_of_range_error(
-//                        "matrix element read: dimension count mismatch. matrix dims:" + to_string(shape.size()) + " passed dims:" + to_string(plist.size()), true);
-//            int64 dim = 0, pos = 0;
-//            for (const int64 &i: plist) {
-//                if (i < -shape[dim] || i >= shape[dim]) {
-//                    throw_out_of_range_error(
-//                            "matrix element read out of bounds at dim " + to_string(i + 1) + " (shape length), index i=" + to_string(i) + " out of range",
-//                            true);
-//                }
-//                dim++;
-//            }
-//            auto iter = rbegin(plist);
-//            while (iter != rend(plist)) {
-//                pos = *iter + pos * shape[--dim];
-//                iter++;
-//            }
-//            return data[pos];
-//        }
-//
-//        dType &operator()(initializer_list<int64> plist) {
-//            if (plist.size() != this->shape.size())
-//                throw_out_of_range_error(
-//                        "matrix element read: dimension count mismatch. matrix dims:" + to_string(shape.size()) + " passed dims:" + to_string(plist.size()), true);
-//            int64 dim = 0, pos = 0;
-//            for (const int64 &i: plist) {
-//                if (i < -shape[dim] || i >= shape[dim]) {
-//                    throw_out_of_range_error(
-//                            "matrix element read out of bounds at dim " + to_string(i + 1) + " (shape length), index i=" + to_string(i) + " out of range",
-//                            true);
-//                }
-//                dim++;
-//            }
-//            auto iter = rbegin(plist);
-//            while (iter != rend(plist)) {
-//                pos = *iter + pos * shape[--dim];
-//                iter++;
-//            }
-//            return data[pos];
-//        }
 
         virtual auto operator()(shape_type pvec) -> dType & {
             if (pvec.size() != this->shape.size()) {
@@ -1686,41 +1560,6 @@ namespace matsar {
             return *this;
         }
 
-//        ///Matirx Mul Special BroadCast!
-//        template<typename Other>
-//        auto operator*=(const Matrix<Other> &right) -> Matrix & {
-//            if (Util::TypeUtil::typeHigher<Other, dType>())
-//                throw_type_loss_exception<Other, dType>();
-//            if (isEmpty() || right.isEmpty())
-//                throw_value_error("matrix multiplication received an empty matrix");
-//            auto left_shape = shape;
-//            auto right_shape = right.getShape();
-//            newAxis(left_shape, 2);
-//            newAxis(right_shape, 2);
-//            if (left_shape[1] != right_shape[0]) {
-//                if (left_shape[1] == 1) left_shape[1] = right_shape[0];
-//                else if (left_shape[0] == 1)right_shape[0] = left_shape[1];
-//                else
-//                    throw_broadcast_exception(MatrixBase::shapeToString(left_shape),
-//                                              MatrixBase::shapeToString(right_shape));
-//            }
-//            broadcastShape(left_shape, right_shape, 3);
-//            auto r_shape = left_shape;
-//            r_shape[1] = right_shape[1];
-//
-//            auto m = left_shape[0], n = right_shape[1], k = left_shape[1];
-//
-//            Matrix r(r_shape, 0.);
-//            if (shape == left_shape && right.getShape() == right_shape) {
-//                Base::MMul(data, right.getData(), r.getData(), m, n, k, getUnitNum());
-//            } else {
-//                auto b_left = (*this).broadcast(left_shape);
-//                auto b_right = right.broadcast(right_shape);
-//                Base::MMul(b_left.getData(), b_right.getData(), r.getData(), m, n, k, b_left.getUnitNum());
-//            }
-//            return this->operator=(r);
-//        }
-
         ///BroadCast Needed!
         template<typename Other>
         auto operator*=(const Matrix<Other> &right) -> Matrix & {
@@ -1768,152 +1607,6 @@ namespace matsar {
             Base::Div(data, v, size);
             return *this;
         }
-
-//        template<typename Other>
-//        auto matmul(const Matrix<Other> &right) -> Matrix & {
-//
-//        }
-
-//        ///Matrix multiplication; Multidimensional with pagemtimes
-//        template<RealType RT>
-//        auto operator*=(Matrix<RT> right) -> Matrix<dType> & {
-//            if (Util::TypeUtil::typeHigher<RT, dType>())
-//                throw_type_loss_exception<RT, dType>();
-//            Matrix<dType> left(*this);
-//            left.expandShape(2);
-//            right.expandShape(2);
-//            if (left.getDims() < 2 || right.getDims() < 2)
-//                throw_value_error("Matrix multiply calculate at least or can expand to 2 dimension");
-//            if (left.getShape()[1] != right.getShape()[0]) {
-//                throw_value_error("Matrix multiply shape not match shape:" +
-//                                  Util::VectorUtil::toString(left.getShape()) +
-//                                  " shape:" + Util::VectorUtil::toString(right.getShape()));
-//            }
-//            broadcast(left, right, 3);
-//            vector<int64> r_shape = left.getShape();
-//            r_shape[1] = right.getShape()[1];
-//            Matrix<dType> r(r_shape, 0.);
-//
-//            for (int64 n = 0; n < left.getUnitNum(); ++n)
-//                for (int64 i = 0; i < r_shape[0]; ++i)
-//                    for (int64 j = 0; j < r_shape[1]; ++j)
-//                        for (int64 k = 0; k < left.getShape()[1]; ++k)
-//                            r(n, i, j) += left(n, i, k) * right(n, k, j);
-//            this->operator=(r);
-//            return *this;
-//        }
-//
-//        template<ComplexType CT>
-//        Matrix<dType> &operator*=(Matrix<CT> right) {
-//            if (Util::TypeUtil::typeHigher<CT, dType>()) {
-//                throw_type_loss_exception<CT, dType>();
-//            }
-//            Matrix<dType> left(*this);
-//            if (left.getShape().size() < 2 || right.getShape().size() < 2) {
-//                throw_value_error("Matrix dot at least 2 dimension");
-//            }
-//            if (left.getShape()[1] != right.getShape()[0]) {
-//                throw_value_error("Matrix dot shape not match shape:" +
-//                                  Util::VectorUtil::toString(left.getShape()) +
-//                                  " shape:" +
-//                                  Util::VectorUtil::toString(right.getShape()));
-//            }
-//            if (!isComplex<dType>()) {
-//                this->operator*=(right.real());
-//            } else {
-//                broadcast(left, right, 3);
-//                vector<int64> r_shape = left.getShape();
-//                r_shape[1] = right.getShape()[1];
-//                Matrix<dType> r(r_shape, 0.);
-//
-//                for (int64 n = 0; n < left.getUnitNum(); ++n)
-//                    for (int64 i = 0; i < r_shape[0]; ++i)
-//                        for (int64 j = 0; j < r_shape[1]; ++j)
-//                            for (int64 k = 0; k < left.getShape()[1]; ++k)
-//                                r(n, i, j) += left(n, i, k) * right(n, k, j);
-//                this->operator=(r);
-//            }
-//            return *this;
-//        }
-
-//        /**
-//         * @redefine ^ not represent xor but power
-//         */
-//        template<RealType T>
-//        Matrix<dType> &operator^=(Matrix<T> right) {
-//            broadcast(*this, right);
-//            if (right.getShape() != shape) {
-//                throw_value_error(
-//                        "Matrix shape not match shape:" + Util::VectorUtil::toString(shape) + " shape:" +
-//                        Util::VectorUtil::toString(right.getShape()));
-//            }
-//            if (Util::TypeUtil::typeHigher<T, dType>()) {
-//                throw_type_loss_exception<T, dType>();
-//            }
-//            dType *iter = this->data, *end = this->data + this->size;
-//            T *iter_right = right.getData();
-//            while (iter != end)
-//                *(iter++) = pow(*(iter++), *(iter_right++));
-//            return *this;
-//        }
-//
-//        ///BroadCast Needed!
-//        /**
-//         * @redefine ^ not represent xor but power
-//         */
-//        template<ComplexType CT>
-//        Matrix<dType> &operator^=(Matrix<CT> right) {
-//            broadcast(*this, right);
-//            if (right.getShape() != shape) {
-//                throw_value_error(
-//                        "Matrix shape not match shape:" + Util::VectorUtil::toString(shape) + " shape:" +
-//                        Util::VectorUtil::toString(right.getShape()));
-//            }
-//            if (Util::TypeUtil::typeHigher<CT, dType>()) {
-//                throw_type_loss_exception<CT, dType>();
-//            }
-//            if (!isComplex<dType>()) {
-//                this->template operator^=(right.real());
-//            } else {
-//                dType *iter = this->data, *end = this->data + this->size;
-//                CT *iter_right = right.getData();
-//                while (iter != end)
-//                    *(iter++) = pow(*(iter++), *(iter_right++));
-//            }
-//            return *this;
-//        }
-//
-//        /**
-//         * @redefine ^ not represent xor but power
-//         */
-//        template<RealType T>
-//        Matrix<dType> &operator^=(const T &v) {
-//            if (Util::TypeUtil::typeHigher<T, dType>()) {
-//                throw_type_loss_exception<T, dType>();
-//            }
-//            dType *iter = this->data, *end = this->data + this->size;
-//            while (iter != end)
-//                *(iter++) = pow(*(iter++), v);
-//            return *this;
-//        }
-//
-//        /**
-//         * @redefine ^ not represent xor but power
-//         */
-//        template<ComplexType CT>
-//        Matrix<dType> &operator^=(const CT &v) {
-//            if (Util::TypeUtil::typeHigher<CT, dType>()) {
-//                throw_type_loss_exception<CT, dType>();
-//            }
-//            if (!isComplex<dType>()) {
-//                this->template operator^=(v.real());
-//            } else {
-//                dType *iter = this->data, *end = this->data + this->size;
-//                while (iter != end)
-//                    *(iter++) = pow(*(iter++), v);
-//            }
-//            return *this;
-//        }
 
         ///BroadCast Needed!
         template<typename Other>
@@ -2175,19 +1868,6 @@ namespace matsar {
             return m;
         }
 
-//        /**
-//         * Tran Negative (Move to operator-)
-//         */
-//        [[nodiscard]] auto num_negative() const -> Matrix<dType> {
-//            Matrix<dType> m(*this);
-//            dType *iter = m.data, *end = m.data + m.size;
-//            while (iter != end) {
-//                *iter = -*iter;
-//                iter++;
-//            }
-//            return m;
-//        }
-
         ///Auto predict shape
         [[nodiscard]] auto reshape(mshape_type new_shape) const -> Matrix<dType> {
             if (new_shape == shape)
@@ -2438,13 +2118,6 @@ namespace matsar {
             return sqrt(sum);
         }
     };
-//    template<Calculable dType>
-//    class SparseMatrix : public Matrix<dType>{
-//    private:
-//    protected:
-//        using size_type = msize_type;
-//
-//    };
 }
 namespace matsar {
     /// Element-wise `+` with broadcasting (matrix+matrix, matrix+scalar, scalar+matrix).
