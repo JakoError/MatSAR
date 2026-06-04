@@ -1,0 +1,48 @@
+# MatSAR code style. Tuned to match the existing hand-formatted style so that
+# `clang-format` is a light touch (no wholesale reflow):
+#   - 4-space indentation, spaces only; attached (K&R) braces
+#   - pointers/references bind to the name  (dType *data)
+#   - template declarations on their own line; namespace bodies indented
+#   - no column-based line reflow (ColumnLimit 0): keep deliberate line breaks
+#   - comments and their prefixes left as written
+# Format changed code with:  clang-format -i <file>
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 0
+
+AccessModifierOffset: -4
+PointerAlignment: Right
+ReferenceAlignment: Right
+NamespaceIndentation: All
+BreakBeforeBraces: Attach
+AlwaysBreakTemplateDeclarations: Yes
+SpaceAfterTemplateKeyword: false
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: false
+SpaceAfterCStyleCast: true
+FixNamespaceComments: false
+ContinuationIndentWidth: 8
+
+# The code keeps short `if (cond) stmt;` / `for (...) stmt;` on one line.
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+
+# Keep the code's deliberate formatting; don't fight the author.
+ReflowComments: false
+AlignEscapedNewlines: DontAlign
+AlignTrailingComments:
+  Kind: Leave
+SpacesInLineCommentPrefix:
+  Minimum: 0
+  Maximum: -1
+KeepEmptyLinesAtTheStartOfBlocks: true
+
+# The headers use deliberate, guard-aware include ordering; don't reorder them.
+SortIncludes: false
+SortUsingDeclarations: Never
+...

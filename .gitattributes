@@ -1,0 +1,12 @@
+# Treat bundled OpenBLAS binaries (and any future binaries) as binary so git
+# never applies text or line-ending normalization to them.
+# Full text/EOL normalization rules are introduced later with the dev-standards
+# (.clang-format) change — see the open-source public-mirror spec, Phase 4.
+*.dll   binary
+*.lib   binary
+*.a     binary
+*.so    binary
+*.dylib binary
+
+# Shell scripts must stay LF so they run on Linux / MSYS2.
+*.sh    text eol=lf

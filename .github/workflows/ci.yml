@@ -1,0 +1,96 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cxx: [g++, clang++]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y ninja-build libopenblas-dev
+      - name: Configure
+        run: cmake -G Ninja -B build -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  windows-msvc:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OpenBLAS (vcpkg)
+        run: vcpkg install openblas:x64-windows
+      - name: Configure
+        shell: pwsh
+        run: cmake -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DVCPKG_APPLOCAL_DEPS=ON
+      - name: Build
+        run: cmake --build build --config Debug
+      - name: Test
+        run: ctest --test-dir build -C Debug --output-on-failure
+
+  windows-mingw:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: 'msys2 {0}'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-openblas
+            mingw-w64-x86_64-gcc-fortran
+            mingw-w64-x86_64-pkgconf
+      - name: Configure
+        run: cmake -G Ninja -B build
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # Core path with no OpenBLAS dependency (mmul/% disabled, test_mmul skipped).
+  linux-noblas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Configure (no BLAS)
+        run: cmake -G Ninja -B build -DMATSAR_WITH_BLAS=OFF
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # Formatting gate. clang-format is pinned (pip) so the result is identical to
+  # what contributors get locally; see .clang-format for the (no-reflow) style.
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install clang-format (pinned for reproducibility)
+        run: pip install clang-format==22.1.4
+      - name: Check formatting
+        run: |
+          clang-format --version
+          clang-format --dry-run --Werror \
+            include/MatSAR/Matrix.hpp \
+            include/MatSAR/MatrixCreation.hpp \
+            include/MatSAR/NumberOperation.hpp \
+            include/MatSAR/MatSAR.hpp \
+            include/MatSAR/util/*.hpp \
+            tests/*.cpp \
+            examples/*.cpp
