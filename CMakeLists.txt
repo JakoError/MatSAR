@@ -12,6 +12,7 @@ option(MATSAR_ENABLE_EXPERIMENTAL "Include unfinished experimental modules" OFF)
 option(MATSAR_LEGACY_COLUMN_INITIALIZER_LIST "Revert nested {{...}} to legacy column-wise construction (temporary migration aid)" OFF)
 option(MATSAR_BUILD_TESTS "Build MatSAR tests" ${_matsar_is_top_level})
 option(MATSAR_BUILD_EXAMPLES "Build MatSAR examples" ${_matsar_is_top_level})
+option(MATSAR_BUILD_EXPERIMENTAL_TESTS "Build experimental math-module tests (golden + property)" OFF)
 option(MATSAR_INSTALL "Generate MatSAR install + package-config rules" ${_matsar_is_top_level})
 
 # Header-only interface library
