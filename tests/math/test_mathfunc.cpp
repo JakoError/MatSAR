@@ -62,5 +62,13 @@ TEST_CASE("property · reductions vs brute force + identities") {
             CAPTURE(i);
             CHECK(approx_eq((double)cs(i, cols - 1), (double)sm(i, 0), 1e-10, 1e-12));
         }
+
+        // 4) cumprod's last slice along an axis == prod along that axis
+        auto cp = Math::cumprod(m, (msize_type)1);
+        auto pm = Math::prod(m, (msize_type)1);
+        for (std::size_t i = 0; i < rows; ++i) {
+            CAPTURE(i);
+            CHECK(approx_eq((double)cp(i, cols - 1), (double)pm(i, 0), 1e-10, 1e-12));
+        }
     }
 }

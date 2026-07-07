@@ -3,6 +3,7 @@
 #ifndef MATSAR_TEST_GOLDEN_HPP
 #define MATSAR_TEST_GOLDEN_HPP
 #include <cstddef>
+#include <string>
 #include <vector>
 #include <MatSAR/Matrix.hpp>
 #include <MatSAR/MatrixCreation.hpp>
@@ -45,7 +46,7 @@ template<class T>
 void check_matrix(const char* name, const Matrix<T>& got,
                   const std::vector<double>& expect, const std::vector<std::size_t>& shape,
                   double rtol, double atol) {
-    INFO("case: " << name);
+    INFO("case: " << std::string(name));
     auto gs = got.getShape();
     REQUIRE(gs.size() == shape.size());
     for (std::size_t d = 0; d < shape.size(); ++d) { CAPTURE(d); CHECK(static_cast<std::size_t>(gs[d]) == shape[d]); }
