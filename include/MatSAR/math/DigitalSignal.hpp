@@ -207,13 +207,13 @@ namespace matsar {
 
             template<typename dType, typename TargetType>
             auto do_global_fft(const Matrix<dType> &m, const msize_type &N) -> Matrix<TargetType> {
-                return apply_tfunction_global_all_k<dType, TargetType, dType, Internal::FFT>(m, N, 0,
+                return apply_tfunction_global_k<dType, TargetType, dType, Internal::FFT>(m, N, 0,
                                                                                              m.getSize() == N);
             }
 
             template<typename dType, typename TargetType>
             auto do_fft(const Matrix<dType> &m, const msize_type &dim_idx, const msize_type &N) -> Matrix<TargetType> {
-                return apply_tfunction_all_k<dType, TargetType, dType, Internal::FFT>(m, dim_idx, N, 0);
+                return apply_tfunction_dim_k<dType, TargetType, dType, Internal::FFT>(m, dim_idx, N, 0);
             }
 
             template<typename dType, typename TargetType>

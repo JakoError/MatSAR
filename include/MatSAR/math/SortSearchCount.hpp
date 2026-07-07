@@ -46,10 +46,10 @@ namespace matsar {
             template<typename dType, typename TargetType>
             auto do_global_sort(const Matrix<dType> &m, const bool &up) -> Matrix<TargetType> {
                 if (up) {
-                    return matsar::apply_tfunction_global_all_k<dType, TargetType, dType, Internal::SORT_UP>(m,
+                    return matsar::apply_tfunction_global_k<dType, TargetType, dType, Internal::SORT_UP>(m,
                                                                                                              m.getSize());
                 } else {
-                    return matsar::apply_tfunction_global_all_k<dType, TargetType, dType, Internal::SORT_DOWN>(m,
+                    return matsar::apply_tfunction_global_k<dType, TargetType, dType, Internal::SORT_DOWN>(m,
                                                                                                                m.getSize());
                 }
             }
@@ -58,11 +58,11 @@ namespace matsar {
             auto
             do_sort(const Matrix<dType> &m, const msize_type &dim_idx, const bool &up) -> Matrix<TargetType> {
                 if (up) {
-                    return matsar::apply_tfunction_all_k<dType, TargetType, dType, Internal::SORT_UP>(m,
+                    return matsar::apply_tfunction_dim_k<dType, TargetType, dType, Internal::SORT_UP>(m,
                                                                                                dim_idx,
                                                                                                m.getShape()[dim_idx]);
                 } else {
-                    return matsar::apply_tfunction_all_k<dType, TargetType, dType, Internal::SORT_DOWN>(m,
+                    return matsar::apply_tfunction_dim_k<dType, TargetType, dType, Internal::SORT_DOWN>(m,
                                                                                                  dim_idx,
                                                                                                  m.getShape()[dim_idx]);
                 }
