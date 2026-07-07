@@ -94,3 +94,52 @@ jobs:
             include/MatSAR/util/*.hpp \
             tests/*.cpp \
             examples/*.cpp
+
+  linux-experimental:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Configure
+        run: cmake -G Ninja -B build -DMATSAR_BUILD_EXPERIMENTAL_TESTS=ON -DMATSAR_WITH_BLAS=OFF
+      - name: Build
+        run: cmake --build build --target test_mathfunc
+      - name: Test
+        run: ctest --test-dir build -R test_mathfunc --output-on-failure
+
+  windows-mingw-experimental:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: 'msys2 {0}'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+      - name: Configure
+        run: cmake -G Ninja -B build -DMATSAR_BUILD_EXPERIMENTAL_TESTS=ON -DMATSAR_WITH_BLAS=OFF
+      - name: Build
+        run: cmake --build build --target test_mathfunc
+      - name: Test
+        run: ctest --test-dir build -R test_mathfunc --output-on-failure
+
+  golden-regen-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install pinned numpy
+        run: pip install -r tests/math/gen/requirements.txt
+      - name: Regenerate goldens
+        run: python tests/math/gen/generate.py
+      - name: Fail if goldens drifted
+        run: git diff --exit-code tests/math/golden/golden_mathfunc.hpp
