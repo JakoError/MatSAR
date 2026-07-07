@@ -4,6 +4,62 @@ NumPy-golden + property-based verification for the experimental `math/` modules,
 `MathematicalFunction` (`sum` / `prod` / `cumsum` / `cumprod`).
 Design spec: `docs/superpowers/specs/2026-06-05-math-test-harness-design.md`.
 
+## Step-by-step: "I wrote a function — how do I test it?"
+
+**First decide:** is the function already covered? `sum` / `prod` / `cumsum` / `cumprod` are.
+- **You edited an existing one** (bugfix / refactor): skip to **Step 5 (build & run)**. The existing golden
+  cases + properties already check it.
+- **It's a brand-new function** (e.g. `mean`, `var`, `median`): do all steps below. The worked example adds `mean`.
+
+**Step 1 — tell the harness what "correct" is (the NumPy oracle).**
+In `gen/oracle.py`, add your function's NumPy equivalent. Match MatSAR's shape convention
+(`keepdims=True` for an axis; shape `(1,)` for global — same as `sum`):
+```python
+ORACLE = {
+    ...
+    "mean": lambda a, axis: (_wrap1(a.mean()) if axis is None else a.mean(axis=axis, keepdims=True)),
+}
+```
+
+**Step 2 — list the inputs to test.** In `gen/cases.py`, add a block (curated edge cases + a seeded random batch):
+```python
+"mean": {
+    "curated": [dict(shape=(2,3), axis=0), dict(shape=(2,3), axis=1), dict(shape=(4,), axis=AXIS_NONE)],
+    "random":  dict(count=30, shapes=[(4,),(2,3),(5,4)], axes=[0,1,AXIS_NONE], lo=-10.0, hi=10.0, seed=2001),
+    "rtol": 1e-12, "atol": 1e-13,
+},
+```
+
+**Step 3 — generate the golden answers** (NumPy computes them; you never type expected values):
+```bash
+python tests/math/gen/generate.py
+```
+This writes a `mean_golden` array into `golden/golden_mathfunc.hpp`.
+
+**Step 4 — wire the check** (one ~10-line block in `test_mathfunc.cpp`):
+```cpp
+TEST_CASE("golden · mean") { REPLAY_REDUCE(mean, mean_golden) }
+```
+`REPLAY_REDUCE` already handles axis-vs-global. For a different signature (2 inputs, no axis, …), copy the
+macro body and adjust the `Math::...` call.
+
+**Step 5 — build & run** (from the repo root):
+```bash
+export PATH=/d/msys64/mingw64/bin:$PATH            # MinGW; omit on WSL
+g++ -std=c++17 -D_GNU_SOURCE -DMATSAR_ENABLE_EXPERIMENTAL -O0 \
+    -I include -I tests -I tests/math/include -I tests/math/golden \
+    -o /tmp/tmf tests/math/test_mathfunc.cpp && /tmp/tmf
+```
+
+**Step 6 — read the result:**
+- `Status: SUCCESS!` → your function matches NumPy on every case and the invariants hold. Done.
+- `FAIL  golden · mean   case: mean/cur1/2x3/ax1   i=1   got=… want=…` → your output differs from NumPy at
+  that exact input and index. Either a **bug** (fix the function, rerun) or an **intended change** (then update
+  `cases.py`/`oracle.py`, regenerate, and commit the new golden header).
+
+**Step 7 — commit.** If you touched `cases.py`, regenerate and commit `golden/golden_mathfunc.hpp` too — CI's
+`golden-regen-guard` fails otherwise.
+
 ## Layout
 
 | Path | What |
