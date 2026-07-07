@@ -3,6 +3,7 @@
 #ifndef MATSAR_TEST_GOLDEN_HPP
 #define MATSAR_TEST_GOLDEN_HPP
 #include <cstddef>
+#include <limits>
 #include <string>
 #include <vector>
 #include <MatSAR/Matrix.hpp>

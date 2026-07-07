@@ -53,4 +53,13 @@ if(MATSAR_BUILD_EXPERIMENTAL_TESTS)
             ${CMAKE_CURRENT_SOURCE_DIR}/math/golden)    # golden_mathfunc.hpp
     target_compile_definitions(test_mathfunc PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
     add_test(NAME test_mathfunc COMMAND test_mathfunc)
+
+    # Self-test for the harness's own helpers (approx_eq / build<T> / check_matrix).
+    add_executable(selftest_helpers math/selftest_helpers.cpp)
+    target_link_libraries(selftest_helpers PRIVATE matsar)
+    target_include_directories(selftest_helpers PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}                 # doctest.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/math/include)   # approx.hpp/golden.hpp/rng.hpp
+    target_compile_definitions(selftest_helpers PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+    add_test(NAME selftest_helpers COMMAND selftest_helpers)
 endif()
