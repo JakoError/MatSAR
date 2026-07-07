@@ -6,10 +6,10 @@
 
 namespace matsar_test {
 // NumPy allclose-style comparison with NaN/Inf awareness.
-inline bool approx_eq(double got, double want, double rtol, double atol) {
-    if (std::isnan(want)) return std::isnan(got);   // domain-error cases: NaN matches NaN
-    if (std::isinf(want)) return got == want;        // sign-correct Inf
-    return std::abs(got - want) <= atol + rtol * std::abs(want);
-}
+    inline bool approx_eq(double got, double want, double rtol, double atol) {
+        if (std::isnan(want)) return std::isnan(got);   // domain-error cases: NaN matches NaN
+        if (std::isinf(want)) return got == want;        // sign-correct Inf
+        return std::abs(got - want) <= atol + rtol * std::abs(want);
+    }
 }  // namespace matsar_test
 #endif

@@ -29,14 +29,16 @@ TEST_CASE("approx_eq: NaN and Inf") {
 TEST_CASE("build<T>: 1-D and 2-D round-trip logical") {
     auto v = build<float64>({1., 2., 3.}, {3});
     CHECK(v.getShape().size() == 1);
-    CHECK(v(0) == 1.); CHECK(v(2) == 3.);
+    CHECK(v(0) == 1.);
+    CHECK(v(2) == 3.);
     auto m = build<float64>({1., 2., 3., 4., 5., 6.}, {2, 3});
-    CHECK((std::size_t)m.getShape()[0] == 2);
-    CHECK((std::size_t)m.getShape()[1] == 3);
+    CHECK((std::size_t) m.getShape()[0] == 2);
+    CHECK((std::size_t) m.getShape()[1] == 3);
     CHECK(m(0, 1) == 2.);   // logical row-major: 2nd of first row
     CHECK(m(1, 0) == 4.);
     auto mi = build<int64>({1., 2., 3., 4.}, {4});   // double->int64 cast path
-    CHECK(mi(0) == 1); CHECK(mi(3) == 4);
+    CHECK(mi(0) == 1);
+    CHECK(mi(3) == 4);
 }
 TEST_CASE("check_matrix: passes on exact (sanity)") {
     auto m = build<float64>({5., 7., 9.}, {1, 3});
