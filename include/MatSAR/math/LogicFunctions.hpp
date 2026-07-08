@@ -95,7 +95,7 @@ namespace matsar {
             template<typename dType>
             auto do_global_all(const Matrix<dType> &m) -> Matrix<bool> {
                 /*
-                 * apply_function_global_all_1(m, [](const bool &r, const bool &i){return r && i;}, true);
+                 * apply_function_global_reduce(m, [](const bool &r, const bool &i){return r && i;}, true);
                  */
 //                    bool r = true;
 //                    for (const auto &i: m) {
@@ -127,14 +127,14 @@ namespace matsar {
             template<typename dType>
             auto do_all(const Matrix<dType> &m, const msize_type &dim_idx) -> Matrix<bool> {
 //                    return do_all(m != dType(0), dim_idx);
-                return apply_tfunction_n_k<dType, bool, dType, Internal::ALL_NUM>(m, dim_idx, m.getShape()[dim_idx],
+                return apply_tfunction_dim_n_k<dType, bool, dType, Internal::ALL_NUM>(m, dim_idx, m.getShape()[dim_idx],
                                                                                   1, 0);
             }
 
             // optimized
             auto do_all(const Matrix<bool> &m, const msize_type &dim_idx) -> Matrix<bool> {
-//                    return apply_function_all_1(m, [](const bool &r, const bool &i) { return r && i; }, dim_idx, true);
-                return apply_tfunction_n_k<bool, bool, bool, Internal::ALL_BOOL>(m, dim_idx, m.getShape()[dim_idx],
+//                    return apply_function_dim_reduce(m, [](const bool &r, const bool &i) { return r && i; }, dim_idx, true);
+                return apply_tfunction_dim_n_k<bool, bool, bool, Internal::ALL_BOOL>(m, dim_idx, m.getShape()[dim_idx],
                                                                                  1, 0);
             }
 
@@ -168,13 +168,13 @@ namespace matsar {
             template<typename dType>
             auto do_any(const Matrix<dType> &m, const msize_type &dim_idx) -> Matrix<bool> {
 //                    return do_all(m != dType(0), dim_idx);
-                return apply_tfunction_n_k<dType, bool, dType, Internal::ANY_NUM>(m, dim_idx, m.getShape()[dim_idx],
+                return apply_tfunction_dim_n_k<dType, bool, dType, Internal::ANY_NUM>(m, dim_idx, m.getShape()[dim_idx],
                                                                                   1, 0);
             }
 
             auto do_any(const Matrix<bool> &m, const msize_type &dim_idx) -> Matrix<bool> {
-//                    return apply_function_all_1(m, [](const bool &r, const bool &i) { return r || i; }, dim_idx, false);
-                return apply_tfunction_n_k<bool, bool, bool, Internal::ANY_BOOL>(m, dim_idx, m.getShape()[dim_idx],
+//                    return apply_function_dim_reduce(m, [](const bool &r, const bool &i) { return r || i; }, dim_idx, false);
+                return apply_tfunction_dim_n_k<bool, bool, bool, Internal::ANY_BOOL>(m, dim_idx, m.getShape()[dim_idx],
                                                                                  1, 0);
             }
         }
