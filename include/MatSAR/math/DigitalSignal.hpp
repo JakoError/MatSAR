@@ -557,12 +557,12 @@ namespace matsar {
 //        }
 //
 //        matsar::Matrix<complex_max> operatory(const matsar::Matrix<complex_max> &matrix, int divisor, int multi) {
-//            matsar::Matrix<complex_max> result = matrix;  // 创建一个新的 Matrix 对象，初始化为当前对象的复制品
-//            for (auto &element: result) {  // 遍历 result 的每个元素
-//                element /= static_cast<complex_max>(divisor);  // 将元素除以 divisor
+//            matsar::Matrix<complex_max> result = matrix;  // create a new Matrix object, initialized as a copy of the current object
+//            for (auto &element: result) {  // iterate over every element of result
+//                element /= static_cast<complex_max>(divisor);  // divide the element by divisor
 //                element *= static_cast<complex_max>(multi);
 //            }
-//            return result;  // 返回结果
+//            return result;  // return the result
 //        }
 //
 //        template<typename dType>
@@ -576,7 +576,7 @@ namespace matsar {
 //                        for (int i = 0; i < result.getShape()[1]; ++i) {
 //                            result(j, i) = *x_iter;
 //                            if (++x_iter == x.end()) {
-//                                x_iter = x.begin();  // 如果已经达到 x 的末尾，那么从头开始
+//                                x_iter = x.begin();  // if the end of x has been reached, start over from the beginning
 //                            }
 //                        }
 //                    }
@@ -585,7 +585,7 @@ namespace matsar {
 //                    for (auto &element: result) {
 //                        element = *x_iter;
 //                        if (++x_iter == x.end()) {
-//                            x_iter = x.begin();  // 如果已经达到 x 的末尾，那么从头开始
+//                            x_iter = x.begin();  // if the end of x has been reached, start over from the beginning
 //                        }
 //                    }
 //                }
@@ -594,10 +594,10 @@ namespace matsar {
 //
 //            //if(x.getShape()[0] != 1&& x.getShape()[1] != 1)
 //            dim = dim == 1 ? 2 : 1;
-//            // 傅立叶变换
+//            // Fourier transform
 //            Matrix<complex128> X = fft(x, dim);
 //
-//            // 零填充
+//            // zero padding
 //            auto m = X.getShape()[dim - 1];
 //            Matrix<complex128> Xzp;
 //            if (dim == 1) {
@@ -606,11 +606,11 @@ namespace matsar {
 //                Xzp = zeros<typename TypeTraits<dType>::ComplexType>({X.getShape()[0], n});
 //            }
 //
-//            // 计算左半部分和右半部分的索引
+//            // compute the indices of the left and right halves
 //            int left_end = std::ceil(static_cast<double>(m) / 2);
 //            //int right_start = left_end + (m % 2 == 0 ? 0 : 1);
 //            int right_start = left_end;
-//            // 提取左半部分和右半部分，并进行零填充
+//            // extract the left and right halves, and apply zero padding
 //            auto X_left = slice(X, 0, left_end, dim);
 //            auto X_zeros = [&]() -> Matrix<complex128> {
 //                if (dim == 1) {
@@ -626,13 +626,13 @@ namespace matsar {
 //            Xzp = matsar::Math::mycat<complex128>(dim, {X_left, X_zeros, X_right});
 //
 //
-//            // 傅立叶逆变换
+//            // inverse Fourier transform
 //            Matrix<complex128> y = ifft(Xzp, dim);
 //
-//            // 乘以新旧长度的比例，以保证能量一致性
+//            // multiply by the ratio of new to old length to preserve energy consistency
 //            y = operatory(y, m, n);
 //
-//            // 创建结果矩阵并将其填充为逆FFT结果的实部
+//            // create the result matrix and fill it with the real part of the inverse FFT result
 //            Matrix<dType> result(y.getShape(), 0.);
 //            auto result_iter = result.begin();
 //            for (const auto &val: y) {

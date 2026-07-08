@@ -365,8 +365,8 @@ namespace matsar {
 
     namespace Math {
         /**
-         * geomean求n个数的乘积再开n次根
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
+         * geomean computes the product of n numbers, then takes the nth root
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
         template<RealType dType>
         auto geomean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<real_max> {
@@ -389,7 +389,7 @@ namespace matsar {
 
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
-            Matrix<real_max> r(r_shape, 1, m.getData());//乘积需要初始化为1
+            Matrix<real_max> r(r_shape, 1, m.getData());//the product must be initialized to 1
 
             auto iter_r = r.getData();
             auto iter_m = m.getData();
@@ -410,8 +410,8 @@ namespace matsar {
         }
 
         /**
-         * 调和平均数
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
+         * harmonic mean
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
         template<RealType dType>
         auto harmmean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<real_max> {
@@ -457,7 +457,7 @@ namespace matsar {
         template<Calculable dType>
         auto trace(const Matrix<dType> &m) -> dType {
             if (!m.isSquare() || m.getDims() > 2)
-                throw_value_error("trace要求矩阵为方阵并且维度为2");
+                throw_value_error("trace requires the matrix to be square with 2 dimensions");
             dType r = 0;
             for (msize_type i = 0; i < m.getShape()[0]; ++i)
                 r += m(i, i);
@@ -465,7 +465,7 @@ namespace matsar {
         }
     }
 
-///LU分解
+///LU decomposition
     namespace Math {
         auto LAPACK_LU(lapack_int m, lapack_int n, float64 *data, lapack_int lda, lapack_int *ipiv) -> lapack_int {
             return LAPACKE_dgetrf2(CblasColMajor, m, n, data, lda, ipiv);
@@ -484,7 +484,7 @@ namespace matsar {
             Matrix<TargetType> fm(M);
             fm.expandShape(2);
             if (!fm.is2D())
-                throw_value_error("svd需要二维矩阵或可扩展为二维矩阵");
+                throw_value_error("svd requires a 2D matrix or a matrix that can be expanded to 2D");
             lapack_int m = fm.getShape()[0], n = fm.getShape()[1];
             lapack_int min_m_n = m > n ? std::max(m, n) : std::min(m, n);
             unique_ptr<lapack_int[]> IPIV(new lapack_int[min_m_n]);
@@ -535,7 +535,7 @@ namespace matsar {
             Matrix<TargetType> fm(M);
             fm.expandShape(2);
             if (!fm.is2D())
-                throw_value_error("svd需要二维矩阵或可扩展为二维矩阵");
+                throw_value_error("svd requires a 2D matrix or a matrix that can be expanded to 2D");
             lapack_int m = fm.getShape()[0], n = fm.getShape()[1];
             lapack_int min_m_n = m > n ? std::max(m, n) : std::min(m, n);
             unique_ptr<lapack_int[]> IPIV(new lapack_int[min_m_n]);
@@ -604,7 +604,7 @@ namespace matsar {
         template<RealType RT>
         auto inv(const Matrix<RT> &m) -> Matrix<real_max> {
             if (!m.isSquare() || m.getDims() != 2)
-                throw_value_error("矩阵求逆需要二维方阵");
+                throw_value_error("matrix inversion requires a 2D square matrix");
             auto n = m.getShape()[0];
             Matrix<real_max> A(m);
             Matrix<real_max> X({n, n}, 0., m.getData());
@@ -616,10 +616,10 @@ namespace matsar {
             auto info = LAPACKE_dsgesv(CblasColMajor, n, n, A.getData(), n,
                                        IPIV.get(), eye<real_max>(n).getData(), n, X.getData(), n, &iter);
             if (info < 0)
-                throw_value_error("inv参数出错" + to_string(info));
+                throw_value_error("inv argument error " + to_string(info));
             if (info > 0) {
                 stringstream ss;
-                ss << "该矩阵秩为" << rank(m) << "形状为" << n << "无逆矩阵解";
+                ss << "matrix rank is " << rank(m) << " shape is " << n << " has no inverse";
                 m.debug();
                 throw_warning(ss.str());
             }
@@ -629,7 +629,7 @@ namespace matsar {
         template<ComplexType CT>
         auto inv(const Matrix<CT> &m) -> Matrix<complex_max> {
             if (!m.isSquare() || m.getDims() != 2)
-                throw_value_error("矩阵求逆需要二维方阵");
+                throw_value_error("matrix inversion requires a 2D square matrix");
             auto n = m.getShape()[0];
             Matrix<complex_max> A(m);
             Matrix<complex_max> X({n, n}, 0., m.getData());
@@ -641,10 +641,10 @@ namespace matsar {
             auto info = LAPACKE_zcgesv(CblasColMajor, n, n, A.getData(), n,
                                        IPIV.get(), eye<complex_max>(n).getData(), n, X.getData(), n, &iter);
             if (info < 0)
-                throw_value_error("inv参数出错" + to_string(info));
+                throw_value_error("inv argument error " + to_string(info));
             if (info > 0) {
                 stringstream ss;
-                ss << "该矩阵秩为" << rank(m) << "形状为" << n << "无逆矩阵解";
+                ss << "matrix rank is " << rank(m) << " shape is " << n << " has no inverse";
                 m.debug();
                 throw_warning(ss.str());
             }
@@ -654,16 +654,16 @@ namespace matsar {
     namespace Math {
 //        /**
 //         * @author wzp
-//         * @function norm 范数
-//         * @param n = 0 代表无穷范数
-//         * @param n = 1 代表1范数
-//         * @param n = 2 2范数
+//         * @function norm norm
+//         * @param n = 0 represents the infinity norm
+//         * @param n = 1 represents the 1-norm
+//         * @param n = 2 the 2-norm
 //         *
 //         */
 //        template<typename dType>
 //        auto norm(Matrix<dType> m, int n = 2) -> dType {
 //            if (!m.is2D())
-//                throw_value_error("不是二维数组！");
+//                throw_value_error("not a 2D array!");
 //            if (n == 2) {
 //                return matsar::Math::sqrt(matsar::Math::svd(m * m.T())).Max();
 //            } else if (n == 1) {
@@ -685,7 +685,7 @@ namespace matsar {
 //                }
 //                return max_val;
 //            } else {
-//                throw_value_error("p范数只支持1，2，∞！");
+//                throw_value_error("p-norm only supports 1, 2, ∞!");
 //                return 0;
 //            }
 //        }
@@ -693,15 +693,15 @@ namespace matsar {
         /**
         * @author wzp
         * @fuction [V,D, W] = eig(A)
-        * @return 返回特征值的对角矩阵 D 和矩阵 V，其列是对应的右特征向量，使得 A*V = V*D。
-        * @return 还返回满矩阵 W，其列是对应的左特征向量，使得 W'*A = D*W'*B。
+        * @return returns the diagonal matrix D of eigenvalues and the matrix V, whose columns are the corresponding right eigenvectors, such that A*V = V*D.
+        * @return also returns the full matrix W, whose columns are the corresponding left eigenvectors, such that W'*A = D*W'*B.
         */
         template<typename dType>
         auto eig(const Matrix<dType> &A) -> vector<Matrix<float64>> {
             Matrix<float64> fA(A);
             fA.expandShape(2);
             if (!fA.is2D())
-                throw_value_error("eig需要二维矩阵或可扩展为二维矩阵");
+                throw_value_error("eig requires a 2D matrix or a matrix that can be expanded to 2D");
             lapack_int m = fA.getShape()[0], n = fA.getShape()[1];
             mshape_type S_shape = {min(m, n)};
             Matrix<float64> S(S_shape, 0., A.getData());
@@ -748,7 +748,7 @@ namespace matsar {
 
         /**
          * @author wzp
-         * @function condeig 与特征值有关的条件数
+         * @function condeig condition numbers related to the eigenvalues
          * @return [V,D,s] = condeig(A)
          * s = a vector of condition numbers for the eigenvalues of A. These condition numbers are the reciprocals of the cosines of the angles between the left and right eigenvectors.
          */
@@ -756,7 +756,7 @@ namespace matsar {
         auto condeig(const Matrix<dType> &A) -> vector<Matrix<float64>> {
             vector<Matrix<dType>> V_D_s(3);
             if (!A.is2D() || !A.isSquare()) {
-                throw_value_error("输入矩阵必须为方阵！");
+                throw_value_error("input matrix must be a square matrix!");
                 return V_D_s;
             }
             auto V_D_W = eig(A);
@@ -785,12 +785,12 @@ namespace matsar {
             return V_D_s;
         }
 
-        //pinv函数
+        //pinv function
         template<typename dType>
         auto pinv(const Matrix<dType> &matrix) -> Matrix<dType> {
             Matrix<float64> transposed = matrix.T();
-            int rows = matrix.getShape()[0];  //行
-            int cols = matrix.getShape()[1];  //列
+            int rows = matrix.getShape()[0];  //rows
+            int cols = matrix.getShape()[1];  //cols
             if (rows > cols) {
                 Matrix<float64> product = mmul(transposed, matrix);
                 Matrix<float64> inverse = inv(product);
@@ -854,7 +854,7 @@ namespace matsar {
             } else {
                 throw_value_error("Invalid flag value. Expected 'complex' or 'real'.");
             }
-            //T尚需转置
+            //T still needs transposing
             return T;
         }
 
@@ -862,7 +862,7 @@ namespace matsar {
         /******schur by wwl******/
         template<typename dType>
         vector<Matrix<dType>> schur(const Matrix<dType> &A) {
-            vector<Matrix<dType>> U_T(2); //存储结果
+            vector<Matrix<dType>> U_T(2); //store the result
 
             Matrix<dType> inputA(A);
             inputA.expandShape(2);
@@ -906,7 +906,7 @@ namespace matsar {
             Matrix<dType> U(temp_U);
             U = U.reshape({m, n});
 
-            // T,U 尚需转置
+            // T,U still need transposing
             U_T[0] = T;
             U_T[1] = U;
             return U_T;
@@ -1044,7 +1044,7 @@ namespace matsar {
             int num = min(m, n);
             vector<vector<double> > res;
             int k = -m + 1;
-            //m >=n 对角线下方从一开始计算， m<n,对角线下方的要先填0
+            //m >=n below the diagonal counts from one; m<n, the part below the diagonal must first be filled with 0
             if (m >= n) {
                 for (int row = m - 1; row >= 0; row--) {
                     bool flag = false;
@@ -1055,7 +1055,7 @@ namespace matsar {
                         }
                         temp_v[index++] = temp(j, i);
                     }
-                    //有非0，才能加入
+                    //only added when there is a non-0
                     if (flag) {
                         idx.push_back(k);
                         res.push_back(temp_v);
@@ -1065,7 +1065,7 @@ namespace matsar {
                 for (int col = 1; col < n; col++) {
                     vector<double> temp_v(num, 0.);
                     bool flag = false;
-                    //k>0 是 上半矩阵
+                    //k>0 is the upper-triangular part
                     for (int i = 0, j = col, index = k; i < m && j < n; i++, j++) {
                         if (temp(j, i) != 0.) {
                             flag = true;
@@ -1088,7 +1088,7 @@ namespace matsar {
                         }
                         temp_v[index++] = temp(j, i);
                     }
-                    //有非0，才能加入
+                    //only added when there is a non-0
                     if (flag) {
                         idx.push_back(k);
                         res.push_back(temp_v);
@@ -1098,7 +1098,7 @@ namespace matsar {
                 for (int col = 1; col < n; col++) {
                     vector<double> temp_v(num, 0.);
                     bool flag = false;
-                    //k>0 是 上半矩阵
+                    //k>0 is the upper-triangular part
                     for (int i = 0, j = col, index = 0; i < m && j < n; i++, j++) {
                         if (temp(j, i) != 0.) {
                             flag = true;

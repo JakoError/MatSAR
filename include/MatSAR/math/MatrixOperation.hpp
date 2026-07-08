@@ -3,7 +3,7 @@
 //
 // Created by JakoError on 2022/7/10.
 //
-///对矩阵符号函数的扩展
+///Extension of the matrix sign function
 #ifndef MATSAR_MATRIXOPERATION_HPP
 #define MATSAR_MATRIXOPERATION_HPP
 

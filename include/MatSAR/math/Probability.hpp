@@ -33,13 +33,13 @@
 #include <algorithm>
 
 namespace matsar {
-///矩阵概率计算函数
+///Matrix probability computation functions
     namespace Math {
         /**
-         * 返回矩阵对应维度最大值
-         * @param m 支持所有Calculable矩阵
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
-         * @return 矩阵对应维度最大值
+         * Return the maximum along the given dimension of the matrix
+         * @param m supports all Calculable matrices
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
+         * @return the maximum along the given dimension of the matrix
          */
         template<Calculable dType>
         auto max(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
@@ -75,10 +75,10 @@ namespace matsar {
         }
 
         /**
-         * 返回矩阵对应维度最小值
-         * @param m 支持所有Calculable矩阵
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
-         * @return 矩阵对应维度最小值
+         * Return the minimum along the given dimension of the matrix
+         * @param m supports all Calculable matrices
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
+         * @return the minimum along the given dimension of the matrix
          */
         template<Calculable dType>
         auto min(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
@@ -114,7 +114,7 @@ namespace matsar {
         }
 
         /**
-         * @related range函数等价于调用min和max函数
+         * @related the range function is equivalent to calling the min and max functions
          */
         template<Calculable dType>
         auto range(const Matrix<dType> &m, msize_type dim = 1) -> tuple<Matrix<dType>, Matrix<dType>> {
@@ -122,10 +122,10 @@ namespace matsar {
         }
 
         /**
-         * 返回矩阵对应维度中位数
-         * @param m 支持所有Calculable矩阵
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
-         * @return 矩阵对应维度中位数
+         * Return the median along the given dimension of the matrix
+         * @param m supports all Calculable matrices
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
+         * @return the median along the given dimension of the matrix
          */
         template<Calculable TargetType, Calculable dType>
         auto median(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<TargetType> {
@@ -192,8 +192,8 @@ namespace matsar {
         }
 
         /**
-         * mean求n个数的平均值
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
+         * mean computes the mean of n values
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
         template<Calculable TargetType, Calculable dType>
         auto mean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<TargetType> {
@@ -217,7 +217,7 @@ namespace matsar {
     }
     namespace Math {
         /**
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
         template<Calculable TargetType, Calculable dType>
         auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1) -> Matrix<TargetType> {
@@ -239,16 +239,16 @@ namespace matsar {
             return var<complex_max, CT>(m, w, dim);
         }
     }
-    ///分布函数
+    ///Distribution functions
     namespace Math {
 //        static const float_max PI = static_cast<float_max>(3.14159265358979323846);
 
         /**
-         * 将矩阵内的所有元素经过正态分布映射
-         * @param m 要求为实数矩阵
-         * @param mu 正态分布的均值
-         * @param sigma 正态分布的方差
-         * @return 浮点矩阵：矩阵元素正态分布映射
+         * Map every element of the matrix through the normal distribution
+         * @param m must be a real-valued matrix
+         * @param mu the mean of the normal distribution
+         * @param sigma the variance of the normal distribution
+         * @return floating-point matrix: the matrix elements mapped through the normal distribution
          */
         template<RealType RT>
         auto normpdf(const Matrix<RT> &m, float_max mu = 0., float_max sigma = 1.) -> Matrix<real_max> {
@@ -262,11 +262,11 @@ namespace matsar {
         }
 
         /**
-         * 将矩阵内的所有元素经过正态分布映射
-         * @param m 要求矩阵为实数矩阵
-         * @param mu矩阵 正态分布的均值，会对mu矩阵进行broadcast操作
-         * @param sigma矩阵 正态分布的方差，会对sigma矩阵进行broadcast操作
-         * @return 浮点矩阵：矩阵元素正态分布映射
+         * Map every element of the matrix through the normal distribution
+         * @param m the matrix must be a real-valued matrix
+         * @param mu matrix the mean of the normal distribution, a broadcast operation is applied to the mu matrix
+         * @param sigma matrix the variance of the normal distribution, a broadcast operation is applied to the sigma matrix
+         * @return floating-point matrix: the matrix elements mapped through the normal distribution
          */
         template<RealType RT>
         auto normpdf(const Matrix<RT> &m, Matrix<float_max> mu, Matrix<float_max> sigma) -> Matrix<real_max> {
@@ -283,11 +283,11 @@ namespace matsar {
         }
 
         /**
-         * 生成正态分布的随机矩阵
-         * @param mu 正态分布的均值
-         * @param sigma 正态分布的方差
-         * @param shape 目标矩阵的shape
-         * @return 浮点矩阵：正态分布的随机矩阵
+         * Generate a random matrix from the normal distribution
+         * @param mu the mean of the normal distribution
+         * @param sigma the variance of the normal distribution
+         * @param shape the shape of the target matrix
+         * @return floating-point matrix: a random matrix from the normal distribution
          */
         auto normrnd(float_max mu = 0., float_max sigma = 1., const mshape_type &shape = {1}) -> Matrix<real_max> {
             Matrix<real_max> r(shape, 0.);
@@ -300,16 +300,16 @@ namespace matsar {
         }
 
         /**
-         * 生成正态分布的随机矩阵
-         * @param mu矩阵 正态分布的均值，会对mu矩阵进行broadcast操作
-         * @param sigma矩阵 正态分布的方差，会对sigma矩阵进行broadcast操作
-         * @param shape 目标矩阵的shape
-         * @return 浮点矩阵：正态分布的随机矩阵
+         * Generate a random matrix from the normal distribution
+         * @param mu matrix the mean of the normal distribution, a broadcast operation is applied to the mu matrix
+         * @param sigma matrix the variance of the normal distribution, a broadcast operation is applied to the sigma matrix
+         * @param shape the shape of the target matrix
+         * @return floating-point matrix: a random matrix from the normal distribution
          */
         auto normrnd(const Matrix<float_max> &mu, const Matrix<float_max> &sigma,
                      const mshape_type &shape = {1}) -> Matrix<real_max> {
             if (mu.getShape() != shape || sigma.getShape() != shape)
-                throw_shape_exception("mu矩阵或sigma矩阵大小与指定shape不同");
+                throw_shape_exception("mu matrix or sigma matrix size differs from the specified shape");
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -322,8 +322,8 @@ namespace matsar {
         }
 
         /**
-         * 正态分布的均值和方差
-         * @return 浮点矩阵tuple {mu,sigma*sigma}
+         * The mean and variance of the normal distribution
+         * @return floating-point matrix tuple {mu,sigma*sigma}
          */
         template<RealType RT1, RealType RT2>
         auto normstat(RT1 mu, RT2 sigma) -> tuple<real_max, real_max> {
@@ -331,8 +331,8 @@ namespace matsar {
         }
 
         /**
-         * 正态分布的均值和方差
-         * @return 浮点矩阵tuple {mu,sigma*sigma}
+         * The mean and variance of the normal distribution
+         * @return floating-point matrix tuple {mu,sigma*sigma}
          */
         template<RealType RT1, RealType RT2>
         auto normstat(const Matrix<RT1> &mu, const Matrix<RT2> &sigma) -> tuple<Matrix<real_max>, Matrix<real_max>> {
@@ -344,11 +344,11 @@ namespace matsar {
     }
     namespace Math {
         /**
-         * 将矩阵内的所有元素经过二项分布映射
-         * @param m 要求为实数矩阵，若浮点四舍五入
-         * @param n 二项分布的实验次数
-         * @param p 二项分布的发生概率
-         * @return 浮点矩阵：矩阵元素二项分布映射
+         * Map every element of the matrix through the binomial distribution
+         * @param m must be a real-valued matrix; floating-point values are rounded
+         * @param n the number of trials of the binomial distribution
+         * @param p the success probability of the binomial distribution
+         * @return floating-point matrix: the matrix elements mapped through the binomial distribution
          */
         template<RealType RT>
         auto binopdf(const Matrix<RT> &m, float64 n, float64 p) -> Matrix<float64> {
@@ -363,11 +363,11 @@ namespace matsar {
         }
 
         /**
-         * 将矩阵内的所有元素经过二项分布映射
-         * @param m 要求为实数矩阵，若浮点四舍五入
-         * @param n matrix 二项分布的实验次数
-         * @param p matrix 二项分布的发生概率
-         * @return 浮点矩阵：矩阵元素二项分布映射
+         * Map every element of the matrix through the binomial distribution
+         * @param m must be a real-valued matrix; floating-point values are rounded
+         * @param n matrix the number of trials of the binomial distribution
+         * @param p matrix the success probability of the binomial distribution
+         * @return floating-point matrix: the matrix elements mapped through the binomial distribution
          */
         template<RealType RT>
         auto binopdf(const Matrix<RT> &m, Matrix<float64> n, Matrix<float64> p) -> Matrix<float64> {
@@ -390,11 +390,11 @@ namespace matsar {
         }
 
         /**
-         * 生成二项分布的随机矩阵
-         * @param mu 二项分布的均值
-         * @param sigma 二项分布的方差
-         * @param shape 目标矩阵的shape
-         * @return 浮点矩阵：二项分布的随机矩阵
+         * Generate a random matrix from the binomial distribution
+         * @param mu the mean of the binomial distribution
+         * @param sigma the variance of the binomial distribution
+         * @param shape the shape of the target matrix
+         * @return floating-point matrix: a random matrix from the binomial distribution
          */
         auto binornd(float64 n = 1, float64 p = 0.5, const mshape_type &shape = {1}) -> Matrix<real_max> {
             if (std::round(n) != n || p < 0 || p > 1)
@@ -409,14 +409,14 @@ namespace matsar {
         }
 
         /**
-         * 生成多个二项分布的随机矩阵
-         * @param mu矩阵 二项分布的均值
-         * @param sigma矩阵 二项分布的方差
-         * @return 浮点矩阵：二项分布的随机矩阵
+         * Generate a random matrix from multiple binomial distributions
+         * @param mu matrix the mean of the binomial distribution
+         * @param sigma matrix the variance of the binomial distribution
+         * @return floating-point matrix: a random matrix from the binomial distribution
          */
         auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p) -> Matrix<real_max> {
             if (n.getShape() != p.getShape())
-                throw_shape_exception("n矩阵和p矩阵大小不同");
+                throw_shape_exception("n matrix and p matrix have different sizes");
             Matrix<real_max> r(n.getShape(), 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -433,16 +433,16 @@ namespace matsar {
         }
 
         /**
-         * 生成多个二项分布的随机矩阵
-         * @param mu矩阵 二项分布的均值
-         * @param sigma矩阵 二项分布的方差
-         * @param shape 目标矩阵的大小
-         * @return 浮点矩阵：二项分布的随机矩阵
+         * Generate a random matrix from multiple binomial distributions
+         * @param mu matrix the mean of the binomial distribution
+         * @param sigma matrix the variance of the binomial distribution
+         * @param shape the size of the target matrix
+         * @return floating-point matrix: a random matrix from the binomial distribution
          */
         auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p,
                      const mshape_type &shape = {1}) -> Matrix<real_max> {
             if (n.getShape() != shape || p.getShape() != shape)
-                throw_shape_exception("n矩阵或p矩阵与指定矩阵形状大小不同");
+                throw_shape_exception("n matrix or p matrix differs in shape from the specified matrix");
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -459,8 +459,8 @@ namespace matsar {
         }
 
         /**
-         * 二项分布的均值和方差
-         * @return 浮点矩阵tuple {n*p,n*p*(1-p)}
+         * The mean and variance of the binomial distribution
+         * @return floating-point matrix tuple {n*p,n*p*(1-p)}
          */
         template<RealType RT1, RealType RT2>
         auto binostat(RT1 n, RT2 p) -> tuple<real_max, real_max> {
@@ -472,8 +472,8 @@ namespace matsar {
         }
 
         /**
-         * 二项分布的均值和方差
-         * @return 浮点矩阵tuple {mu,sigma*sigma}
+         * The mean and variance of the binomial distribution
+         * @return floating-point matrix tuple {mu,sigma*sigma}
          */
         template<RealType RT1, RealType RT2>
         auto binostat(const Matrix<RT1> &n, const Matrix<RT2> &p) -> tuple<Matrix<real_max>, Matrix<real_max>> {
@@ -482,12 +482,12 @@ namespace matsar {
         }
     }
     namespace Math {
-        //连续均匀分布
+        //Continuous uniform distribution
         /**
-         * 求连续均匀分布函数值
-         * @param x 函数传入x值，x值需在[a,b]内
-         * @param a 连续均匀函数左边界值，默认为标准分布0
-         * @param b 连续均匀函数右边界值，默认为标准分布1
+         * Compute the value of the continuous uniform distribution function
+         * @param x the x value passed to the function; x must lie within [a,b]
+         * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
+         * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
          */
         auto unifpdf(float64 x, float64 a = 0, float64 b = 1) -> float64 {
             if (x < a || x > b)
@@ -496,10 +496,10 @@ namespace matsar {
         }
 
         /**
-         * 求连续均匀分布函数值
-         * @param x 函数传入x值，x值需在[a,b]内
-         * @param a 连续均匀函数左边界值，默认为标准分布0
-         * @param b 连续均匀函数右边界值，默认为标准分布1
+         * Compute the value of the continuous uniform distribution function
+         * @param x the x value passed to the function; x must lie within [a,b]
+         * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
+         * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
          */
         auto unifpdf(const Matrix<float64> &x, const Matrix<float64> &a = {0},
                      const Matrix<float64> &b = {1}) -> Matrix<float64> {
@@ -507,7 +507,7 @@ namespace matsar {
             bool a_single = a.isSingle();
             bool b_single = b.isSingle();
             if (a.getShape() != b.getShape() || (x.getShape() != a.getShape() && !a_single))
-                throw_shape_exception("unifpdf: a,b两矩阵大小应该相同，并且等于x矩阵大小");
+                throw_shape_exception("unifpdf: matrices a,b must have the same size, and must equal the size of matrix x");
             mshape_type shape;
             if (!x.isSingle())
                 shape = x.getShape();
@@ -530,31 +530,31 @@ namespace matsar {
         }
 
         /**
-        * 求连续均匀分布期望与方差
-        * @param a 连续均匀函数左边界值，默认为标准分布0
-        * @param b 连续均匀函数右边界值，默认为标准分布1
+        * Compute the expected value and variance of the continuous uniform distribution
+        * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
+        * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
         */
         auto unifstat(float64 a, float64 b) -> tuple<float64, float64> {
             return {(a + b) / 2, pow((a - b), 2) / 12};
         }
 
         /**
-        * 求连续均匀分布期望与方差
-        * @param a 连续均匀函数左边界值，默认为标准分布0
-        * @param b 连续均匀函数右边界值，默认为标准分布1
+        * Compute the expected value and variance of the continuous uniform distribution
+        * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
+        * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
         */
         auto unifstat(const Matrix<float64> &a, const Matrix<float64> &b) -> tuple<Matrix<float64>, Matrix<float64>> {
             if (a.getShape() != b.getShape())
-                throw_shape_exception("unifstat: a b两矩阵应该有相同的大小");
+                throw_shape_exception("unifstat: matrices a b must have the same size");
             return {(a + b) / 2, ((a - b) ^ 2) / 12};
         }
     }
 
     namespace Math {
         /**
-         * 生成(0,1)均匀分布的随机矩阵
-         * @param shape 目标矩阵维度
-         * @return 浮点矩阵：(0,1)均匀分布的随机矩阵
+         * Generate a random matrix from the (0,1) uniform distribution
+         * @param shape the dimensions of the target matrix
+         * @return floating-point matrix: a random matrix from the (0,1) uniform distribution
          */
         auto rand(const mshape_type &shape) -> Matrix<real_max> {
             Matrix<real_max> r(shape, 0.);
@@ -567,24 +567,24 @@ namespace matsar {
         }
 
         /**
-         * 生成(0，1)均匀分布矩阵
-         * @param n 表示生成n*n的矩阵
-         * @return 浮点矩阵：(0,1)均匀分布的随机矩阵
+         * Generate a matrix from the (0,1) uniform distribution
+         * @param n indicates that an n*n matrix is generated
+         * @return floating-point matrix: a random matrix from the (0,1) uniform distribution
          */
         auto rand(msize_type n) -> Matrix<real_max> {
             return rand({n, n});
         }
 
         /**
-         * 生成[imin，imax]均匀分布矩阵
-         * @param imin 表示均匀分布最小值
-         * @param imax 表示均匀分布最大值
-         * @param shape 目标矩阵shape
-         * @return 整数矩阵：[imin，imax]均匀分布的随机矩阵
+         * Generate a matrix from the [imin,imax] uniform distribution
+         * @param imin the minimum value of the uniform distribution
+         * @param imax the maximum value of the uniform distribution
+         * @param shape the shape of the target matrix
+         * @return integer matrix: a random matrix from the [imin,imax] uniform distribution
          */
         auto randi(int64 imin, int64 imax, const mshape_type &shape) -> Matrix<int64> {
             if (imin > imax)
-                throw_value_error("randi中要求整数均匀分布最小值应该小于等于最大值");
+                throw_value_error("randi requires the minimum of the integer uniform distribution to be less than or equal to the maximum");
             Matrix<int64> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -595,49 +595,49 @@ namespace matsar {
         }
 
         /**
-         * 生成[1，imax]均匀分布矩阵
-         * @param imax 表示均匀分布最小值
-         * @param shape 目标矩阵shape
-         * @return 整数矩阵：[1，imax]均匀分布矩阵
+         * Generate a matrix from the [1,imax] uniform distribution
+         * @param imax the minimum value of the uniform distribution
+         * @param shape the shape of the target matrix
+         * @return integer matrix: a matrix from the [1,imax] uniform distribution
          */
         auto randi(int64 imax, const mshape_type &shape) -> Matrix<int64> {
             return randi(1, imax, shape);
         }
 
         /**
-         * 生成[imin，imax]均匀分布矩阵
-         * @param imin 表示均匀分布最小值
-         * @param imax 表示均匀分布最大值
-         * @param n 表示生成n*n的矩阵
-         * @return 整数矩阵：[imin，imax]均匀分布的随机矩阵
+         * Generate a matrix from the [imin,imax] uniform distribution
+         * @param imin the minimum value of the uniform distribution
+         * @param imax the maximum value of the uniform distribution
+         * @param n indicates that an n*n matrix is generated
+         * @return integer matrix: a random matrix from the [imin,imax] uniform distribution
          */
         auto randi(int64 imin, int64 imax, msize_type n) -> Matrix<int64> {
             return randi(imin, imax, {n, n});
         }
 
         /**
-         * 生成[1，imax]均匀分布矩阵
-         * @param imax 表示均匀分布最大值
-         * @param n 表示生成n*n的矩阵
-         * @return 整数矩阵：[1，imax]均匀分布矩阵
+         * Generate a matrix from the [1,imax] uniform distribution
+         * @param imax the maximum value of the uniform distribution
+         * @param n indicates that an n*n matrix is generated
+         * @return integer matrix: a matrix from the [1,imax] uniform distribution
          */
         auto randi(int64 imax, msize_type n) -> Matrix<int64> {
             return randi(1, imax, {n, n});
         }
 
         /**
-         * 生成标准正态分布矩阵
-         * @param shape 目标矩阵shape
-         * @return 浮点矩阵：标准正态分布矩阵
+         * Generate a standard normal distribution matrix
+         * @param shape the shape of the target matrix
+         * @return floating-point matrix: a standard normal distribution matrix
          */
         auto randn(const mshape_type &shape) -> Matrix<real_max> {
             return rand(shape);
         }
 
         /**
-         * 生成标准正态分布矩阵
-         * @param n 表示生成n*n的矩阵
-         * @return 浮点矩阵：标准正态分布矩阵
+         * Generate a standard normal distribution matrix
+         * @param n indicates that an n*n matrix is generated
+         * @return floating-point matrix: a standard normal distribution matrix
          */
         auto randn(int64 n) -> Matrix<real_max> {
             return randn({n, n});
@@ -657,14 +657,14 @@ namespace matsar {
         };
 
         /**
-         * 生成整数的随机排列
-         * @param n 采样间隔中的整数数量
-         * @return 整数行数组
-         * @hint 使用偏移量算法
+         * Generate a random permutation of integers
+         * @param n the number of integers in the sampling interval
+         * @return integer row array
+         * @hint uses an offset-based algorithm
          */
         template<IntType IT>
         auto randperm(IT n) -> Matrix<IT> {
-            if (n < 0) throw_value_error("randperm: n 应该为正数");
+            if (n < 0) throw_value_error("randperm: n should be positive");
             unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
             auto rand_seq = rand(mshape_type{n});
             for (IT i = 0; i < n; ++i) {
@@ -680,15 +680,15 @@ namespace matsar {
         }
 
         /**
-         * 生成整数的随机排列
-         * @param n 采样间隔中的整数数量
-         * @param k 所选整数的数量
-         * @return 整数行数组
+         * Generate a random permutation of integers
+         * @param n the number of integers in the sampling interval
+         * @param k the number of integers to select
+         * @return integer row array
          */
         template<IntType IT>
         auto randperm(IT n, IT k) -> Matrix<IT> {
-            if (n < 0) throw_value_error("randperm: n 应该为正数");
-            if (k < 0 || k > n) throw_value_error("randperm: k值应该大于等于0或小于等于n");
+            if (n < 0) throw_value_error("randperm: n should be positive");
+            if (k < 0 || k > n) throw_value_error("randperm: k value should be greater than or equal to 0 or less than or equal to n");
             unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
             auto rand_seq = rand(mshape_type{n});
             for (IT i = 0; i < n; ++i) {
@@ -705,9 +705,9 @@ namespace matsar {
     }
 
     namespace Math {
-//        //卡方分布
+//        //Chi-squared distribution
 //        /**
-//         * 求卡方分布函数值
+//         * Compute the value of the chi-squared distribution function
 //         * @param x
 //         * @param nu
 //         */
@@ -716,9 +716,9 @@ namespace matsar {
 //
 //        }
         /**
-         * 求卡方分布函数值
-         * @param x 函数传入x值
-         * @param nu 卡方分布自由度
+         * Compute the value of the chi-squared distribution function
+         * @param x the x value passed to the function
+         * @param nu the degrees of freedom of the chi-squared distribution
          * @hint std::tgamma function
          */
         auto chi2pdf(float64 x, float64 nu) -> float64 {
@@ -729,14 +729,14 @@ namespace matsar {
         }
 
         /**
-         * 求卡方分布函数值
-         * @param x 函数传入x值
-         * @param nu 卡方分布自由度
-         * @hint 可使用matlab中find排除法优化算法
+         * Compute the value of the chi-squared distribution function
+         * @param x the x value passed to the function
+         * @param nu the degrees of freedom of the chi-squared distribution
+         * @hint the algorithm can be optimized using matlab's find-based exclusion method
          */
         auto chi2pdf(const Matrix<float64> &x, const Matrix<float64> &nu) -> Matrix<float64> {
             if (x.getShape() != nu.getShape() && !x.isSingle() && !nu.isSingle())
-                throw_shape_exception("poisspdf: x 与 nu 维度不同");
+                throw_shape_exception("poisspdf: x and nu have different dimensions");
             mshape_type shape = nu.isSingle() ? x.getShape() : nu.getShape();
             Matrix<float64> r(shape, 0.);
             auto iter_x = x.begin();
@@ -752,29 +752,29 @@ namespace matsar {
         }
     }
     namespace Math {
-        //指数分布
+        //Exponential distribution
         /**
-         * 求指数分布函数值
-         * @param x 函数传入x值
-         * @param mu 指数分布平均值
+         * Compute the value of the exponential distribution function
+         * @param x the x value passed to the function
+         * @param mu the mean of the exponential distribution
          */
         auto exppdf(float64 x, float64 mu = 1) -> float64 {
             return 1 / mu * std::exp(-x / mu);
         }
 
         /**
-         * 求指数分布函数值
-         * @param x 函数传入x值
-         * @param mu 指数分布平均值
+         * Compute the value of the exponential distribution function
+         * @param x the x value passed to the function
+         * @param mu the mean of the exponential distribution
          */
         auto exppdf(const Matrix<float64> &x, const Matrix<float64> &mu = {1}) -> Matrix<float64> {
             return 1 / mu * exp(-x / mu);
         }
 
         /**
-         * 生成指数分布随机矩阵
-         * @param mu 指数分布平均值
-         * @param shape 目标矩阵的大小
+         * Generate a random matrix from the exponential distribution
+         * @param mu the mean of the exponential distribution
+         * @param shape the size of the target matrix
          */
         auto exprnd(float64 mu, const mshape_type &shape = {1}) -> Matrix<float64> {
             Matrix<float64> r(shape, 0.);
@@ -787,8 +787,8 @@ namespace matsar {
         }
 
         /**
-         * 指数分布的均值和方差
-         * @return 浮点矩阵tuple {mu,mu*mu}
+         * The mean and variance of the exponential distribution
+         * @return floating-point matrix tuple {mu,mu*mu}
          */
         template<RealType RT>
         auto expstat(const RT &mu) -> tuple<real_max, real_max> {
@@ -797,8 +797,8 @@ namespace matsar {
         }
 
         /**
-         * 指数分布的均值和方差
-         * @return 浮点矩阵tuple {mu,mu*mu}
+         * The mean and variance of the exponential distribution
+         * @return floating-point matrix tuple {mu,mu*mu}
          */
         template<RealType RT>
         auto expstat(const Matrix<RT> &mu) -> tuple<Matrix<real_max>, Matrix<real_max>> {
@@ -808,11 +808,11 @@ namespace matsar {
     }
 
     namespace Math {
-        //泊松分布
+        //Poisson distribution
         /**
-         * 求泊松分布函数值
-         * @param x 函数传入x值，需要整数值，非整数值泊松分布为0
-         * @param lambda 指数分布lambda值，速率参数，为正数
+         * Compute the value of the Poisson distribution function
+         * @param x the x value passed to the function; must be an integer; non-integer values give a Poisson value of 0
+         * @param lambda the lambda value of the exponential distribution, the rate parameter, must be positive
          */
         auto poisspdf(float64 x, float64 lambda) -> float64 {
             if (x < 0 || x != std::round(x))
@@ -823,13 +823,13 @@ namespace matsar {
         }
 
         /**
-         * 求泊松分布函数值
-         * @param x 函数传入x值，需要整数值，非整数值泊松分布为0
-         * @param lambda 指数分布lambda值，速率参数，为正数
+         * Compute the value of the Poisson distribution function
+         * @param x the x value passed to the function; must be an integer; non-integer values give a Poisson value of 0
+         * @param lambda the lambda value of the exponential distribution, the rate parameter, must be positive
          */
         auto poisspdf(const Matrix<float64> &x, const Matrix<float64> &lambda) -> Matrix<float64> {
             if (x.getShape() != lambda.getShape() && !x.isSingle() && !lambda.isSingle())
-                throw_shape_exception("poisspdf: x 与 lambda 维度不同");
+                throw_shape_exception("poisspdf: x and lambda have different dimensions");
             mshape_type shape;
             if (!x.isSingle())
                 shape = x.getShape();
@@ -849,9 +849,9 @@ namespace matsar {
         }
 
         /**
-         * 生成泊松分布随机矩阵
-         * @param lambda 指数分布lambda值，速率参数，为正数
-         * @param shape 目标矩阵的大小
+         * Generate a random matrix from the Poisson distribution
+         * @param lambda the lambda value of the exponential distribution, the rate parameter, must be positive
+         * @param shape the size of the target matrix
          */
         auto poissrnd(float64 lambda, const mshape_type &shape = {1}) -> Matrix<float64> {
             Matrix<float64> r(shape, 0.);
@@ -864,11 +864,11 @@ namespace matsar {
         }
     }
     namespace Math {
-        //瑞利分布
+        //Rayleigh distribution
         /**
-         * 求瑞利分布函数值
-         * @param x 函数传入x值，需要非负值，负值泊松分布为0
-         * @param b 瑞利分布比例值
+         * Compute the value of the Rayleigh distribution function
+         * @param x the x value passed to the function; must be non-negative; negative values give a Poisson value of 0
+         * @param b the scale value of the Rayleigh distribution
          */
         auto raylpdf(float64 x, float64 b) -> float64 {
             if (x < 0) return 0;
@@ -878,15 +878,15 @@ namespace matsar {
         }
 
         /**
-         * 求瑞利分布函数值
-         * @param x 函数传入x值，需要非负值，负值泊松分布为0
-         * @param b 瑞利分布比例值
+         * Compute the value of the Rayleigh distribution function
+         * @param x the x value passed to the function; must be non-negative; negative values give a Poisson value of 0
+         * @param b the scale value of the Rayleigh distribution
          */
         auto raylpdf(const Matrix<float64> &x, const Matrix<float64> &b) -> Matrix<float64> {
             bool x_single = x.isSingle();
             bool b_single = b.isSingle();
             if (x.getShape() != b.getShape() && !x_single && !b_single)
-                throw_shape_exception("raylpdf: x 与 b 大小不同");
+                throw_shape_exception("raylpdf: x and b have different sizes");
             mshape_type shape;
             if (!x_single)
                 shape = x.getShape();
@@ -906,12 +906,12 @@ namespace matsar {
         }
     }
     namespace Math {
-        //韦伯分布
+        //Weibull distribution
         /**
-         * 求韦伯分布函数值
-         * @param x 函数传入x值，需要非负值，负值韦伯分布为0
-         * @param lambda 韦伯分布比例参数
-         * @param k 韦伯分布形状参数
+         * Compute the value of the Weibull distribution function
+         * @param x the x value passed to the function; must be non-negative; negative values give a Weibull value of 0
+         * @param lambda the scale parameter of the Weibull distribution
+         * @param k the shape parameter of the Weibull distribution
          */
         auto weibpdf(float64 x, float64 lambda, float64 k) -> float64 {
             if (x < 0) return 0;
@@ -923,17 +923,17 @@ namespace matsar {
         }
 
         /**
-         * 求韦伯分布函数值
-         * @param x 函数传入x值，需要非负值，负值韦伯分布为0
-         * @param lambda 韦伯分布比例参数
-         * @param k 韦伯分布形状参数
+         * Compute the value of the Weibull distribution function
+         * @param x the x value passed to the function; must be non-negative; negative values give a Weibull value of 0
+         * @param lambda the scale parameter of the Weibull distribution
+         * @param k the shape parameter of the Weibull distribution
          */
         auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda,const Matrix<float64> &k) -> Matrix<float64> {
             bool x_single = x.isSingle();
             bool lambda_single = lambda.isSingle();
             bool k_single = k.isSingle();
             if (lambda.getShape() != k.getShape() || (!lambda_single && x.getShape() != lambda.getShape()))
-                throw_shape_exception("weibpdf: lambda k 两矩阵应该有相同的大小，并且与x大小匹配");
+                throw_shape_exception("weibpdf: the lambda k matrices must have the same size, and match the size of x");
             mshape_type shape;
             if (!x_single)
                 shape = x.getShape();
