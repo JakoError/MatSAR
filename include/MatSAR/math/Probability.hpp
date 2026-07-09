@@ -247,7 +247,7 @@ namespace matsar {
          * Map every element of the matrix through the normal distribution
          * @param m must be a real-valued matrix
          * @param mu the mean of the normal distribution
-         * @param sigma the variance of the normal distribution
+         * @param sigma the standard deviation of the normal distribution
          * @return floating-point matrix: the matrix elements mapped through the normal distribution
          */
         template<RealType RT>
@@ -264,8 +264,8 @@ namespace matsar {
         /**
          * Map every element of the matrix through the normal distribution
          * @param m the matrix must be a real-valued matrix
-         * @param mu matrix the mean of the normal distribution, a broadcast operation is applied to the mu matrix
-         * @param sigma matrix the variance of the normal distribution, a broadcast operation is applied to the sigma matrix
+         * @param mu the mean of the normal distribution; a broadcast operation is applied to the mu matrix
+         * @param sigma the standard deviation of the normal distribution; a broadcast operation is applied to the sigma matrix
          * @return floating-point matrix: the matrix elements mapped through the normal distribution
          */
         template<RealType RT>
@@ -285,7 +285,7 @@ namespace matsar {
         /**
          * Generate a random matrix from the normal distribution
          * @param mu the mean of the normal distribution
-         * @param sigma the variance of the normal distribution
+         * @param sigma the standard deviation of the normal distribution
          * @param shape the shape of the target matrix
          * @return floating-point matrix: a random matrix from the normal distribution
          */
@@ -301,8 +301,8 @@ namespace matsar {
 
         /**
          * Generate a random matrix from the normal distribution
-         * @param mu matrix the mean of the normal distribution, a broadcast operation is applied to the mu matrix
-         * @param sigma matrix the variance of the normal distribution, a broadcast operation is applied to the sigma matrix
+         * @param mu the mean of the normal distribution; a broadcast operation is applied to the mu matrix
+         * @param sigma the standard deviation of the normal distribution; a broadcast operation is applied to the sigma matrix
          * @param shape the shape of the target matrix
          * @return floating-point matrix: a random matrix from the normal distribution
          */
@@ -391,8 +391,8 @@ namespace matsar {
 
         /**
          * Generate a random matrix from the binomial distribution
-         * @param mu the mean of the binomial distribution
-         * @param sigma the variance of the binomial distribution
+         * @param n the number of trials of the binomial distribution
+         * @param p the success probability of the binomial distribution
          * @param shape the shape of the target matrix
          * @return floating-point matrix: a random matrix from the binomial distribution
          */
@@ -410,8 +410,8 @@ namespace matsar {
 
         /**
          * Generate a random matrix from multiple binomial distributions
-         * @param mu matrix the mean of the binomial distribution
-         * @param sigma matrix the variance of the binomial distribution
+         * @param n the number of trials of the binomial distribution
+         * @param p the success probability of the binomial distribution
          * @return floating-point matrix: a random matrix from the binomial distribution
          */
         auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p) -> Matrix<real_max> {
@@ -434,8 +434,8 @@ namespace matsar {
 
         /**
          * Generate a random matrix from multiple binomial distributions
-         * @param mu matrix the mean of the binomial distribution
-         * @param sigma matrix the variance of the binomial distribution
+         * @param n the number of trials of the binomial distribution
+         * @param p the success probability of the binomial distribution
          * @param shape the size of the target matrix
          * @return floating-point matrix: a random matrix from the binomial distribution
          */
@@ -596,7 +596,7 @@ namespace matsar {
 
         /**
          * Generate a matrix from the [1,imax] uniform distribution
-         * @param imax the minimum value of the uniform distribution
+         * @param imax the maximum value of the uniform distribution
          * @param shape the shape of the target matrix
          * @return integer matrix: a matrix from the [1,imax] uniform distribution
          */
@@ -736,7 +736,7 @@ namespace matsar {
          */
         auto chi2pdf(const Matrix<float64> &x, const Matrix<float64> &nu) -> Matrix<float64> {
             if (x.getShape() != nu.getShape() && !x.isSingle() && !nu.isSingle())
-                throw_shape_exception("poisspdf: x and nu have different dimensions");
+                throw_shape_exception("chi2pdf: x and nu have different dimensions");
             mshape_type shape = nu.isSingle() ? x.getShape() : nu.getShape();
             Matrix<float64> r(shape, 0.);
             auto iter_x = x.begin();
@@ -811,8 +811,8 @@ namespace matsar {
         //Poisson distribution
         /**
          * Compute the value of the Poisson distribution function
-         * @param x the x value passed to the function; must be an integer; non-integer values give a Poisson value of 0
-         * @param lambda the lambda value of the exponential distribution, the rate parameter, must be positive
+         * @param x the x value passed to the function; must be an integer; non-integer values return 0
+         * @param lambda the rate parameter of the Poisson distribution, must be positive
          */
         auto poisspdf(float64 x, float64 lambda) -> float64 {
             if (x < 0 || x != std::round(x))
@@ -824,8 +824,8 @@ namespace matsar {
 
         /**
          * Compute the value of the Poisson distribution function
-         * @param x the x value passed to the function; must be an integer; non-integer values give a Poisson value of 0
-         * @param lambda the lambda value of the exponential distribution, the rate parameter, must be positive
+         * @param x the x value passed to the function; must be an integer; non-integer values return 0
+         * @param lambda the rate parameter of the Poisson distribution, must be positive
          */
         auto poisspdf(const Matrix<float64> &x, const Matrix<float64> &lambda) -> Matrix<float64> {
             if (x.getShape() != lambda.getShape() && !x.isSingle() && !lambda.isSingle())
@@ -850,7 +850,7 @@ namespace matsar {
 
         /**
          * Generate a random matrix from the Poisson distribution
-         * @param lambda the lambda value of the exponential distribution, the rate parameter, must be positive
+         * @param lambda the rate parameter of the Poisson distribution, must be positive
          * @param shape the size of the target matrix
          */
         auto poissrnd(float64 lambda, const mshape_type &shape = {1}) -> Matrix<float64> {
@@ -867,7 +867,7 @@ namespace matsar {
         //Rayleigh distribution
         /**
          * Compute the value of the Rayleigh distribution function
-         * @param x the x value passed to the function; must be non-negative; negative values give a Poisson value of 0
+         * @param x the x value passed to the function; must be non-negative; negative values return 0
          * @param b the scale value of the Rayleigh distribution
          */
         auto raylpdf(float64 x, float64 b) -> float64 {
@@ -879,7 +879,7 @@ namespace matsar {
 
         /**
          * Compute the value of the Rayleigh distribution function
-         * @param x the x value passed to the function; must be non-negative; negative values give a Poisson value of 0
+         * @param x the x value passed to the function; must be non-negative; negative values return 0
          * @param b the scale value of the Rayleigh distribution
          */
         auto raylpdf(const Matrix<float64> &x, const Matrix<float64> &b) -> Matrix<float64> {

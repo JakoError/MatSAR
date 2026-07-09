@@ -484,7 +484,7 @@ namespace matsar {
             Matrix<TargetType> fm(M);
             fm.expandShape(2);
             if (!fm.is2D())
-                throw_value_error("svd requires a 2D matrix or a matrix that can be expanded to 2D");
+                throw_value_error("lu requires a 2D matrix or a matrix that can be expanded to 2D");
             lapack_int m = fm.getShape()[0], n = fm.getShape()[1];
             lapack_int min_m_n = m > n ? std::max(m, n) : std::min(m, n);
             unique_ptr<lapack_int[]> IPIV(new lapack_int[min_m_n]);
@@ -535,7 +535,7 @@ namespace matsar {
             Matrix<TargetType> fm(M);
             fm.expandShape(2);
             if (!fm.is2D())
-                throw_value_error("svd requires a 2D matrix or a matrix that can be expanded to 2D");
+                throw_value_error("lup requires a 2D matrix or a matrix that can be expanded to 2D");
             lapack_int m = fm.getShape()[0], n = fm.getShape()[1];
             lapack_int min_m_n = m > n ? std::max(m, n) : std::min(m, n);
             unique_ptr<lapack_int[]> IPIV(new lapack_int[min_m_n]);
