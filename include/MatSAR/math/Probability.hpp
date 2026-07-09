@@ -7,6 +7,9 @@
 #ifndef MATSAR_PROBABILITY_HPP
 #define MATSAR_PROBABILITY_HPP
 
+#include <random>
+#include <algorithm>
+
 //#ifndef _USE_MATH_DEFINES
 //#define _USE_MATH_DEFINES
 //#endif //_USE_MATH_DEFINES
@@ -29,8 +32,11 @@
 
 #endif //MATSAR_LINEARALGEBRA_HPP
 
-#include <random>
-#include <algorithm>
+#ifndef MATSAR_SORTSEARCHCOUNT_HPP
+
+#include "SortSearchCount.hpp"
+
+#endif //MATSAR_SORTSEARCHCOUNT_HPP
 
 namespace matsar {
 ///Matrix probability computation functions
@@ -176,19 +182,15 @@ namespace matsar {
             return r;
         }
 
-        template<IntType IT>
-        auto median(const Matrix<IT> &m, msize_type dim = 1) -> Matrix<real_max> {
-            return median<real_max, IT>(m, dim);
-        }
-
-        template<FloatType FT>
-        auto median(const Matrix<FT> &m, msize_type dim = 1) -> Matrix<FT> {
-            return median<FT, FT>(m, dim);
-        }
-
-        template<ComplexType CT>
-        auto median(const Matrix<CT> &m, msize_type dim = 1) -> Matrix<CT> {
-            return median<CT, CT>(m, dim);
+        // Single dispatch overload. C++17 has no concepts, so IntType/FloatType/ComplexType
+        // all expand to `typename` -- the old Float/Complex overloads then redefined each
+        // other. One overload picks the output type: integers -> real_max, floating and
+        // complex keep their own type.
+        template<Calculable dType>
+        auto median(const Matrix<dType> &m, msize_type dim = 1)
+                -> Matrix<std::conditional_t<std::is_integral_v<dType>, real_max, dType>> {
+            using Out = std::conditional_t<std::is_integral_v<dType>, real_max, dType>;
+            return median<Out, dType>(m, dim);
         }
 
         /**
@@ -205,14 +207,12 @@ namespace matsar {
             return sum<TargetType, dType>(m / float_max(m.getShape()[dim_idx]), dim);
         }
 
-        template<RealType RT>
-        auto mean(const Matrix<RT> &m, msize_type dim = 1) -> Matrix<real_max> {
-            return mean<real_max, RT>(m, dim);
-        }
-
-        template<ComplexType CT>
-        auto mean(const Matrix<CT> &m, msize_type dim = 1) -> Matrix<real_max> {
-            return mean<real_max, CT>(m, dim);
+        // Single dispatch overload (RealType/ComplexType both become `typename` in C++17, so
+        // the two overloads used to redefine each other). Preserves the prior return type:
+        // every Calculable input maps to real_max.
+        template<Calculable dType>
+        auto mean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<real_max> {
+            return mean<real_max, dType>(m, dim);
         }
     }
     namespace Math {
@@ -229,14 +229,13 @@ namespace matsar {
             return {sum<TargetType, dType>(abs(m - sum<TargetType, dType>(m, dim) / n) ^ 2, dim) / denom};
         }
 
-        template<RealType RT>
-        auto var(const Matrix<RT> &m, bool w = false, msize_type dim = 1) -> Matrix<real_max> {
-            return var<real_max, RT>(m, w, dim);
-        }
-
-        template<ComplexType CT>
-        auto var(const Matrix<CT> &m, bool w = false, msize_type dim = 1) -> Matrix<complex_max> {
-            return var<complex_max, CT>(m, w, dim);
+        // Single dispatch overload (RealType/ComplexType collapse to `typename` in C++17).
+        // Preserves the prior return types: complex inputs -> complex_max, else -> real_max.
+        template<Calculable dType>
+        auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1)
+                -> Matrix<std::conditional_t<std::is_same_v<dType, complex64> || std::is_same_v<dType, complex128>, complex_max, real_max>> {
+            using Out = std::conditional_t<std::is_same_v<dType, complex64> || std::is_same_v<dType, complex128>, complex_max, real_max>;
+            return var<Out, dType>(m, w, dim);
         }
     }
     ///Distribution functions
@@ -293,7 +292,7 @@ namespace matsar {
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            normal_distribution <float_max> normal(mu, sigma);
+            normal_distribution<float_max> normal(mu, sigma);
             for (auto &i: r)
                 i = normal(gen);
             return r;
@@ -315,7 +314,7 @@ namespace matsar {
             std::mt19937 gen(rd());
             for (auto iter = r.begin(), iter_mu = mu.begin(), iter_sigma = sigma.begin();
                  iter != r.end(); ++iter, ++iter_mu, ++iter_sigma) {
-                normal_distribution <float_max> normal(*iter_mu, *iter_sigma);
+                normal_distribution<float_max> normal(*iter_mu, *iter_sigma);
                 *iter = normal(gen);
             }
             return r;
@@ -814,12 +813,12 @@ namespace matsar {
          * @param x the x value passed to the function; must be an integer; non-integer values return 0
          * @param lambda the rate parameter of the Poisson distribution, must be positive
          */
-        auto poisspdf(float64 x, float64 lambda) -> float64 {
+        auto poisspdf(float_max x, float_max lambda) -> float_max {
             if (x < 0 || x != std::round(x))
                 return 0;
             if (lambda < 0)
                 return NAN;
-            return pow(lambda, x) / factorial<float64>(x) * std::exp(-lambda);
+            return pow(lambda, x) / matsar::factorial<float_max>(x) * std::exp(-lambda);
         }
 
         /**
@@ -928,7 +927,7 @@ namespace matsar {
          * @param lambda the scale parameter of the Weibull distribution
          * @param k the shape parameter of the Weibull distribution
          */
-        auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda,const Matrix<float64> &k) -> Matrix<float64> {
+        auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda, const Matrix<float64> &k) -> Matrix<float64> {
             bool x_single = x.isSingle();
             bool lambda_single = lambda.isSingle();
             bool k_single = k.isSingle();
@@ -944,7 +943,7 @@ namespace matsar {
             auto iter_lambda = lambda.begin();
             auto iter_k = k.begin();
             for (auto &i: r) {
-                i = weibpdf(*iter_x, *iter_lambda,*iter_k);
+                i = weibpdf(*iter_x, *iter_lambda, *iter_k);
                 if (!x_single)
                     iter_x++;
                 if (!lambda_single)

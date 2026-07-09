@@ -7,6 +7,8 @@
 #ifndef MATSAR_DIGITALSIGNAL_HPP
 #define MATSAR_DIGITALSIGNAL_HPP
 
+#include <climits>
+
 #ifndef MATSAR_MATRIX_HPP
 
 #include "../Matrix.hpp"
@@ -91,7 +93,7 @@ namespace matsar {
             template<typename ITER_SRC_T, typename ITER_DST_T, typename WORT_T>
             class FFT {
             public:
-                using SRC_T = typeof(*std::declval<ITER_SRC_T>());
+                using SRC_T = decltype(*std::declval<ITER_SRC_T>());
 
                 // use cal_final_swap_index reverse bit is faster
                 static inline msize_type cal_swap_index(const msize_type i, const msize_type N) {
@@ -301,7 +303,7 @@ namespace matsar {
             }
 
             auto r = Matrix<TargetType>(m);
-            for (typeof(n) i = 0; i < n; ++i) {
+            for (decltype(n) i = 0; i < n; ++i) {
                 auto N = Ns[i];
                 auto dim_idx = dim_idxs[i];
 
@@ -439,7 +441,7 @@ namespace matsar {
             }
 
             auto r = Matrix<TargetType>(m);
-            for (typeof(n) i = 0; i < n; ++i) {
+            for (decltype(n) i = 0; i < n; ++i) {
                 auto N = Ns[i];
                 auto dim_idx = dim_idxs[i];
 

@@ -16,7 +16,7 @@
 // require universal matrix functions
 #ifndef MATSAR_UNIVERSALFUNCTIONS_HPP
 
-#include "UniversalFunctions.hpp"
+#include "../UniversalFunctions.hpp"
 
 #endif //MATSAR_UNIVERSALFUNCTIONS_HPP
 

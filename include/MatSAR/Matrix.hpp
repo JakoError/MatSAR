@@ -1445,6 +1445,14 @@ namespace matsar {
             return data[pos];
         }
 
+        virtual auto operator()(initializer_list<size_type> plist) -> dType & {
+            return (*this)(shape_type(plist));
+        }
+
+        virtual auto operator()(initializer_list<size_type> plist) const -> dType {
+            return (*this)(shape_type(plist));
+        }
+
         /**
          * @param svec Select some values from multiple dimensions.
          * If there is only one value and it is shape[dim] or -shape[dim], select all values.
@@ -2167,6 +2175,20 @@ namespace matsar {
     }
 }
 namespace matsar {
+    // Arithmetic result-type promotion for the operators below: integers/float widen to
+    // double (as the old "x + 0." idiom did), and complex<float> widens to complex<double>.
+    // Needed because std::complex<float> + double is ill-formed C++, so a plain "x + 0."
+    // could not deduce a result type for complex<float>.
+    // Function-form (never defined -- used only inside decltype) so a non-promotable T
+    // (e.g. a Matrix passed to the scalar operator*) fails via SFINAE in the immediate
+    // context rather than as a hard error inside a class-template member.
+    template<typename T>
+    auto arith_promote_fn(T) -> decltype(std::declval<T>() + 0.);
+    template<typename U>
+    auto arith_promote_fn(std::complex<U>) -> std::complex<decltype(std::declval<U>() + 0.)>;
+    template<typename T>
+    using arith_promote_t = decltype(arith_promote_fn(std::declval<T>()));
+
     template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() * std::declval<rT>())>
     auto mul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
@@ -2174,21 +2196,21 @@ namespace matsar {
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() * std::declval<arith_promote_t<rT>>())>
     auto operator*(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
-        tmp *= TargetType{right + 0.};
+        tmp *= static_cast<TargetType>(right);
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() * std::declval<arith_promote_t<rT>>())>
     auto operator*(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(right);
-        tmp *= TargetType{left + 0.};
+        tmp *= static_cast<TargetType>(left);
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() * std::declval<arith_promote_t<rT>>())>
     auto operator*(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp *= right;   // element-wise with broadcasting; matrix product is mmul()/operator%
@@ -2204,7 +2226,7 @@ namespace matsar {
      * Note: `operator*` between two matrices is ELEMENT-wise (see operator+), not
      * this matrix product.
      */
-    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() * std::declval<arith_promote_t<rT>>())>
     auto mmul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         auto b_left = Matrix<TargetType>(left);
         auto b_right = Matrix<TargetType>(right);
@@ -2218,7 +2240,7 @@ namespace matsar {
     }
 
     /// Alias for mmul(): the BLAS-backed matrix product.
-    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() * std::declval<arith_promote_t<rT>>())>
     auto operator%(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         return mmul<lT, rT, TargetType>(left, right);
     }
@@ -2228,7 +2250,7 @@ namespace matsar {
      * Vector Dot Product
      * Vector horizontal input, one row represents a vector X or Y
      */
-    template<typename dType, typename TargetType = decltype(std::declval<dType>() + std::declval<real_max>())>
+    template<typename dType, typename TargetType = arith_promote_t<dType>>
     auto dot(Matrix<dType> A, Matrix<dType> B) -> Matrix<TargetType> {
         A = A.squeeze();
         B = B.squeeze();
@@ -2323,21 +2345,21 @@ namespace matsar {
     }
 }
 namespace matsar {
-    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() / std::declval<rT>() + std::declval<real_max>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() / std::declval<arith_promote_t<rT>>())>
     auto operator/(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp /= right;
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() / std::declval<rT>() + std::declval<real_max>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() / std::declval<arith_promote_t<rT>>())>
     auto operator/(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp /= right;
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() / std::declval<rT>() + std::declval<real_max>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() / std::declval<arith_promote_t<rT>>())>
     auto operator/(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(right.getShape(), static_cast<TargetType>(left));
         tmp /= right;

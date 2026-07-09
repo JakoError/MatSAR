@@ -60,7 +60,7 @@ using matsar::Util::VectorUtil::Range;
 
 namespace matsar {
     namespace Math {
-        template<typename T1, typename T2, typename TargetType=decltype(std::declval<T1>() * std::declval<T2>())>
+        template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() * std::declval<T2>())>
         auto kron(Matrix<T1> m1, Matrix<T2> m2) -> Matrix<TargetType> {
             m1.expandShape(2);
             m2.expandShape(2);
@@ -198,8 +198,7 @@ namespace matsar {
                 }
             }
 
-            auto do_svd(const Matrix<float64> &A, const bool &compute_uv, const bool &full_matrices
-            ) -> vector<Matrix<float64>> {
+            auto do_svd(const Matrix<float64> &A, const bool &compute_uv, const bool &full_matrices) -> vector<Matrix<float64>> {
                 using T = float64;
 
                 auto m = static_cast<lapack_int>(A.getShape()[0]), n = static_cast<lapack_int>(A.getShape()[1]);
@@ -228,7 +227,7 @@ namespace matsar {
                 auto U_iter = U.begin();
                 auto V_iter = V.begin();
 
-                for (typeof(unit_num) i = 0; i < unit_num; ++i) {
+                for (decltype(unit_num) i = 0; i < unit_num; ++i) {
                     auto info = LAPACK_SVD(A_iter, S_iter, U_iter, V_iter,
                                            jobu, jobvt, m, n,
                                            lda, ldu, ldvt,
@@ -254,8 +253,7 @@ namespace matsar {
             }
 
             template<typename T>
-            auto do_svd(const Matrix<complex<T>> &A, const bool &compute_uv, const bool &full_matrices
-            ) -> vector<Matrix<complex<T>>> {
+            auto do_svd(const Matrix<complex<T>> &A, const bool &compute_uv, const bool &full_matrices) -> vector<Matrix<complex<T>>> {
                 auto m = static_cast<lapack_int>(A.getShape()[0]), n = static_cast<lapack_int>(A.getShape()[1]);
 
                 auto &k = min(m, n);
@@ -267,7 +265,6 @@ namespace matsar {
                 lapack_int lda = m, ldu, ldvt;
                 Matrix<complex<T>> U, V;
                 svd_prepare_uv(A, compute_uv, full_matrices, m, n, k, jobu, jobvt, ldu, ldvt, U, V);
-
 
                 auto work_size = LAPACK_SVD_WORK_SIZE<complex<T>>(jobu, jobvt, m, n, lda, ldu, ldvt);
                 unique_ptr<complex<T>[]> work(new complex<T>[work_size]);
@@ -284,7 +281,7 @@ namespace matsar {
                 auto U_iter = U.begin();
                 auto V_iter = V.begin();
 
-                for (typeof(unit_num) i = 0; i < unit_num; ++i) {
+                for (decltype(unit_num) i = 0; i < unit_num; ++i) {
                     auto info = LAPACK_SVD(A_iter, S_iter, U_iter, V_iter,
                                            jobu, jobvt, m, n,
                                            lda, ldu, ldvt,
@@ -311,10 +308,8 @@ namespace matsar {
             }
         }
 
-
         template<typename RT>
-        auto svd(const Matrix<RT> &A, const bool &compute_uv = true, const bool &full_matrices = true
-        ) -> vector<Matrix<float64>> {
+        auto svd(const Matrix<RT> &A, const bool &compute_uv = true, const bool &full_matrices = true) -> vector<Matrix<float64>> {
             if (A.getDims() < 2) {
                 throw_value_error(
                         "svd: svd requires Matrix at least 2 dimensions, but got: " + to_string(A.getDims()));
@@ -331,8 +326,7 @@ namespace matsar {
         }
 
         template<typename T>
-        auto svd(const Matrix<complex<T>> &A, const bool &compute_uv = true, const bool &full_matrices = true
-        ) -> vector<Matrix<complex<T>>> {
+        auto svd(const Matrix<complex<T>> &A, const bool &compute_uv = true, const bool &full_matrices = true) -> vector<Matrix<complex<T>>> {
             if (A.getDims() < 2) {
                 throw_value_error(
                         "svd: svd requires Matrix at least 2 dimensions, but got: " + to_string(A.getDims()));
@@ -506,28 +500,34 @@ namespace matsar {
 
 //            cout << fm.toRowColString("fm") << endl;
 //            cout << P.toString("p") << endl;
-            if (m == n)
-                return {P * (tril(fm, -1) + eye<TargetType>(m, n)), triu(fm)};
-            else if (m > n) {
-                auto U = (triu(fm))({Range(n), Range(n)});
-                return {P * (tril(fm, -1) + eye<TargetType>(m, n)), U};
+            // P is the row-permutation matrix; applying it to L is a MATRIX product,
+            // not element-wise -- use mmul/operator% (operator* is Hadamard). Normalize
+            // to Matrix<TargetType> since mmul promotes via its (x + 0.) default type.
+            if (m == n) {
+                Matrix<TargetType> L = mmul(P, tril(fm, -1) + eye<TargetType>(m, n));
+                return {L, triu(fm)};
+            } else if (m > n) {
+                Matrix<TargetType> L = mmul(P, tril(fm, -1) + eye<TargetType>(m, n));
+                auto U = triu(fm)({Range<msize_type>(n), Range<msize_type>(n)});
+                return {L, U};
             } else {
-                auto L = (P * (tril(fm, -1) + eye<TargetType>(m, n)))({Range(m), Range(m)});
+                Matrix<TargetType> PL = mmul(P, tril(fm, -1) + eye<TargetType>(m, n));
+                auto L = PL({Range<msize_type>(m), Range<msize_type>(m)});
                 return {L, triu(fm)};
             }
         }
 
         template<RealType RT>
         auto lu(const Matrix<RT> &M) -> tuple<Matrix<float64>, Matrix<float64>> {
-            return lu<float64>(M);
+            return lu<float64, float64>(Matrix<float64>(M));
         }
 
         auto lu(const Matrix<complex64> &M) -> tuple<Matrix<complex64>, Matrix<complex64>> {
-            return lu<complex64>(M);
+            return lu<complex64, complex64>(M);
         }
 
         auto lu(const Matrix<complex128> &M) -> tuple<Matrix<complex128>, Matrix<complex128>> {
-            return lu<complex128>(M);
+            return lu<complex128, complex128>(M);
         }
 
         template<Calculable TargetType, Calculable dType>
@@ -560,10 +560,10 @@ namespace matsar {
             if (m == n)
                 return {(tril(fm, -1) + eye<TargetType>(m, n)), triu(fm), P};
             else if (m > n) {
-                auto U = (triu(fm))({Range(n), Range(n)});
+                auto U = (triu(fm))({Range<msize_type>(n), Range<msize_type>(n)});
                 return {tril(fm, -1) + eye<TargetType>(m, n), U, P};
             } else {
-                auto L = (tril(fm, -1) + eye<TargetType>(m, n))({Range(m), Range(m)});
+                auto L = (tril(fm, -1) + eye<TargetType>(m, n))({Range<msize_type>(m), Range<msize_type>(m)});
                 return {L, triu(fm), P};
             }
         }
@@ -601,45 +601,29 @@ namespace matsar {
     }
 
     namespace Math {
-        template<RealType RT>
-        auto inv(const Matrix<RT> &m) -> Matrix<real_max> {
+        // element type the LAPACK routines compute in: real_max for real inputs
+        // (integers included), complex_max for complex inputs.
+        template<typename T>
+        using la_promote_t = std::conditional_t<matsar::complex_type<T>::value, complex_max, real_max>;
+
+        template<Calculable dType>
+        auto inv(const Matrix<dType> &m) -> Matrix<la_promote_t<dType>> {
+            using Out = la_promote_t<dType>;
             if (!m.isSquare() || m.getDims() != 2)
                 throw_value_error("matrix inversion requires a 2D square matrix");
+
             auto n = m.getShape()[0];
-            Matrix<real_max> A(m);
-            Matrix<real_max> X({n, n}, 0., m.getData());
-
-            lapack_int iter;
-
+            Matrix<Out> A(m), X({n, n}, 0., m.getData());
+            lapack_int iter, info;
             unique_ptr<lapack_int[]> IPIV(new lapack_int[n]);
 
-            auto info = LAPACKE_dsgesv(CblasColMajor, n, n, A.getData(), n,
-                                       IPIV.get(), eye<real_max>(n).getData(), n, X.getData(), n, &iter);
-            if (info < 0)
-                throw_value_error("inv argument error " + to_string(info));
-            if (info > 0) {
-                stringstream ss;
-                ss << "matrix rank is " << rank(m) << " shape is " << n << " has no inverse";
-                m.debug();
-                throw_warning(ss.str());
-            }
-            return X;
-        }
+            if constexpr (matsar::complex_type<dType>::value)      // <- the ONLY real/complex difference
+                info = LAPACKE_zcgesv(CblasColMajor, n, n, A.getData(), n, IPIV.get(),
+                                      eye<Out>(n).getData(), n, X.getData(), n, &iter);
+            else
+                info = LAPACKE_dsgesv(CblasColMajor, n, n, A.getData(), n, IPIV.get(),
+                                      eye<Out>(n).getData(), n, X.getData(), n, &iter);
 
-        template<ComplexType CT>
-        auto inv(const Matrix<CT> &m) -> Matrix<complex_max> {
-            if (!m.isSquare() || m.getDims() != 2)
-                throw_value_error("matrix inversion requires a 2D square matrix");
-            auto n = m.getShape()[0];
-            Matrix<complex_max> A(m);
-            Matrix<complex_max> X({n, n}, 0., m.getData());
-
-            lapack_int iter;
-
-            unique_ptr<lapack_int[]> IPIV(new lapack_int[n]);
-
-            auto info = LAPACKE_zcgesv(CblasColMajor, n, n, A.getData(), n,
-                                       IPIV.get(), eye<complex_max>(n).getData(), n, X.getData(), n, &iter);
             if (info < 0)
                 throw_value_error("inv argument error " + to_string(info));
             if (info > 0) {
@@ -858,7 +842,6 @@ namespace matsar {
             return T;
         }
 
-
         /******schur by wwl******/
         template<typename dType>
         vector<Matrix<dType>> schur(const Matrix<dType> &A) {
@@ -1010,14 +993,67 @@ namespace matsar {
             return r;
         }
 
+        namespace Internal {
+            // Exponential integral Ei(x) for real x != 0 -- native drop-in for
+            // boost::math::expint(x), so this module keeps OpenBLAS as its only
+            // external dependency. Matches boost/reference Ei to ~1e-15.
+            inline real_max expint_ei(real_max x) {
+                constexpr real_max EULER = 0.5772156649015328606;
+                constexpr int MAXIT = 200;
+                const real_max EPS = std::numeric_limits<real_max>::epsilon();
+                const real_max FPMIN = std::numeric_limits<real_max>::min() / EPS;
+                if (x == 0.0) return -std::numeric_limits<real_max>::infinity();
+                if (x < 0.0) {                        // Ei(x) = -E1(-x); E1 via Lentz continued fraction
+                    const real_max y = -x;
+                    real_max b = y + 1.0, c = 1.0 / FPMIN, d = 1.0 / b, h = d;
+                    for (int i = 1; i <= MAXIT; ++i) {
+                        const real_max a = -real_max(i) * i;
+                        b += 2.0;
+                        d = 1.0 / (a * d + b);
+                        c = b + a / c;
+                        const real_max del = c * d;
+                        h *= del;
+                        if (std::fabs(del - 1.0) <= EPS) break;
+                    }
+                    return -std::exp(-y) * h;
+                }
+                if (x < FPMIN) return std::log(x) + EULER;
+                if (x <= -std::log(EPS)) {            // power series (moderate x)
+                    real_max sum = 0.0, fact = 1.0;
+                    for (int k = 1; k <= MAXIT; ++k) {
+                        fact *= x / k;
+                        const real_max term = fact / k;
+                        sum += term;
+                        if (term < EPS * sum) break;
+                    }
+                    return sum + std::log(x) + EULER;
+                }
+                real_max sum = 0.0, term = 1.0;       // asymptotic series (large x)
+                for (int k = 1; k <= MAXIT; ++k) {
+                    const real_max prev = term;
+                    term *= real_max(k) / x;
+                    if (term < EPS) break;
+                    if (term < prev)
+                        sum += term;
+                    else {
+                        sum -= prev;
+                        break;
+                    }
+                }
+                return std::exp(x) * (1.0 + sum) / x;
+            }
+        }
+
         /**
          * @author zzx
+         * MATLAB-style exponential integral: expint(x) = E1(x) = -Ei(-x),
+         * computed via the native Internal::expint_ei above.
          */
-        template<typename dType, typename TargetType=decltype(boost::math::expint(declval<dType>()))>
+        template<typename dType, typename TargetType = real_max>
         auto Expint(const Matrix<dType> x) -> Matrix<TargetType> {
             Matrix<TargetType> r(x);
             for (auto &i: r) {
-                i = boost::math::expint(i);
+                i = -Internal::expint_ei(-i);
             }
             return r;
         }
@@ -1029,7 +1065,7 @@ namespace matsar {
         auto Expint(const Matrix<complex<dType>> x) -> Matrix<complex<dType>> {
             Matrix<complex<dType>> r(x);
             for (auto &i: r) {
-                i = -boost::math::expint(-i.real()) - pi * I(1.);
+                i = -Internal::expint_ei(-i.real()) - pi * I(1.);
             }
             return r;
         }
@@ -1042,7 +1078,7 @@ namespace matsar {
             }
             vector<double> idx;
             int num = min(m, n);
-            vector<vector<double> > res;
+            vector<vector<double>> res;
             int k = -m + 1;
             //m >=n below the diagonal counts from one; m<n, the part below the diagonal must first be filled with 0
             if (m >= n) {
