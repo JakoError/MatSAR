@@ -173,6 +173,33 @@ namespace matsar {
                                   std::true_type, std::false_type>::type {
     };
 
+    // ---- output-type promotion vocabulary (house standard) ----------------------
+    // void-sentinel resolver: an explicit override wins; else fall back to a family trait/type.
+    template<typename Target, typename Fallback>
+    using resolve_t = std::conditional_t<std::is_void_v<Target>, Fallback, Target>;
+
+    // accumulate family (sum/prod/cumsum/cumprod/trace): widen ints, keep float/complex.
+    template<typename T>
+    using accumulate_t = std::conditional_t<sint_type<T>::value, int_max,
+                         std::conditional_t<uint_type<T>::value, uint_max, T>>;
+
+    // mean/median/geomean/harmmean/Expint: integers enter the real domain; keep float/complex width.
+    template<typename T>
+    using real_promote_t = std::conditional_t<int_type<T>::value, real_max, T>;
+
+    // var/std: real-valued magnitude; complex collapses to its real counterpart.
+    namespace Internal {
+        template<typename T> struct real_counterpart { using type = T; };
+        template<typename U> struct real_counterpart<std::complex<U>> { using type = U; };
+    }
+    template<typename T>
+    using magnitude_t = std::conditional_t<int_type<T>::value, real_max,
+                        typename Internal::real_counterpart<T>::type>;
+
+    // linalg (BLAS/LAPACK-backed): complex -> complex_max, else real_max.
+    template<typename T>
+    using linalg_promote_t = std::conditional_t<complex_type<T>::value, complex_max, real_max>;
+
 #if (__cplusplus >= 202002L)
 
     //    template<typename dType>
