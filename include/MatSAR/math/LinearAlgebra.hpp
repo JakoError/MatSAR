@@ -532,9 +532,12 @@ namespace matsar {
             }
         }
 
-        template<Calculable TargetType, Calculable dType>
-        auto lup(const Matrix<dType> &M) -> tuple<Matrix<TargetType>, Matrix<TargetType>, Matrix<int64>> {
-            Matrix<TargetType> fm(M);
+        template<typename TargetType = void, Calculable dType>
+        auto lup(const Matrix<dType> &M)
+                -> tuple<Matrix<resolve_t<TargetType, linalg_promote_t<dType>>>, Matrix<resolve_t<TargetType, linalg_promote_t<dType>>>, Matrix<int64>> {
+            using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "lup: output type must be Calculable");
+            Matrix<Out> fm(M);
             fm.expandShape(2);
             if (!fm.is2D())
                 throw_value_error("lup requires a 2D matrix or a matrix that can be expanded to 2D");
@@ -558,29 +561,16 @@ namespace matsar {
             for (int i = 0; i < min_m_n; ++i)
                 P(i, IDX[i]) = 1;//P!!!
 //            cout << fm.toRowColString("fm") << endl;
-//            return {(tril(fm, -1) + eye<TargetType>(m, n)), triu(fm), P};
+//            return {(tril(fm, -1) + eye<Out>(m, n)), triu(fm), P};
             if (m == n)
-                return {(tril(fm, -1) + eye<TargetType>(m, n)), triu(fm), P};
+                return {(tril(fm, -1) + eye<Out>(m, n)), triu(fm), P};
             else if (m > n) {
                 auto U = (triu(fm))({Range<msize_type>(n), Range<msize_type>(n)});
-                return {tril(fm, -1) + eye<TargetType>(m, n), U, P};
+                return {tril(fm, -1) + eye<Out>(m, n), U, P};
             } else {
-                auto L = (tril(fm, -1) + eye<TargetType>(m, n))({Range<msize_type>(m), Range<msize_type>(m)});
+                auto L = (tril(fm, -1) + eye<Out>(m, n))({Range<msize_type>(m), Range<msize_type>(m)});
                 return {L, triu(fm), P};
             }
-        }
-
-        template<RealType RT>
-        auto lup(const Matrix<RT> &M) -> tuple<Matrix<float64>, Matrix<float64>, Matrix<int64>> {
-            return lup<float64, RT>(M);
-        }
-
-        auto lup(const Matrix<complex64> &M) -> tuple<Matrix<complex64>, Matrix<complex64>, Matrix<int64>> {
-            return lup<complex64, complex64>(M);
-        }
-
-        auto lup(const Matrix<complex128> &M) -> tuple<Matrix<complex128>, Matrix<complex128>, Matrix<int64>> {
-            return lup<complex128, complex128>(M);
         }
     }
 
