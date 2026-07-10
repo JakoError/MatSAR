@@ -27,9 +27,13 @@
 
 #endif
 
-#ifndef MATSAR_LINEARALGEBRA_HPP
+// nnz() delegates to sum(); pull that in directly (MathematicalFunction) rather than
+// the heavyweight, LAPACK-dependent LinearAlgebra (which MatrixOperation does not use --
+// its only det/inv references are commented out below). Keeps MatrixOperation, and its
+// downstream includers like Probability, buildable without BLAS.
+#ifndef MATSAR_MATHEMATICALFUNCTION_HPP
 
-#include "LinearAlgebra.hpp"
+#include "MathematicalFunction.hpp"
 
 #endif
 

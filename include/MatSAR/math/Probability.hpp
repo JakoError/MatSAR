@@ -26,11 +26,11 @@
 
 #endif //MATSAR_MATRIXOPERATION_HPP
 
-#ifndef MATSAR_LINEARALGEBRA_HPP
+#ifndef MATSAR_MATHEMATICALFUNCTION_HPP
 
-#include "LinearAlgebra.hpp"
+#include "MathematicalFunction.hpp"
 
-#endif //MATSAR_LINEARALGEBRA_HPP
+#endif //MATSAR_MATHEMATICALFUNCTION_HPP
 
 #ifndef MATSAR_SORTSEARCHCOUNT_HPP
 
