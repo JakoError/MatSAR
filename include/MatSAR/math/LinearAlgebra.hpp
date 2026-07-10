@@ -344,7 +344,11 @@ namespace matsar {
 
         template<typename dType>
         auto rank(const Matrix<dType> &m, float64 tol) -> msize_type {
-            Matrix<float64> s = matsar::Math::svd(m, false, false)[0];
+            // Singular values are non-negative reals, but for complex `m` svd stores
+            // them in a complex container; take the magnitude so the result is a real
+            // Matrix<float64> (identity for real input).
+            Matrix<float64> s = matsar::apply_function(matsar::Math::svd(m, false, false)[0],
+                                                       [](const auto &x) { return static_cast<float64>(matsar::abs(x)); });
             Matrix<msize_type> mask = matsar::apply_function<bool, msize_type>(
                     s > tol, [](const bool &x) { return static_cast<msize_type>(x); });
             return msize_type(matsar::Math::sum<msize_type>(mask)(0));
@@ -352,7 +356,12 @@ namespace matsar {
 
         template<typename dType>
         auto rank(const Matrix<dType> &m) -> msize_type {
-            Matrix<float64> s = matsar::Math::svd(m, false, false)[0];
+            // Singular values are non-negative reals, but for complex `m` svd stores
+            // them in a complex container; take the magnitude so the result is a real
+            // Matrix<float64> (identity for real input). This also unblocks inv()'s
+            // info>0 branch (which calls rank(m)) for complex matrices.
+            Matrix<float64> s = matsar::apply_function(matsar::Math::svd(m, false, false)[0],
+                                                       [](const auto &x) { return static_cast<float64>(matsar::abs(x)); });
             // TODO: Check the integrity
             auto tol = m.getLength() * matsar::Util::TypeUtil::eps(s.Max());
             Matrix<msize_type> mask = matsar::apply_function<bool, msize_type>(
