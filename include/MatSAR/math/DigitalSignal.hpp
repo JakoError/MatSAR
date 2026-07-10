@@ -93,7 +93,7 @@ namespace matsar {
             template<typename ITER_SRC_T, typename ITER_DST_T, typename WORT_T>
             class FFT {
             public:
-                using SRC_T = decltype(*std::declval<ITER_SRC_T>());
+                using SRC_T = std::remove_reference_t<decltype(*std::declval<ITER_SRC_T>())>;
 
                 // use cal_final_swap_index reverse bit is faster
                 static inline msize_type cal_swap_index(const msize_type i, const msize_type N) {
