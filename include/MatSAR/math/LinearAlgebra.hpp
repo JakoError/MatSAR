@@ -758,21 +758,23 @@ namespace matsar {
          * @return [V,D,s] = condeig(A)
          * s = a vector of condition numbers for the eigenvalues of A. These condition numbers are the reciprocals of the cosines of the angles between the left and right eigenvectors.
          */
-        template<typename dType>
-        auto condeig(const Matrix<dType> &A) -> vector<Matrix<float64>> {
-            vector<Matrix<dType>> V_D_s(3);
+        template<typename TargetType = void, Calculable dType>
+        auto condeig(const Matrix<dType> &A) -> vector<Matrix<resolve_t<TargetType, linalg_promote_t<dType>>>> {
+            using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "condeig: output type must be Calculable");
+            vector<Matrix<Out>> V_D_s(3);
             if (!A.is2D() || !A.isSquare()) {
                 throw_value_error("input matrix must be a square matrix!");
                 return V_D_s;
             }
-            auto V_D_W = eig(A);
+            auto V_D_W = eig<float64>(A);
             auto V = V_D_W[0];
             auto D = V_D_W[1];
             auto W = V_D_W[2];
             auto shape = D.getShape();
-            vector<dType> s(shape[0]);
-            vector<dType> a(shape[1]);
-            vector<dType> b(shape[1]);
+            vector<float64> s(shape[0]);
+            vector<float64> a(shape[1]);
+            vector<float64> b(shape[1]);
 
             for (int j = 0; j < shape[1]; j++) {
                 float64 mul = 0;
