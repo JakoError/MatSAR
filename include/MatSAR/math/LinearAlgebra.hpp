@@ -698,9 +698,13 @@ namespace matsar {
         * @return returns the diagonal matrix D of eigenvalues and the matrix V, whose columns are the corresponding right eigenvectors, such that A*V = V*D.
         * @return also returns the full matrix W, whose columns are the corresponding left eigenvectors, such that W'*A = D*W'*B.
         */
-        template<typename dType>
-        auto eig(const Matrix<dType> &A) -> vector<Matrix<float64>> {
-            Matrix<float64> fA(A);
+        template<typename TargetType = void, Calculable dType>
+        auto eig(const Matrix<dType> &A) -> vector<Matrix<resolve_t<TargetType, linalg_promote_t<dType>>>> {
+            using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "eig: output type must be Calculable");
+            // LAPACKE_dgeev is a real-only solver: for complex dType, only the real part
+            // feeds compute (values remain real; this is not a complex eigensolver).
+            Matrix<float64> fA(A.real());
             fA.expandShape(2);
             if (!fA.is2D())
                 throw_value_error("eig requires a 2D matrix or a matrix that can be expanded to 2D");
@@ -722,7 +726,7 @@ namespace matsar {
                 A.debug();
                 throw_warning("eig works badly error code:" + to_string(info));
             }
-            vector<Matrix<float64>> V_D_W(3);
+            vector<Matrix<Out>> V_D_W(3);
             vector<float64> eig_v;
             for (int i = 0; i < m; i++) {
                 eig_v.push_back(wr.get()[i]);
