@@ -176,16 +176,11 @@ namespace matsar {
         /**
          * @param dim_idx Global evaluation is performed when it is none.
          */
-        template<typename dType, typename TargetType = void>
+        template<typename TargetType = void, Calculable dType>
         auto cumprod(const Matrix<dType> &m, Container<msize_type> dim_idx = 0)
-                -> Matrix<std::conditional_t<
-                        std::is_void_v<TargetType>,
-                        remove_cvref_t<decltype(std::declval<dType>() * std::declval<dType>())>,
-                        TargetType>> {
-            using Out = std::conditional_t<
-                    std::is_void_v<TargetType>,
-                    remove_cvref_t<decltype(std::declval<dType>() * std::declval<dType>())>,
-                    TargetType>;
+                -> Matrix<resolve_t<TargetType, accumulate_t<dType>>> {
+            using Out = resolve_t<TargetType, accumulate_t<dType>>;
+            static_assert(calculable_type<Out>::value, "cumprod: output type must be Calculable");
             if (dim_idx == none || m.isEmpty()) {
                 return Internal::do_global_cumprod<dType, Out>(m);
             }
