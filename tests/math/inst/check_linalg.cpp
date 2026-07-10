@@ -1,9 +1,11 @@
 // Copyright 2026 Zhexian Zhou
 // SPDX-License-Identifier: Apache-2.0
-// check_linalg.cpp -- runnable value spot-check for the Phase 5A lu/lup/det/inv
-// refactor: confirms LAPACK compute precision (and hence the numeric RESULT) is
-// unchanged by the output-first `Out` reshaping -- only the return container's
-// element type moved.
+// check_linalg.cpp -- runnable value spot-check for the lu/lup/det/inv refactor and
+// the three pre-existing correctness fixes it surfaced:
+//   1. Matrix::Det() compares against a typed zero (complex Det instantiates).
+//   2. det() folds in the LU row-permutation SIGN (correct determinant sign).
+//   3. rank() takes the magnitude of the singular values (supports complex;
+//      unblocks inv()/pinv() on complex matrices).
 #include "MatSAR/math/LinearAlgebra.hpp"
 #include <cmath>
 #include <cstdio>
@@ -16,36 +18,67 @@ static bool approx(double got, double want, double atol = 1e-9) {
 }
 
 int main() {
-    // NOTE: the task's suggested example, A = [[4,3],[6,3]], triggers a partial-pivot
-    // row swap under LAPACKE_dgetrf2 (|6|>|4| in column 0). Math::det()'s body -- kept
-    // verbatim per the Phase 5A instructions -- computes `L.det() * prod(diag(U))` and
-    // never folds in the permutation matrix's sign, so any input requiring an ODD number
-    // of pivot swaps gets the WRONG SIGN (confirmed: that example yields +6, not -6; L, U,
-    // P returned by lup() are individually all correct -- P is just never consulted by
-    // det()). This is a pre-existing bug, unrelated to the Phase 5A signature refactor
-    // (byte-identical body before/after); flagged separately, not fixed here.
-    // A = [[4,1],[2,3]] avoids a pivot swap (|4|>|2| in column 0), so it exercises the
-    // refactor (Out-typed return, unchanged compute precision) without tripping over the
-    // unrelated sign bug. det = 4*3 - 1*2 = 10.
-    Matrix<float64> A = Matrix<float64>::fromRows({{4, 1},
-                                                    {2, 3}});
-
     bool ok = true;
 
-    // det(A) ~ 10
-    auto d = matsar::Math::det(A);
-    double dv = d(0);
-    if (!approx(dv, 10.0)) {
-        std::printf("FAIL: det(A) = %f, want 10\n", dv);
+    // ---- det SIGN regression guard (the permutation-sign fix) ----------------
+    // [[4,3],[6,3]] needs an ODD pivot swap under LAPACK partial pivoting, so it is
+    // the canonical case that used to return +6 instead of the correct -6.
+    auto d1 = Matrix<float64>::fromRows({{4, 3},
+                                         {6, 3}});
+    auto d2 = Matrix<float64>::fromRows({{1, 2},
+                                         {3, 4}});
+    auto d3 = Matrix<float64>::fromRows({{2, 0},
+                                         {0, 3}});
+    auto d4 = Matrix<float64>::fromRows({{1, 2, 3},
+                                         {4, 5, 6},
+                                         {7, 8, 10}});
+
+    double v1 = matsar::Math::det(d1)(0);
+    double v2 = matsar::Math::det(d2)(0);
+    double v3 = matsar::Math::det(d3)(0);
+    double v4 = matsar::Math::det(d4)(0);
+    std::printf("det([[4,3],[6,3]])              = %.10g  (want -6)\n", v1);
+    std::printf("det([[1,2],[3,4]])              = %.10g  (want -2)\n", v2);
+    std::printf("det([[2,0],[0,3]])              = %.10g  (want  6)\n", v3);
+    std::printf("det([[1,2,3],[4,5,6],[7,8,10]]) = %.10g  (want -3)\n", v4);
+    if (!approx(v1, -6.0)) { std::printf("FAIL: det case 1 (want -6)\n"); ok = false; }
+    if (!approx(v2, -2.0)) { std::printf("FAIL: det case 2 (want -2)\n"); ok = false; }
+    if (!approx(v3, 6.0))  { std::printf("FAIL: det case 3 (want  6)\n"); ok = false; }
+    if (!approx(v4, -3.0)) { std::printf("FAIL: det case 4 (want -3)\n"); ok = false; }
+
+    // ---- real inv round-trip (compute precision unchanged) -------------------
+    auto A = Matrix<float64>::fromRows({{4, 1},
+                                        {2, 3}});
+    auto Ainv = matsar::Math::inv(A);
+    auto Ione = mmul(A, Ainv);
+    if (!approx(Ione(0, 0), 1.0) || !approx(Ione(1, 1), 1.0) ||
+        !approx(Ione(0, 1), 0.0) || !approx(Ione(1, 0), 0.0)) {
+        std::printf("FAIL: mmul(A, inv(A)) = [[%f,%f],[%f,%f]], want identity\n",
+                    Ione(0, 0), Ione(0, 1), Ione(1, 0), Ione(1, 1));
         ok = false;
     }
 
-    // inv(A) round-trips: mmul(A, inv(A)) ~ I
-    auto Ainv = matsar::Math::inv(A);
-    auto I = mmul(A, Ainv);
-    double i00 = I(0, 0), i01 = I(0, 1), i10 = I(1, 0), i11 = I(1, 1);
-    if (!approx(i00, 1.0) || !approx(i11, 1.0) || !approx(i01, 0.0) || !approx(i10, 0.0)) {
-        std::printf("FAIL: mmul(A, inv(A)) = [[%f,%f],[%f,%f]], want identity\n", i00, i01, i10, i11);
+    // ---- complex inv round-trip (unblocked by the Det + rank fixes) ----------
+    // C = [[2, i],[i, 2]], det = 4 - i*i = 5 (non-singular).
+    auto C = Matrix<complex128>::fromRows({{complex128(2, 0), complex128(0, 1)},
+                                           {complex128(0, 1), complex128(2, 0)}});
+    auto Cinv = matsar::Math::inv(C);
+    auto Cid = mmul(C, Cinv);
+    complex128 e00 = Cid(0, 0), e01 = Cid(0, 1), e10 = Cid(1, 0), e11 = Cid(1, 1);
+    if (std::abs(e00 - complex128(1, 0)) > 1e-9 || std::abs(e11 - complex128(1, 0)) > 1e-9 ||
+        std::abs(e01) > 1e-9 || std::abs(e10) > 1e-9) {
+        std::printf("FAIL: mmul(C, inv(C)) = [[(%g,%g),(%g,%g)],[(%g,%g),(%g,%g)]], want complex identity\n",
+                    e00.real(), e00.imag(), e01.real(), e01.imag(),
+                    e10.real(), e10.imag(), e11.real(), e11.imag());
+        ok = false;
+    }
+
+    // ---- rank of a rank-deficient matrix -------------------------------------
+    auto R = Matrix<float64>::fromRows({{1, 2},
+                                        {2, 4}});
+    auto rk = matsar::Math::rank(R);
+    if (rk != 1) {
+        std::printf("FAIL: rank([[1,2],[2,4]]) = %llu, want 1\n", (unsigned long long) rk);
         ok = false;
     }
 
