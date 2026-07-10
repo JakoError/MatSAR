@@ -366,15 +366,18 @@ namespace matsar {
          * geomean computes the product of n numbers, then takes the nth root
          * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
-        template<RealType dType>
-        auto geomean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<real_max> {
+        template<typename TargetType = void, RealType dType>
+        auto geomean(const Matrix<dType> &m, msize_type dim = 1)
+                -> Matrix<resolve_t<TargetType, real_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, real_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "geomean: output type must be Calculable");
             msize_type dim_idx = dim - 1;
             if (m.isEmpty())
                 return {};
             if (dim_idx >= m.getDims())
                 return {m};
             if (dim_idx < 0) {
-                dType mul = 1;
+                Out mul = 1;
                 for (auto &i: m)
                     mul *= i;
                 return {pow(mul, 1. / m.getSize())};
@@ -387,7 +390,7 @@ namespace matsar {
 
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
-            Matrix<real_max> r(r_shape, 1, m.getData());//the product must be initialized to 1
+            Matrix<Out> r(r_shape, 1, m.getData());//the product must be initialized to 1
 
             auto iter_r = r.getData();
             auto iter_m = m.getData();
