@@ -209,23 +209,35 @@ namespace matsar {
         /**
          * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
-        template<Calculable TargetType, Calculable dType>
-        auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1) -> Matrix<TargetType> {
+        template<typename TargetType = void, Calculable dType>
+        auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1)
+                -> Matrix<resolve_t<TargetType, magnitude_t<dType>>> {
+            using Out = resolve_t<TargetType, magnitude_t<dType>>;
+            static_assert(calculable_type<Out>::value, "var: output type must be Calculable");
             msize_type dim_idx = dim - 1;
             if (m.isEmpty()) return {};
-            if (dim_idx >= m.getDims()) return {m};
+            if (dim_idx >= m.getDims()) {
+                // magnitude_t collapses complex dType to a real Out, so the identity
+                // "return the matrix itself" has no type-preserving meaning here; fall
+                // back to the magnitude (abs) for complex inputs, keep the exact prior
+                // identity behavior for real inputs (Out == dType there).
+                if constexpr (complex_type<dType>::value) {
+                    return {abs(m)};
+                } else {
+                    return {m};
+                }
+            }
             auto n = m.getSize();
             auto denom = w ? n - 1 : n;
-            return {sum<dType>(abs(m - sum<dType>(m, dim) / n) ^ 2, dim) / denom};
-        }
-
-        // Single dispatch overload (RealType/ComplexType collapse to `typename` in C++17).
-        // Preserves the prior return types: complex inputs -> complex_max, else -> real_max.
-        template<Calculable dType>
-        auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1)
-                -> Matrix<std::conditional_t<std::is_same_v<dType, complex64> || std::is_same_v<dType, complex128>, complex_max, real_max>> {
-            using Out = std::conditional_t<std::is_same_v<dType, complex64> || std::is_same_v<dType, complex128>, complex_max, real_max>;
-            return var<Out, dType>(m, w, dim);
+            // Divide in-place (operator/=) rather than via the free Matrix operator/,
+            // which widens complex64 -> complex128 for ANY scalar divisor (arith_promote_t
+            // unconditionally promotes complex<float> to complex<double>). That widening
+            // would leave m (complex64) minus a complex128 mean with no valid operator-
+            // overload (Matrix operator- has no mixed-precision-complex overload). Staying
+            // in real_promote_t<dType> precision throughout keeps the subtraction homogeneous.
+            auto mean_m = sum<real_promote_t<dType>>(m, dim);
+            mean_m /= n;
+            return {sum<Out>(abs(m - mean_m) ^ 2, dim) / denom};
         }
     }
     ///Distribution functions
