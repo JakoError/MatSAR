@@ -422,7 +422,7 @@ namespace matsar {
             if (dim_idx < 0) {
                 Out sum = 0.;
                 for (auto &i: m)
-                    sum += i;
+                    sum += 1. / i;
                 return {m.getSize() / sum};
             }
             auto shape = m.getShape();
