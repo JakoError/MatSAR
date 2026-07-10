@@ -203,8 +203,8 @@ namespace matsar {
             if (dim_idx >= m.getDims())
                 return {m};
             if (dim_idx < 0)
-                return sum<TargetType, dType>(m / float_max(m.getSize()), dim);
-            return sum<TargetType, dType>(m / float_max(m.getShape()[dim_idx]), dim);
+                return sum<dType>(m / float_max(m.getSize()), dim);
+            return sum<dType>(m / float_max(m.getShape()[dim_idx]), dim);
         }
 
         // Single dispatch overload (RealType/ComplexType both become `typename` in C++17, so
@@ -226,7 +226,7 @@ namespace matsar {
             if (dim_idx >= m.getDims()) return {m};
             auto n = m.getSize();
             auto denom = w ? n - 1 : n;
-            return {sum<TargetType, dType>(abs(m - sum<TargetType, dType>(m, dim) / n) ^ 2, dim) / denom};
+            return {sum<dType>(abs(m - sum<dType>(m, dim) / n) ^ 2, dim) / denom};
         }
 
         // Single dispatch overload (RealType/ComplexType collapse to `typename` in C++17).

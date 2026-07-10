@@ -357,7 +357,9 @@ namespace matsar {
          */
         template<typename dType>
         auto nnz(const Matrix<dType> &m) -> msize_type {
-            return sum<bool, msize_type>(m != 0, none)(0);
+            Matrix<msize_type> mask = apply_function<bool, msize_type>(
+                    m != 0, [](const bool &x) { return static_cast<msize_type>(x); });
+            return sum<msize_type>(mask, none)(0);
         }
 
         /**

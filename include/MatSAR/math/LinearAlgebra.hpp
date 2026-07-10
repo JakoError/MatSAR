@@ -345,7 +345,9 @@ namespace matsar {
         template<typename dType>
         auto rank(const Matrix<dType> &m, float64 tol) -> msize_type {
             Matrix<float64> s = matsar::Math::svd(m, false, false)[0];
-            return msize_type(matsar::Math::sum(s > tol)(0));
+            Matrix<msize_type> mask = matsar::apply_function<bool, msize_type>(
+                    s > tol, [](const bool &x) { return static_cast<msize_type>(x); });
+            return msize_type(matsar::Math::sum<msize_type>(mask)(0));
         }
 
         template<typename dType>
@@ -353,7 +355,9 @@ namespace matsar {
             Matrix<float64> s = matsar::Math::svd(m, false, false)[0];
             // TODO: Check the integrity
             auto tol = m.getLength() * matsar::Util::TypeUtil::eps(s.Max());
-            return msize_type(matsar::Math::sum(s > tol)(0));
+            Matrix<msize_type> mask = matsar::apply_function<bool, msize_type>(
+                    s > tol, [](const bool &x) { return static_cast<msize_type>(x); });
+            return msize_type(matsar::Math::sum<msize_type>(mask)(0));
         }
     }
 
