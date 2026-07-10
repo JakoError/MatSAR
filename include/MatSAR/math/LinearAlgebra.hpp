@@ -1178,9 +1178,9 @@ namespace matsar {
             return res.T();
         }
 
-        template<typename T, typename FT>
-        auto funm(const Matrix<T> &A, FT matrix_fun, const string &fun_name) -> Matrix<T> {
-            vector<Matrix<T>> V_D_W = eig(A);
+        template<typename dType, typename FT>
+        auto funm(const Matrix<dType> &A, FT matrix_fun, const string &fun_name) -> Matrix<dType> {
+            vector<Matrix<dType>> V_D_W = eig(A);
             auto inter_m = diag(V_D_W[1]);
             matrix_fun(inter_m, fun_name);
             return mmul(mmul(inv(V_D_W[0]), diag(inter_m)), (V_D_W[0]));
