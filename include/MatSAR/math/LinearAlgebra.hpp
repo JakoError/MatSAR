@@ -575,16 +575,10 @@ namespace matsar {
     }
 
     namespace Math {
-        template<RealType RT>
-        auto det(const Matrix<RT> &m) -> Matrix<real_max> {
-            auto lup_res = lup(m);
-            auto &L = std::get<0>(lup_res);
-            auto &U = std::get<1>(lup_res);
-            return L.det() * prod(diag(U));
-        }
-
-        template<ComplexType CT>
-        auto det(const Matrix<CT> &m) -> Matrix<complex_max> {
+        template<typename TargetType = void, Calculable dType>
+        auto det(const Matrix<dType> &m) -> Matrix<resolve_t<TargetType, linalg_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "det: output type must be Calculable");
             auto lup_res = lup(m);
             auto &L = std::get<0>(lup_res);
             auto &U = std::get<1>(lup_res);
