@@ -203,7 +203,7 @@ namespace matsar {
 
                 auto m = static_cast<lapack_int>(A.getShape()[0]), n = static_cast<lapack_int>(A.getShape()[1]);
 
-                auto &k = min(m, n);
+                auto &k = std::min(m, n);
                 mshape_type S_shape = Util::VectorUtil::cut(A.getShape(), 1);
                 S_shape[0] = k;
                 auto S = matsar::zeros<T>(S_shape);
@@ -256,7 +256,7 @@ namespace matsar {
             auto do_svd(const Matrix<complex<T>> &A, const bool &compute_uv, const bool &full_matrices) -> vector<Matrix<complex<T>>> {
                 auto m = static_cast<lapack_int>(A.getShape()[0]), n = static_cast<lapack_int>(A.getShape()[1]);
 
-                auto &k = min(m, n);
+                auto &k = std::min(m, n);
                 mshape_type S_shape = cut(A.getShape(), 1);
                 S_shape[0] = k;
                 auto S = zeros<T>(S_shape);
@@ -695,7 +695,7 @@ namespace matsar {
             if (!fA.is2D())
                 throw_value_error("eig requires a 2D matrix or a matrix that can be expanded to 2D");
             lapack_int m = fA.getShape()[0], n = fA.getShape()[1];
-            mshape_type S_shape = {min(m, n)};
+            mshape_type S_shape = {std::min(m, n)};
             Matrix<float64> S(S_shape, 0., A.getData());
             unique_ptr<float64> size(new float64);
             unique_ptr<float64[]> wr(new float64[m]);
@@ -1086,7 +1086,7 @@ namespace matsar {
                 return {};
             }
             vector<double> idx;
-            int num = min(m, n);
+            int num = std::min(m, n);
             vector<vector<double>> res;
             int k = -m + 1;
             //m >=n below the diagonal counts from one; m<n, the part below the diagonal must first be filled with 0
@@ -1167,7 +1167,7 @@ namespace matsar {
             }
             Matrix<double> temp(A.T());
             int m = temp.getShape()[0], n = temp.getShape()[1];
-            int len = min(m, n);
+            int len = std::min(m, n);
             vector<vector<double>> res_v;
             for (auto iter_d = d.begin(); iter_d != d.end(); iter_d++) {
                 int k = (int) (*iter_d);
