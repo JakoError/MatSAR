@@ -789,26 +789,28 @@ namespace matsar {
             }
             V_D_s[0] = V;
             V_D_s[1] = D;
-            V_D_s[2] = Matrix<dType>(s);
+            V_D_s[2] = Matrix<float64>(s);
             return V_D_s;
         }
 
         //pinv function
-        template<typename dType>
-        auto pinv(const Matrix<dType> &matrix) -> Matrix<dType> {
-            Matrix<float64> transposed = matrix.T();
+        template<typename TargetType = void, Calculable dType>
+        auto pinv(const Matrix<dType> &matrix) -> Matrix<resolve_t<TargetType, linalg_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "pinv: output type must be Calculable");
+            Matrix<Out> transposed = matrix.T();
             int rows = matrix.getShape()[0];  //rows
             int cols = matrix.getShape()[1];  //cols
             if (rows > cols) {
-                Matrix<float64> product = mmul(transposed, matrix);
-                Matrix<float64> inverse = inv(product);
-                Matrix<float64> res = mmul(inverse, transposed);
+                Matrix<Out> product = mmul(transposed, matrix);
+                Matrix<Out> inverse = inv(product);
+                Matrix<Out> res = mmul(inverse, transposed);
                 //res = res.reshape({ n*origRows,n*origCols });
                 return res;
             } else {
-                Matrix<float64> product = mmul(matrix, transposed);
-                Matrix<float64> inverse = inv(product);
-                Matrix<float64> res = mmul(transposed, inverse);
+                Matrix<Out> product = mmul(matrix, transposed);
+                Matrix<Out> inverse = inv(product);
+                Matrix<Out> res = mmul(transposed, inverse);
                 //res = res.reshape({ n*origRows,n*origCols });
                 return res;
             }

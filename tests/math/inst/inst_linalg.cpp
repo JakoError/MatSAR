@@ -25,4 +25,14 @@ void inst_linalg() {
     // rank() complex bugs that previously blocked these bodies are now fixed).
     { auto r = Math::det(eye<complex64>(2)); static_assert(std::is_same_v<decltype(r), Matrix<complex128>>, "det c64->c128"); }
     { auto r = Math::inv(eye<complex64>(2)); static_assert(std::is_same_v<decltype(r), Matrix<complex128>>, "inv c64->c128"); }
+
+    // pinv: Matrix<Out>
+    { auto r = Math::pinv(eye<int32>(2));     static_assert(std::is_same_v<decltype(r), Matrix<float64>>,    "pinv int->f64"); }
+    { auto r = Math::pinv(eye<float32>(2));   static_assert(std::is_same_v<decltype(r), Matrix<float64>>,    "pinv f32->f64"); }
+    { auto r = Math::pinv(eye<complex64>(2)); static_assert(std::is_same_v<decltype(r), Matrix<complex128>>, "pinv c64->c128"); }
+    // eig / condeig: vector<Matrix<Out>>
+    { auto r = Math::eig(eye<float64>(2));     static_assert(std::is_same_v<decltype(r), std::vector<Matrix<float64>>>,    "eig f64->vec<f64>"); }
+    { auto r = Math::eig(eye<complex64>(2));   static_assert(std::is_same_v<decltype(r), std::vector<Matrix<complex128>>>, "eig c64->vec<c128>"); }
+    { auto r = Math::condeig(eye<float64>(2)); static_assert(std::is_same_v<decltype(r), std::vector<Matrix<float64>>>,    "condeig f64->vec<f64>"); }
+    { auto r = Math::condeig(eye<complex64>(2));static_assert(std::is_same_v<decltype(r), std::vector<Matrix<complex128>>>,"condeig c64->vec<c128>"); }
 }

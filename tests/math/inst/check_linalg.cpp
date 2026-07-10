@@ -73,6 +73,19 @@ int main() {
         ok = false;
     }
 
+    // ---- pinv round-trip (Phase 5B: element-type threading only, compute unchanged) ----
+    auto P = Matrix<float64>::fromRows({{4, 1},
+                                        {2, 3}});
+    auto Pinv = matsar::Math::pinv(P);
+    auto Prt = mmul(mmul(P, Pinv), P);
+    if (!approx(Prt(0, 0), P(0, 0), 1e-6) || !approx(Prt(0, 1), P(0, 1), 1e-6) ||
+        !approx(Prt(1, 0), P(1, 0), 1e-6) || !approx(Prt(1, 1), P(1, 1), 1e-6)) {
+        std::printf("FAIL: mmul(mmul(P,pinv(P)),P) = [[%f,%f],[%f,%f]], want P = [[%f,%f],[%f,%f]]\n",
+                    Prt(0, 0), Prt(0, 1), Prt(1, 0), Prt(1, 1),
+                    P(0, 0), P(0, 1), P(1, 0), P(1, 1));
+        ok = false;
+    }
+
     // ---- rank of a rank-deficient matrix -------------------------------------
     auto R = Matrix<float64>::fromRows({{1, 2},
                                         {2, 4}});
