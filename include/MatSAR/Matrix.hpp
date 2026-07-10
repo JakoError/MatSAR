@@ -1060,8 +1060,10 @@ namespace matsar {
 
         template<typename T>
         Matrix(const initializer_list<Matrix<T>> &ms, size_type dim = 1) {
-            if (typeHigher<T, dType>())
-                throw_type_loss_exception<T, dType>(false);
+            if constexpr (!std::is_same_v<T, dType>) {
+                if (typeHigher<T, dType>())
+                    throw_type_loss_exception<T, dType>(false);
+            }
             vector<Matrix<dType>> mv(ms.begin(), ms.end());
             this->operator=(cat(dim, mv));
         };
