@@ -133,8 +133,11 @@ namespace matsar {
          * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          * @return the median along the given dimension of the matrix
          */
-        template<Calculable TargetType, Calculable dType>
-        auto median(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<TargetType> {
+        template<typename TargetType = void, Calculable dType>
+        auto median(const Matrix<dType> &m, msize_type dim = 1)
+                -> Matrix<resolve_t<TargetType, real_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, real_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "median: output type must be Calculable");
             auto dim_idx = dim - 1;
             if (dim_idx >= m.getDims())
                 return {m};
@@ -142,9 +145,10 @@ namespace matsar {
                 auto sort_m = m.sort();
                 auto iter = sort_m.getData() + sort_m.getSize() / 2;
                 if (sort_m.getSize() % 2 == 0) {
-                    return {(*(iter - 1) + *iter) / 2.};
+                    return {(real_promote_t<dType>(*(iter - 1)) + real_promote_t<dType>(*iter)) /
+                            real_promote_t<dType>(2)};
                 } else {
-                    return {*iter / 1.};
+                    return {real_promote_t<dType>(*iter) / real_promote_t<dType>(1)};
                 }
             }
             auto shape = m.getShape();
@@ -156,7 +160,7 @@ namespace matsar {
             auto sort_m = matsar::Math::sort(m, dim);
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
-            Matrix<TargetType> r(r_shape, 0., m.getData());
+            Matrix<Out> r(r_shape, 0., m.getData());
 
             auto iter_r = r.getData();
             auto iter_m = sort_m.getData();
@@ -165,7 +169,9 @@ namespace matsar {
                 iter_m += pick;
                 for (msize_type i = 0; i < unit_num; ++i) {
                     for (msize_type j = 0; j < step_size; ++j) {
-                        *(iter_r++) = (*(iter_m + j) + *(iter_m + j + step_size)) / 2.;
+                        *(iter_r++) = (real_promote_t<dType>(*(iter_m + j)) +
+                                       real_promote_t<dType>(*(iter_m + j + step_size))) /
+                                      real_promote_t<dType>(2);
                     }
                     iter_m += unit_size;
                 }
@@ -180,17 +186,6 @@ namespace matsar {
                 }
             }
             return r;
-        }
-
-        // Single dispatch overload. C++17 has no concepts, so IntType/FloatType/ComplexType
-        // all expand to `typename` -- the old Float/Complex overloads then redefined each
-        // other. One overload picks the output type: integers -> real_max, floating and
-        // complex keep their own type.
-        template<Calculable dType>
-        auto median(const Matrix<dType> &m, msize_type dim = 1)
-                -> Matrix<std::conditional_t<std::is_integral_v<dType>, real_max, dType>> {
-            using Out = std::conditional_t<std::is_integral_v<dType>, real_max, dType>;
-            return median<Out, dType>(m, dim);
         }
 
         /**

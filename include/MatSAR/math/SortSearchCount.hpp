@@ -22,13 +22,21 @@
 namespace matsar {
     namespace Math {
         namespace Internal {
+            // std::sort's default comparator (std::less) resolves '<' via ADL on the
+            // element type alone, which only ever searches namespace std for
+            // std::complex -- it can never see matsar's magnitude-based operator< for
+            // complex<T1,T2> (NumberOperation.hpp), which lives in namespace matsar and
+            // is unreachable that way. An explicit lambda comparator is looked up
+            // unqualified from this point of definition (matsar::Math::Internal), which
+            // includes the enclosing matsar namespace, so it finds that operator< for
+            // complex while still using the built-in '<' for every other Calculable type.
             template<typename ITER_SRC_T, typename ITER_DST_T, typename WORT_T=void>
             class SORT_UP {
             public:
                 void operator()(ITER_SRC_T src_iter, ITER_DST_T dst_iter, const msize_type &n,
                                 __attribute__((unused)) void *work) {
                     std::copy_n(src_iter, n, dst_iter);
-                    std::sort(dst_iter, dst_iter + n);
+                    std::sort(dst_iter, dst_iter + n, [](const auto &a, const auto &b) { return a < b; });
                 }
             };
 
@@ -38,7 +46,7 @@ namespace matsar {
                 void operator()(ITER_SRC_T src_iter, ITER_DST_T dst_iter, const msize_type &n,
                                 __attribute__((unused)) void *work) {
                     std::copy_n(src_iter, n, dst_iter);
-                    std::sort(dst_iter, dst_iter + n);
+                    std::sort(dst_iter, dst_iter + n, [](const auto &a, const auto &b) { return a < b; });
                     std::reverse(dst_iter, dst_iter + n);
                 }
             };
