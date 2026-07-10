@@ -7,6 +7,7 @@
 //   3. rank() takes the magnitude of the singular values (supports complex;
 //      unblocks inv()/pinv() on complex matrices).
 #include "MatSAR/math/LinearAlgebra.hpp"
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -84,6 +85,50 @@ int main() {
                     Prt(0, 0), Prt(0, 1), Prt(1, 0), Prt(1, 1),
                     P(0, 0), P(0, 1), P(1, 0), P(1, 1));
         ok = false;
+    }
+
+    // ---- complex pinv correctness (conjugate-transpose fix) ------------------
+    // NOTE: for a SQUARE invertible matrix, (X(A)*A)^-1 * X(A) collapses to A^-1
+    // *algebraically* for ANY invertible "transpose-like" op X -- including a plain
+    // (non-conjugated) transpose -- via (X(A)*A)^-1 = A^-1*X(A)^-1, so a
+    // pinv(square-invertible) == inv(square-invertible) check does NOT discriminate
+    // this bug (verified empirically: it still passes with the buggy plain-transpose
+    // code). The property that DOES require the conjugate transpose is that
+    // A*pinv(A) must be Hermitian for a rectangular (here: tall, full column rank)
+    // complex A -- with a plain transpose this was observed to be off by ~0.69 max
+    // abs deviation; with the conjugate-transpose fix it is 0 to machine precision.
+    auto Cx = Matrix<complex128>::fromRows({{complex128(1, 1), complex128(0, 0)},
+                                            {complex128(0, 0), complex128(1, 0)},
+                                            {complex128(1, 0), complex128(1, -1)}});
+    auto CxPinv = matsar::Math::pinv(Cx);
+    auto CxCxp = mmul(Cx, CxPinv);
+    auto CxCxpH = CxCxp.conj().T();
+    double herm_diff = 0;
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+            herm_diff = std::max(herm_diff, std::abs(CxCxp(i, j) - CxCxpH(i, j)));
+    std::printf("max |A*pinv(A) - (A*pinv(A))^H| = %g  (want ~0; complex pseudo-inverse Hermitian-projector check)\n",
+                herm_diff);
+    if (herm_diff > 1e-6) {
+        std::printf("FAIL: A*pinv(A) is not Hermitian for complex tall Cx (max |diff| = %g)\n", herm_diff);
+        ok = false;
+    } else {
+        std::printf("PASS: A*pinv(A) is Hermitian within 1e-6 -- complex pseudo-inverse correct\n");
+    }
+
+    // Moore-Penrose property: A * pinv(A) * A == A (sanity check; holds regardless of
+    // conjugation for full column rank A, so it is not a discriminator by itself, but
+    // it must still hold).
+    auto CxRt = mmul(CxCxp, Cx);
+    bool mp_ok = true;
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 2; ++j)
+            if (std::abs(CxRt(i, j) - Cx(i, j)) > 1e-6) mp_ok = false;
+    if (!mp_ok) {
+        std::printf("FAIL: mmul(mmul(Cx,pinv(Cx)),Cx) != Cx\n");
+        ok = false;
+    } else {
+        std::printf("PASS: mmul(mmul(Cx,pinv(Cx)),Cx) == Cx within 1e-6 (Moore-Penrose property holds)\n");
     }
 
     // ---- rank of a rank-deficient matrix -------------------------------------

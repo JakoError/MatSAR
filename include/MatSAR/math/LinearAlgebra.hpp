@@ -784,7 +784,15 @@ namespace matsar {
         auto pinv(const Matrix<dType> &matrix) -> Matrix<resolve_t<TargetType, linalg_promote_t<dType>>> {
             using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
             static_assert(calculable_type<Out>::value, "pinv: output type must be Calculable");
-            Matrix<Out> transposed = matrix.T();
+            // Normal-equation transpose must be the conjugate (Hermitian) transpose Aᴴ for
+            // the result to be the true Moore-Penrose pseudo-inverse. For real dType,
+            // conjugation is a no-op, so this collapses to the plain transpose exactly as
+            // before.
+            Matrix<Out> transposed;
+            if constexpr (complex_type<dType>::value)
+                transposed = matrix.conj().T();
+            else
+                transposed = matrix.T();
             int rows = matrix.getShape()[0];  //rows
             int cols = matrix.getShape()[1];  //cols
             if (rows > cols) {
