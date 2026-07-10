@@ -485,9 +485,12 @@ namespace matsar {
             return LAPACKE_zgetrf2(CblasColMajor, m, n, data, lda, ipiv);
         }
 
-        template<Calculable TargetType, Calculable dType>
-        auto lu(const Matrix<dType> &M) -> tuple<Matrix<TargetType>, Matrix<TargetType>> {
-            Matrix<TargetType> fm(M);
+        template<typename TargetType = void, Calculable dType>
+        auto lu(const Matrix<dType> &M)
+                -> tuple<Matrix<resolve_t<TargetType, linalg_promote_t<dType>>>, Matrix<resolve_t<TargetType, linalg_promote_t<dType>>>> {
+            using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "lu: output type must be Calculable");
+            Matrix<Out> fm(M);
             fm.expandShape(2);
             if (!fm.is2D())
                 throw_value_error("lu requires a 2D matrix or a matrix that can be expanded to 2D");
@@ -514,32 +517,19 @@ namespace matsar {
 //            cout << P.toString("p") << endl;
             // P is the row-permutation matrix; applying it to L is a MATRIX product,
             // not element-wise -- use mmul/operator% (operator* is Hadamard). Normalize
-            // to Matrix<TargetType> since mmul promotes via its (x + 0.) default type.
+            // to Matrix<Out> since mmul promotes via its (x + 0.) default type.
             if (m == n) {
-                Matrix<TargetType> L = mmul(P, tril(fm, -1) + eye<TargetType>(m, n));
+                Matrix<Out> L = mmul(P, tril(fm, -1) + eye<Out>(m, n));
                 return {L, triu(fm)};
             } else if (m > n) {
-                Matrix<TargetType> L = mmul(P, tril(fm, -1) + eye<TargetType>(m, n));
+                Matrix<Out> L = mmul(P, tril(fm, -1) + eye<Out>(m, n));
                 auto U = triu(fm)({Range<msize_type>(n), Range<msize_type>(n)});
                 return {L, U};
             } else {
-                Matrix<TargetType> PL = mmul(P, tril(fm, -1) + eye<TargetType>(m, n));
+                Matrix<Out> PL = mmul(P, tril(fm, -1) + eye<Out>(m, n));
                 auto L = PL({Range<msize_type>(m), Range<msize_type>(m)});
                 return {L, triu(fm)};
             }
-        }
-
-        template<RealType RT>
-        auto lu(const Matrix<RT> &M) -> tuple<Matrix<float64>, Matrix<float64>> {
-            return lu<float64, float64>(Matrix<float64>(M));
-        }
-
-        auto lu(const Matrix<complex64> &M) -> tuple<Matrix<complex64>, Matrix<complex64>> {
-            return lu<complex64, complex64>(M);
-        }
-
-        auto lu(const Matrix<complex128> &M) -> tuple<Matrix<complex128>, Matrix<complex128>> {
-            return lu<complex128, complex128>(M);
         }
 
         template<Calculable TargetType, Calculable dType>
