@@ -582,7 +582,33 @@ namespace matsar {
             auto lup_res = lup(m);
             auto &L = std::get<0>(lup_res);
             auto &U = std::get<1>(lup_res);
-            return L.det() * prod(diag(U));
+            auto &P = std::get<2>(lup_res);
+            // The factorization is P * A = L * U. det(A) must fold in the sign of the
+            // row permutation P; L.det() * prod(diag(U)) alone omits it, so any matrix
+            // needing an ODD number of row swaps would otherwise get the WRONG sign
+            // (e.g. det([[4,3],[6,3]]) = -6, not +6). lup fills P with P(i, perm[i]) = 1,
+            // i.e. the single 1 in row i sits at column perm[i]. Compute
+            // det(P) = (-1)^(n - cycles) directly from the permutation -- do NOT call
+            // Matrix::Det on P (that would recurse into the cofactor path). |det(P)| = 1
+            // and det(P) == det(P^-1) == det(P^T), so the orientation is irrelevant to the sign.
+            msize_type np = P.getShape()[0];
+            vector<msize_type> perm(np);
+            for (msize_type i = 0; i < np; ++i)
+                for (msize_type j = 0; j < np; ++j)
+                    if (P(i, j) != 0) {
+                        perm[i] = j;
+                        break;
+                    }
+            vector<bool> visited(np, false);
+            msize_type cycles = 0;
+            for (msize_type i = 0; i < np; ++i) {
+                if (visited[i]) continue;
+                ++cycles;
+                for (msize_type k = i; !visited[k]; k = perm[k])
+                    visited[k] = true;
+            }
+            Out perm_sign = ((np - cycles) % 2 == 0) ? Out(1) : Out(-1);
+            return (perm_sign * L.det()) * prod(diag(U));
         }
     }
 
