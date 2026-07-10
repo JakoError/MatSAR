@@ -587,28 +587,25 @@ namespace matsar {
     }
 
     namespace Math {
-        // element type the LAPACK routines compute in: real_max for real inputs
-        // (integers included), complex_max for complex inputs.
-        template<typename T>
-        using la_promote_t = std::conditional_t<matsar::complex_type<T>::value, complex_max, real_max>;
-
-        template<Calculable dType>
-        auto inv(const Matrix<dType> &m) -> Matrix<la_promote_t<dType>> {
-            using Out = la_promote_t<dType>;
+        template<typename TargetType = void, Calculable dType>
+        auto inv(const Matrix<dType> &m) -> Matrix<resolve_t<TargetType, linalg_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "inv: output type must be Calculable");
+            using Compute = linalg_promote_t<dType>;
             if (!m.isSquare() || m.getDims() != 2)
                 throw_value_error("matrix inversion requires a 2D square matrix");
 
             auto n = m.getShape()[0];
-            Matrix<Out> A(m), X({n, n}, 0., m.getData());
+            Matrix<Compute> A(m), X({n, n}, 0., m.getData());
             lapack_int iter, info;
             unique_ptr<lapack_int[]> IPIV(new lapack_int[n]);
 
             if constexpr (matsar::complex_type<dType>::value)      // <- the ONLY real/complex difference
                 info = LAPACKE_zcgesv(CblasColMajor, n, n, A.getData(), n, IPIV.get(),
-                                      eye<Out>(n).getData(), n, X.getData(), n, &iter);
+                                      eye<Compute>(n).getData(), n, X.getData(), n, &iter);
             else
                 info = LAPACKE_dsgesv(CblasColMajor, n, n, A.getData(), n, IPIV.get(),
-                                      eye<Out>(n).getData(), n, X.getData(), n, &iter);
+                                      eye<Compute>(n).getData(), n, X.getData(), n, &iter);
 
             if (info < 0)
                 throw_value_error("inv argument error " + to_string(info));
