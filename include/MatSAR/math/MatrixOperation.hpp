@@ -77,9 +77,9 @@ namespace matsar {
             return apply_function<dType, TargetType>(m, [](const dType &x) { return matsar::fix(x); });
         }
 
-        template<IntType IT CheckInt(IT)>
-        static auto isPrime(const Matrix<IT> &m) -> Matrix<bool> {
-            return apply_function<IT, bool>(m, [](const IT &x) { return matsar::isPrime(x); });
+        template<IntType dType CheckInt(dType)>
+        static auto isPrime(const Matrix<dType> &m) -> Matrix<bool> {
+            return apply_function<dType, bool>(m, [](const dType &x) { return matsar::isPrime(x); });
         }
 
         template<IntType IT1, IntType IT2 CheckInt(IT1) CheckInt(IT2)>
@@ -122,8 +122,8 @@ namespace matsar {
         }
 
         ///FIXME Optimizable factorial algorithm using array to record data
-        template<typename IT, typename TargetType = float_max>
-        auto factorial(const Matrix<IT> &m) -> Matrix<TargetType> {
+        template<typename dType, typename TargetType = float_max>
+        auto factorial(const Matrix<dType> &m) -> Matrix<TargetType> {
             Matrix<TargetType> r(m);
             for (auto &i: r)
                 i = matsar::factorial<TargetType>(i);
@@ -239,9 +239,9 @@ namespace matsar {
             return m.T();
         }
 
-        template<typename T, typename TargetType = decltype(matsar::abs(std::declval<T>()))>
-        auto abs(const Matrix<T> &m) -> Matrix<TargetType> {
-            return apply_function(m, [](const T &x) { return matsar::abs(x); });
+        template<typename dType, typename TargetType = decltype(matsar::abs(std::declval<dType>()))>
+        auto abs(const Matrix<dType> &m) -> Matrix<TargetType> {
+            return apply_function(m, [](const dType &x) { return matsar::abs(x); });
         }
 
 //        template<Calculable dType>
