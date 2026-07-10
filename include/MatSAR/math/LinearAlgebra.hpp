@@ -452,11 +452,13 @@ namespace matsar {
             return r;
         }
 
-        template<Calculable dType>
-        auto trace(const Matrix<dType> &m) -> dType {
+        template<typename TargetType = void, Calculable dType>
+        auto trace(const Matrix<dType> &m) -> resolve_t<TargetType, accumulate_t<dType>> {
+            using Out = resolve_t<TargetType, accumulate_t<dType>>;
+            static_assert(calculable_type<Out>::value, "trace: output type must be Calculable");
             if (!m.isSquare() || m.getDims() > 2)
                 throw_value_error("trace requires the matrix to be square with 2 dimensions");
-            dType r = 0;
+            Out r = 0;
             for (msize_type i = 0; i < m.getShape()[0]; ++i)
                 r += m(i, i);
             return r;
