@@ -192,22 +192,17 @@ namespace matsar {
          * mean computes the mean of n values
          * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
-        template<Calculable TargetType, Calculable dType>
-        auto mean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<TargetType> {
+        template<typename TargetType = void, Calculable dType>
+        auto mean(const Matrix<dType> &m, msize_type dim = 1)
+                -> Matrix<resolve_t<TargetType, real_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, real_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "mean: output type must be Calculable");
             auto dim_idx = dim - 1;
             if (dim_idx >= m.getDims())
                 return {m};
             if (dim_idx < 0)
-                return sum<dType>(m / float_max(m.getSize()), dim);
-            return sum<dType>(m / float_max(m.getShape()[dim_idx]), dim);
-        }
-
-        // Single dispatch overload (RealType/ComplexType both become `typename` in C++17, so
-        // the two overloads used to redefine each other). Preserves the prior return type:
-        // every Calculable input maps to real_max.
-        template<Calculable dType>
-        auto mean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<real_max> {
-            return mean<real_max, dType>(m, dim);
+                return sum<Out>(m, dim) / float_max(m.getSize());
+            return sum<Out>(m, dim) / float_max(m.getShape()[dim_idx]);
         }
     }
     namespace Math {
