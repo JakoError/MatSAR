@@ -230,14 +230,13 @@ namespace matsar {
         }
 
 
-        template<typename dType,
-                typename TargetType=complex_max,
-                typename ConvertType=TargetType
-        >
+        template<typename TargetType = void, Calculable dType>
         auto fft(const Matrix<dType> &m,
                  Container<msize_type> dim_idx = 0,
                  Container<msize_type> N = none
-        ) -> Matrix<TargetType> {
+        ) -> Matrix<resolve_t<TargetType, complex_max>> {
+            using Out = resolve_t<TargetType, complex_max>;
+            static_assert(calculable_type<Out>::value, "fft: output type must be Calculable");
             // do global fft
             if (dim_idx == none) {
                 if (N == none || N == -1) {
@@ -247,7 +246,7 @@ namespace matsar {
                     throw_value_error(
                             string(string(__FUNCTION__)) + ": Invalid parameter for N as N = " + to_string(N));
                 }
-                return Internal::do_global_fft<ConvertType, TargetType>(m, N);
+                return Internal::do_global_fft<Out, Out>(m, N);
             }
 
             // validate dim_idx
@@ -261,18 +260,20 @@ namespace matsar {
                 throw_value_error(string(__FUNCTION__) + ": Invalid parameter for N as N = " + to_string(N));
             }
 
-            return Internal::do_fft<ConvertType, TargetType>(m, dim_idx, N);
+            return Internal::do_fft<Out, Out>(m, dim_idx, N);
         }
 
         /**
          * fftn, High n-dimensional discrete Fourier transform
          * @TargetType due to Cpp type constraint, define TargetType to confirm the middle procedure stay same type
          */
-        template<typename dType, typename TargetType=complex_max>
+        template<typename TargetType = void, Calculable dType>
         auto fftn(const Matrix<dType> &m,
                   Container<vector<Container<msize_type>>> dim_idxs = none,
                   Container<vector<Container<msize_type>>> Ns = none
-        ) -> Matrix<TargetType> {
+        ) -> Matrix<resolve_t<TargetType, complex_max>> {
+            using Out = resolve_t<TargetType, complex_max>;
+            static_assert(calculable_type<Out>::value, "fftn: output type must be Calculable");
             if (Ns == none && dim_idxs == none) {
 //                throw_value_error("fftn: parameter Ns and dim_idxs cannot be both None.");
                 // auto add each dim to calculate
@@ -302,7 +303,7 @@ namespace matsar {
                 }
             }
 
-            auto r = Matrix<TargetType>(m);
+            auto r = Matrix<Out>(m);
             for (decltype(n) i = 0; i < n; ++i) {
                 auto N = Ns[i];
                 auto dim_idx = dim_idxs[i];
@@ -317,7 +318,7 @@ namespace matsar {
                                 string(__FUNCTION__) + ": Invalid parameter for Ns as Ns[" + to_string(i) + "] = " +
                                 to_string(N));
                     }
-                    r = Internal::do_global_fft<TargetType, TargetType>(r, N);
+                    r = Internal::do_global_fft<Out, Out>(r, N);
                 } else {
                     // validate dim_idx
                     Util::ValueUtil::validate_dimension_index(dim_idx, m.getDims(), __FUNCTION__);
@@ -332,7 +333,7 @@ namespace matsar {
                                 to_string(N));
                     }
 
-                    r = Internal::do_fft<TargetType, TargetType>(r, dim_idx, N);
+                    r = Internal::do_fft<Out, Out>(r, dim_idx, N);
                 }
             }
             return r;
@@ -341,11 +342,13 @@ namespace matsar {
         /**
          * fft2 proxy to fftn for convenience
          */
-        template<typename dType, typename TargetType=complex_max>
+        template<typename TargetType = void, Calculable dType>
         auto fft2(const Matrix<dType> &m,
                   Container<vector<Container<msize_type>>> dim_idxs = {0, 1},
                   Container<vector<Container<msize_type>>> Ns = none
-        ) -> Matrix<TargetType> {
+        ) -> Matrix<resolve_t<TargetType, complex_max>> {
+            using Out = resolve_t<TargetType, complex_max>;
+            static_assert(calculable_type<Out>::value, "fft2: output type must be Calculable");
             // check there is only two values for Ns and dim_idxs
             if (Ns != none && Ns.data().size() != 2) {
                 throw_value_error(
@@ -365,7 +368,7 @@ namespace matsar {
                 dim_idxs = {none, none};
             }
 
-            return fftn<dType, TargetType>(m, dim_idxs, Ns);
+            return fftn<TargetType>(m, dim_idxs, Ns);
         }
     }
     namespace Math {
