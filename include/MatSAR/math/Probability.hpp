@@ -200,9 +200,27 @@ namespace matsar {
             auto dim_idx = dim - 1;
             if (dim_idx >= m.getDims())
                 return {m};
-            if (dim_idx < 0)
-                return sum<Out>(m, dim) / float_max(m.getSize());
-            return sum<Out>(m, dim) / float_max(m.getShape()[dim_idx]);
+            // Divide in-place (operator/=) rather than via the free Matrix operator/,
+            // which widens the result to arith_promote_t<Out> (float32 -> float64,
+            // complex64 -> complex128) for ANY scalar divisor; that wider value is then
+            // narrowed back to Out on return, routing through the type-loss-warning
+            // constructor and spewing a spurious TypeLossException to stderr even though
+            // the numeric result is correct. Staying in Out precision throughout avoids
+            // the widen->narrow round trip -- but operator/= independently re-checks
+            // typeHigher<Other, Out> on the DIVISOR's own type, so the divisor must not
+            // be wrapped in float_max (== float64): float64 tests higher than Out when
+            // Out is float32, which would re-trigger the very same warning. The raw
+            // integer count (msize_type) is never higher-level than any real/complex
+            // Out, so divide by it directly -- the same technique var's inner mean below
+            // already relies on (`mean_m /= n`).
+            if (dim_idx < 0) {
+                auto acc = sum<Out>(m, dim);
+                acc /= m.getSize();
+                return acc;
+            }
+            auto acc = sum<Out>(m, dim);
+            acc /= m.getShape()[dim_idx];
+            return acc;
         }
     }
     namespace Math {
@@ -237,7 +255,12 @@ namespace matsar {
             // in real_promote_t<dType> precision throughout keeps the subtraction homogeneous.
             auto mean_m = sum<real_promote_t<dType>>(m, dim);
             mean_m /= n;
-            return {sum<Out>(abs(m - mean_m) ^ 2, dim) / denom};
+            // Same in-place-division technique as the inner mean above: dividing via
+            // the free operator/ here would widen Out (e.g. complex64 -> complex128)
+            // then narrow back on return, triggering a spurious TypeLossException.
+            auto acc = sum<Out>(abs(m - mean_m) ^ 2, dim);
+            acc /= denom;
+            return {acc};
         }
     }
     ///Distribution functions
