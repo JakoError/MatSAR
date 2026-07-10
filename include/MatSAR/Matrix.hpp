@@ -754,7 +754,7 @@ namespace matsar {
             dType ans = 0;
             for (size_type j = 0; j < shape[0]; ++j) {
                 auto num = getEle(src, i, j);
-                if (num == 0) continue;
+                if (num == dType(0)) continue;
                 if ((i + j) % 2 == 0)
                     ans += num * remove_row_col(src, i, j).det();
                 else
