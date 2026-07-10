@@ -63,20 +63,6 @@ namespace matsar {
     }
     namespace Math {
         namespace Internal {
-            // hint from https://graphics.stanford.edu/~seander/bithacks.html#BitReverseObvious
-            template<typename T>
-            static T reverse_bit(const T &v, const uint64 &N) {
-                T r = std::abs(v); // r will be reversed bits of v; first get LSB of v
-                T s = sizeof(v) * CHAR_BIT - 1; // extra shift needed at end
-
-                for (v >>= 1; v; v >>= 1) {
-                    r <<= 1;
-                    r |= v & 1;
-                    s--;
-                }
-                r <<= s; // shift when v's highest bits are zero
-            }
-
             /**
              * flag for different calculation. When calculating ifft, set flag 1. When calculating fft, set flag -1.
              *
