@@ -1065,23 +1065,16 @@ namespace matsar {
          * MATLAB-style exponential integral: expint(x) = E1(x) = -Ei(-x),
          * computed via the native Internal::expint_ei above.
          */
-        template<typename dType, typename TargetType = real_max>
-        auto Expint(const Matrix<dType> x) -> Matrix<TargetType> {
-            Matrix<TargetType> r(x);
-            for (auto &i: r) {
-                i = -Internal::expint_ei(-i);
-            }
-            return r;
-        }
-
-        /**
-         * @author zzx
-         */
-        template<typename dType>
-        auto Expint(const Matrix<complex<dType>> x) -> Matrix<complex<dType>> {
-            Matrix<complex<dType>> r(x);
-            for (auto &i: r) {
-                i = -Internal::expint_ei(-i.real()) - pi * I(1.);
+        template<typename TargetType = void, Calculable dType>
+        auto Expint(const Matrix<dType> x) -> Matrix<resolve_t<TargetType, real_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, real_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "Expint: output type must be Calculable");
+            Matrix<Out> r(x);
+            for (auto &i : r) {
+                if constexpr (complex_type<dType>::value)
+                    i = -Internal::expint_ei(-i.real()) - pi * I(1.);
+                else
+                    i = -Internal::expint_ei(-i);
             }
             return r;
         }

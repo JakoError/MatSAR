@@ -45,4 +45,9 @@ void inst_linalg() {
     { auto r = Math::schur(eye<complex64>(2), "real"); static_assert(std::is_same_v<decltype(r), Matrix<complex128>>, "schur(flag) c64->c128"); }
     { auto r = Math::schur(eye<float64>(2));      static_assert(std::is_same_v<decltype(r), std::vector<Matrix<float64>>>,    "schur(vec) f64->vec<f64>"); }
     { auto r = Math::schur(eye<complex64>(2));    static_assert(std::is_same_v<decltype(r), std::vector<Matrix<complex128>>>, "schur(vec) c64->vec<c128>"); }
+
+    // Expint: Matrix<Out>
+    { auto r = Math::Expint(eye<int32>(2));       static_assert(std::is_same_v<decltype(r), Matrix<real_max>>,  "Expint int->real_max"); }
+    { auto r = Math::Expint(eye<float32>(2));     static_assert(std::is_same_v<decltype(r), Matrix<float32>>,   "Expint f32 keep"); }
+    { auto r = Math::Expint(eye<complex64>(2));   static_assert(std::is_same_v<decltype(r), Matrix<complex64>>, "Expint c64 keep"); }
 }
