@@ -308,8 +308,11 @@ namespace matsar {
             }
         }
 
-        template<typename RT>
-        auto svd(const Matrix<RT> &A, const bool &compute_uv = true, const bool &full_matrices = true) -> vector<Matrix<float64>> {
+        template<typename TargetType = void, Calculable dType>
+        auto svd(const Matrix<dType> &A, const bool &compute_uv = true, const bool &full_matrices = true)
+                -> vector<Matrix<resolve_t<TargetType, linalg_promote_t<dType>>>> {
+            using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "svd: output type must be Calculable");
             if (A.getDims() < 2) {
                 throw_value_error(
                         "svd: svd requires Matrix at least 2 dimensions, but got: " + to_string(A.getDims()));
@@ -322,24 +325,7 @@ namespace matsar {
                                   " but got input matrix shape = " +
                                   A.shapeToString());
             }
-            return Internal::do_svd(Matrix<float64>(A), compute_uv, full_matrices);
-        }
-
-        template<typename T>
-        auto svd(const Matrix<complex<T>> &A, const bool &compute_uv = true, const bool &full_matrices = true) -> vector<Matrix<complex<T>>> {
-            if (A.getDims() < 2) {
-                throw_value_error(
-                        "svd: svd requires Matrix at least 2 dimensions, but got: " + to_string(A.getDims()));
-            }
-            if (A.getShape()[0] > std::numeric_limits<lapack_int>::max() ||
-                A.getShape()[1] > std::numeric_limits<lapack_int>::max()) {
-                throw_value_error("svd: input Matrix first 2 dimensions exceed the max limit of lapack_int (" +
-                                  getCalculableString<lapack_int>() + ") max limits = " +
-                                  to_string(std::numeric_limits<lapack_int>::max()) +
-                                  " but got input matrix shape = " +
-                                  A.shapeToString());
-            }
-            return Internal::do_svd(A, compute_uv, full_matrices);
+            return Internal::do_svd(Matrix<Out>(A), compute_uv, full_matrices);
         }
 
         template<typename dType>

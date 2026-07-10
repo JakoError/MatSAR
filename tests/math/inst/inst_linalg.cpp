@@ -35,4 +35,8 @@ void inst_linalg() {
     { auto r = Math::eig(eye<complex64>(2));   static_assert(std::is_same_v<decltype(r), std::vector<Matrix<complex128>>>, "eig c64->vec<c128>"); }
     { auto r = Math::condeig(eye<float64>(2)); static_assert(std::is_same_v<decltype(r), std::vector<Matrix<float64>>>,    "condeig f64->vec<f64>"); }
     { auto r = Math::condeig(eye<complex64>(2));static_assert(std::is_same_v<decltype(r), std::vector<Matrix<complex128>>>,"condeig c64->vec<c128>"); }
+
+    // svd: vector<Matrix<Out>>
+    { auto r = Math::svd(eye<float64>(2));       static_assert(std::is_same_v<decltype(r), std::vector<Matrix<float64>>>,    "svd f64->vec<f64>"); }
+    { auto r = Math::svd(eye<complex64>(2));     static_assert(std::is_same_v<decltype(r), std::vector<Matrix<complex128>>>, "svd c64->vec<c128>"); }
 }
