@@ -414,15 +414,18 @@ namespace matsar {
          * harmonic mean
          * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
-        template<RealType dType>
-        auto harmmean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<real_max> {
+        template<typename TargetType = void, RealType dType>
+        auto harmmean(const Matrix<dType> &m, msize_type dim = 1)
+                -> Matrix<resolve_t<TargetType, real_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, real_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "harmmean: output type must be Calculable");
             auto dim_idx = dim - 1;
             if (m.isEmpty())
                 return {};
             if (dim_idx >= m.getDims())
                 return {m};
             if (dim_idx < 0) {
-                real_max sum = 0.;
+                Out sum = 0.;
                 for (auto &i: m)
                     sum += i;
                 return {m.getSize() / sum};
@@ -435,7 +438,7 @@ namespace matsar {
 
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
-            Matrix<real_max> r(r_shape, 1, m.getData());
+            Matrix<Out> r(r_shape, 1, m.getData());
 
             auto iter_r = r.getData();
             auto iter_m = m.getData();
@@ -448,7 +451,7 @@ namespace matsar {
                 }
                 for (msize_type k = 0; k < step_size; ++k) {
                     auto &item = *(iter_r + k);
-                    item = (real_max) step_num / item;
+                    item = (Out) step_num / item;
                 }
                 iter_r += step_size;
             }
