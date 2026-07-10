@@ -39,4 +39,10 @@ void inst_linalg() {
     // svd: vector<Matrix<Out>>
     { auto r = Math::svd(eye<float64>(2));       static_assert(std::is_same_v<decltype(r), std::vector<Matrix<float64>>>,    "svd f64->vec<f64>"); }
     { auto r = Math::svd(eye<complex64>(2));     static_assert(std::is_same_v<decltype(r), std::vector<Matrix<complex128>>>, "svd c64->vec<c128>"); }
+
+    // schur (flag'd): Matrix<Out>; schur (vector): vector<Matrix<Out>>
+    { auto r = Math::schur(eye<float64>(2), "real");   static_assert(std::is_same_v<decltype(r), Matrix<float64>>,    "schur(flag) f64->f64"); }
+    { auto r = Math::schur(eye<complex64>(2), "real"); static_assert(std::is_same_v<decltype(r), Matrix<complex128>>, "schur(flag) c64->c128"); }
+    { auto r = Math::schur(eye<float64>(2));      static_assert(std::is_same_v<decltype(r), std::vector<Matrix<float64>>>,    "schur(vec) f64->vec<f64>"); }
+    { auto r = Math::schur(eye<complex64>(2));    static_assert(std::is_same_v<decltype(r), std::vector<Matrix<complex128>>>, "schur(vec) c64->vec<c128>"); }
 }

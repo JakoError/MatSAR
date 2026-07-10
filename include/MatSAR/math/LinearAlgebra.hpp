@@ -802,9 +802,11 @@ namespace matsar {
             }
         }
 
-        template<typename dType>
-        Matrix<dType> schur(const Matrix<dType> &A, const std::string &flag) {
-            Matrix<dType> inputA(A);
+        template<typename TargetType = void, Calculable dType>
+        auto schur(const Matrix<dType> &A, const std::string &flag) -> Matrix<resolve_t<TargetType, linalg_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "schur: output type must be Calculable");
+            Matrix<float64> inputA(A.real());
             inputA.expandShape(2);
 
             if (!inputA.is2D()) {
@@ -821,9 +823,9 @@ namespace matsar {
 
             lapack_int lda = (int) m;
             lapack_int sdim;
-            unique_ptr<dType[]> wr(new dType[m]);
-            unique_ptr<dType[]> wi(new dType[m]);
-            unique_ptr<dType[]> vs(new dType[m * n]);
+            unique_ptr<float64[]> wr(new float64[m]);
+            unique_ptr<float64[]> wi(new float64[m]);
+            unique_ptr<float64[]> vs(new float64[m * n]);
 
             int ldvs = (int) m;
             char sort = 'N';
@@ -836,7 +838,7 @@ namespace matsar {
                 throw_warning("schur works badly, error code:" + to_string(info));
             }
 
-            Matrix<dType> T = inputA;
+            Matrix<float64> T = inputA;
 
             if (flag == "complex") {
                 return T;
@@ -855,11 +857,13 @@ namespace matsar {
         }
 
         /******schur by wwl******/
-        template<typename dType>
-        vector<Matrix<dType>> schur(const Matrix<dType> &A) {
-            vector<Matrix<dType>> U_T(2); //store the result
+        template<typename TargetType = void, Calculable dType>
+        auto schur(const Matrix<dType> &A) -> vector<Matrix<resolve_t<TargetType, linalg_promote_t<dType>>>> {
+            using Out = resolve_t<TargetType, linalg_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "schur: output type must be Calculable");
+            vector<Matrix<Out>> U_T(2); //store the result
 
-            Matrix<dType> inputA(A);
+            Matrix<float64> inputA(A.real());
             inputA.expandShape(2);
 
             if (!inputA.is2D()) {
@@ -876,9 +880,9 @@ namespace matsar {
 
             lapack_int lda = (int) m;
             lapack_int sdim;
-            unique_ptr<dType[]> wr(new dType[m]);
-            unique_ptr<dType[]> wi(new dType[m]);
-            unique_ptr<dType[]> vs(new dType[m * n]);
+            unique_ptr<float64[]> wr(new float64[m]);
+            unique_ptr<float64[]> wi(new float64[m]);
+            unique_ptr<float64[]> vs(new float64[m * n]);
 
             int ldvs = (int) m;
             char sort = 'N';
@@ -891,14 +895,14 @@ namespace matsar {
                 throw_warning("schur works badly, error code:" + to_string(info));
             }
 
-            Matrix<dType> T = inputA;
-            vector<dType> temp_U;
+            Matrix<float64> T = inputA;
+            vector<float64> temp_U;
             for (int i = 0; i < m; i++) {
                 for (int j = 0; j < n; j++) {
                     temp_U.push_back(vs.get()[(m - 1) * n + i - j * n]);
                 }
             }
-            Matrix<dType> U(temp_U);
+            Matrix<float64> U(temp_U);
             U = U.reshape({m, n});
 
             // T,U still need transposing
