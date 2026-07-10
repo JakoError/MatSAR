@@ -161,10 +161,10 @@ namespace matsar {
                 return static_cast<lapack_int>(std::ceil(std::real(*size)));
             }
 
-            template<typename T>
-            void svd_prepare_uv(const Matrix<T> &A, const bool &compute_uv, const bool &full_matrices, int m, int n,
+            template<typename dType>
+            void svd_prepare_uv(const Matrix<dType> &A, const bool &compute_uv, const bool &full_matrices, int m, int n,
                                 const int &k,
-                                char &jobu, char &jobvt, int &ldu, int &ldvt, Matrix<T> &U, Matrix<T> &V) {
+                                char &jobu, char &jobvt, int &ldu, int &ldvt, Matrix<dType> &U, Matrix<dType> &V) {
                 // as U V have the same type in every condition, extract to this function
                 if (compute_uv) {
                     auto U_shape = A.getShape();
@@ -188,8 +188,8 @@ namespace matsar {
                         ldu = m;
                         ldvt = k;
                     }
-                    U = zeros<T>(U_shape);
-                    V = zeros<T>(V_shape);
+                    U = zeros<dType>(U_shape);
+                    V = zeros<dType>(V_shape);
                 } else {
                     jobu = 'N';
                     jobvt = 'N';
