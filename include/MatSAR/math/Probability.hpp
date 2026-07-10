@@ -213,12 +213,16 @@ namespace matsar {
             // integer count (msize_type) is never higher-level than any real/complex
             // Out, so divide by it directly -- the same technique var's inner mean below
             // already relies on (`mean_m /= n`).
+            // dim is 1-based (like median/max/min); sum's axis parameter is 0-based
+            // and uses the `none` sentinel -- not a numeric value -- for a true global
+            // reduce. Convert here: global (dim <= 0) -> sum(m, none) / getSize();
+            // axis -> sum(m, dim_idx) / axis length.
             if (dim_idx < 0) {
-                auto acc = sum<Out>(m, dim);
+                auto acc = sum<Out>(m, none);
                 acc /= m.getSize();
                 return acc;
             }
-            auto acc = sum<Out>(m, dim);
+            auto acc = sum<Out>(m, dim_idx);
             acc /= m.getShape()[dim_idx];
             return acc;
         }
@@ -245,22 +249,41 @@ namespace matsar {
                     return {m};
                 }
             }
-            auto n = m.getSize();
-            auto denom = w ? n - 1 : n;
+            // dim is 1-based (like median/max/min); sum's axis parameter is 0-based and
+            // uses the `none` sentinel -- not a numeric value -- for a true global reduce.
+            // Both of var's sum calls (the inner mean AND the outer squared-magnitude sum)
+            // must therefore pass `dim_idx` for an axis reduce and `none` for a global one,
+            // and the element count `n` is the axis length for an axis reduce vs the whole
+            // size for a global one.
+            //
             // Divide in-place (operator/=) rather than via the free Matrix operator/,
             // which widens complex64 -> complex128 for ANY scalar divisor (arith_promote_t
             // unconditionally promotes complex<float> to complex<double>). That widening
             // would leave m (complex64) minus a complex128 mean with no valid operator-
             // overload (Matrix operator- has no mixed-precision-complex overload). Staying
             // in real_promote_t<dType> precision throughout keeps the subtraction homogeneous.
-            auto mean_m = sum<real_promote_t<dType>>(m, dim);
+            // The outer sum uses the same in-place-division technique: dividing via the free
+            // operator/ would widen Out (e.g. complex64 -> complex128) then narrow back on
+            // return, triggering a spurious TypeLossException.
+            if (dim_idx < 0) {
+                auto n = m.getSize();
+                auto denom = w ? n - 1 : n;
+                auto mean_m = sum<real_promote_t<dType>>(m, none);
+                mean_m /= n;
+                auto acc = sum<Out>(abs(m - mean_m) ^ 2, none);
+                acc /= denom;
+                // Return unbraced (like mean): Matrix{acc} routes through the
+                // brace constructor, which squeezes trailing singleton dims
+                // ({2,1} -> {2}) and would break the keepdims axis shape.
+                return acc;
+            }
+            auto n = m.getShape()[dim_idx];
+            auto denom = w ? n - 1 : n;
+            auto mean_m = sum<real_promote_t<dType>>(m, dim_idx);
             mean_m /= n;
-            // Same in-place-division technique as the inner mean above: dividing via
-            // the free operator/ here would widen Out (e.g. complex64 -> complex128)
-            // then narrow back on return, triggering a spurious TypeLossException.
-            auto acc = sum<Out>(abs(m - mean_m) ^ 2, dim);
+            auto acc = sum<Out>(abs(m - mean_m) ^ 2, dim_idx);
             acc /= denom;
-            return {acc};
+            return acc;
         }
     }
     ///Distribution functions
