@@ -833,7 +833,7 @@ namespace matsar {
             Matrix<float64> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::exponential_distribution<float64> exp_dis(mu);
+            std::exponential_distribution<float64> exp_dis(1 / mu);   // std takes the rate, 1/mean
             for (auto &i: r)
                 i = exp_dis(gen);
             return r;

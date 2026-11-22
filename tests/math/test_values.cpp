@@ -81,3 +81,17 @@ TEST_CASE("randn · draws from the standard normal distribution") {
     CHECK(lo < -2.0);   // P(all 40000 draws >= -2) is ~0 for N(0,1); impossible for uniform(0,1)
     CHECK(hi > 2.0);
 }
+
+// exprnd(mu) is documented (like exppdf/expstat) with mu = the MEAN, but passed mu to
+// std::exponential_distribution, whose parameter is the RATE (1/mean): samples had mean 1/mu.
+// mu = 2.5, 40000 draws: std error of the mean is 2.5/200 = 0.0125, tolerance 0.1 (8 sigma).
+// The old behavior gives a mean of 0.4.
+TEST_CASE("exprnd · mu is the mean of the exponential distribution") {
+    auto r = Math::exprnd(2.5, {200, 200});
+    REQUIRE(r.getSize() == 40000);
+    double mean, var, lo, hi;
+    moments(r, mean, var, lo, hi);
+    CHECK(std::abs(mean - 2.5) < 0.1);
+    CHECK(std::abs(var - 6.25) < 1.0);   // variance = mu^2; std error ~0.09
+    CHECK(lo >= 0.0);
+}
