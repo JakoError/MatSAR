@@ -1716,7 +1716,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator<(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator<(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1733,7 +1733,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator<(const Other &v) -> Matrix<bool> {
+        auto operator<(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::Less(data, v, size, r.getData());
             return r;
@@ -1741,7 +1741,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator<=(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator<=(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1758,7 +1758,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator<=(const Other &v) -> Matrix<bool> {
+        auto operator<=(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::LessEqual(data, v, size, r.getData());
             return r;
@@ -1766,7 +1766,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator>(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator>(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1783,7 +1783,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator>(const Other &v) -> Matrix<bool> {
+        auto operator>(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::Great(data, v, size, r.getData());
             return r;
@@ -1791,7 +1791,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator>=(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator>=(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1808,7 +1808,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator>=(const Other &v) -> Matrix<bool> {
+        auto operator>=(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::GreatEqual(data, v, size, r.getData());
             return r;
@@ -1816,7 +1816,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator==(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator==(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1833,7 +1833,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator==(const Other &v) -> Matrix<bool> {
+        auto operator==(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::Equal(data, v, size, r.getData());
             return r;
@@ -1841,7 +1841,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator!=(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator!=(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1858,7 +1858,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator!=(const Other &v) -> Matrix<bool> {
+        auto operator!=(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::NotEqual(data, v, size, r.getData());
             return r;
@@ -2462,15 +2462,17 @@ namespace matsar {
         }
     }
 
+    // Element type: what std::pow gives (as for Matrix ^ Matrix). It was forced to Matrix<real_max>,
+    // which did not compile for complex elements.
     template<typename lT, typename rT, typename TargetType = decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
-    auto operator^(const Matrix<lT> &left, const rT &right) -> Matrix<real_max> {
+    auto operator^(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
         Matrix<TargetType> r(left.getShape(), 0.);
         MatrixBase::Pow(left.getData(), right, r.getSize(), r.getData());
         return r;
     }
 
     template<typename lT, typename rT, typename TargetType = decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
-    auto operator^(const lT &left, const Matrix<rT> &right) -> Matrix<real_max> {
+    auto operator^(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> r(right.getShape(), 0.);
         MatrixBase::Pow(left, right.getData(), r.getSize(), r.getData());
         return r;

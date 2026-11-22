@@ -794,8 +794,7 @@ namespace matsar {
          */
         template<typename dType>
         auto nnz(const Matrix<dType> &m) -> msize_type {
-            // Counts directly: `m != 0` does not compile for a const Matrix (Matrix's comparison
-            // operators are non-const members) nor for a non-int element type.
+            // Counts directly, without building a temporary mask matrix.
             msize_type count = 0;
             for (const auto &x: m)
                 if (x != dType(0))

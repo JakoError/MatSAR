@@ -31,3 +31,24 @@ TEST_CASE("other comparisons with broadcasting still correct") {
     CHECK((a == b)(0, 1));                                  // 2 == 2
     CHECK((a != b)(0, 0));                                  // 1 != 2
 }
+
+// Comparisons are const member functions: they must work on a const Matrix (e.g. through a
+// const Matrix& parameter), against a scalar of another type and against another Matrix.
+TEST_CASE("comparisons work on a const Matrix") {
+    const auto a = Matrix<float64>::fromRows({{1.0, 2.0}, {3.0, 4.0}});
+    const auto b = Matrix<float64>::fromRows({{2.0, 2.0}});  // broadcast: compares against 2
+    // every operator, in both the Matrix and the scalar form
+    CHECK((a < b)(0, 0));
+    CHECK((a < 2)(0, 0));
+    CHECK((a <= b)(0, 1));
+    CHECK((a <= 2)(0, 1));
+    CHECK((a > b)(1, 0));
+    CHECK((a > 2.5)(1, 0));
+    CHECK((a >= b)(1, 1));
+    CHECK_FALSE((a >= 3)(0, 1));
+    CHECK((a == b)(0, 1));
+    CHECK((a == 4)(1, 1));
+    CHECK((a != b)(0, 0));
+    CHECK((a != 0)(0, 0));  // int scalar against double elements
+    CHECK_FALSE((a != a)(1, 0));
+}
