@@ -104,9 +104,10 @@ jobs:
       - name: Configure
         run: cmake -G Ninja -B build -DMATSAR_BUILD_EXPERIMENTAL_TESTS=ON -DMATSAR_WITH_BLAS=OFF
       - name: Build
-        run: cmake --build build --target test_mathfunc selftest_helpers
+        run: cmake --build build
       - name: Test
-        run: ctest --test-dir build -R "test_mathfunc|selftest_helpers" --output-on-failure
+        # Every experimental math test (BLAS-free here), its death tests, and the core suite.
+        run: ctest --test-dir build --output-on-failure
 
   windows-mingw-experimental:
     runs-on: windows-latest
@@ -126,9 +127,10 @@ jobs:
       - name: Configure
         run: cmake -G Ninja -B build -DMATSAR_BUILD_EXPERIMENTAL_TESTS=ON -DMATSAR_WITH_BLAS=OFF
       - name: Build
-        run: cmake --build build --target test_mathfunc selftest_helpers
+        run: cmake --build build
       - name: Test
-        run: ctest --test-dir build -R "test_mathfunc|selftest_helpers" --output-on-failure
+        # Every experimental math test (BLAS-free here), its death tests, and the core suite.
+        run: ctest --test-dir build --output-on-failure
 
   golden-regen-guard:
     runs-on: ubuntu-latest
