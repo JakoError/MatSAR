@@ -145,12 +145,12 @@ namespace matsar {
     auto arange_cal_size(const T &start, const T &stop, const T &step) -> msize_type = delete;
 
     template<>
-    auto arange_cal_size<float64>(const float64 &start, const float64 &stop, const float64 &step) -> msize_type {
+    inline auto arange_cal_size<float64>(const float64 &start, const float64 &stop, const float64 &step) -> msize_type {
         return static_cast<msize_type>(std::ceil((stop - start) / step));
     }
 
     template<>
-    auto arange_cal_size<int64>(const int64 &start, const int64 &stop, const int64 &step) -> msize_type {
+    inline auto arange_cal_size<int64>(const int64 &start, const int64 &stop, const int64 &step) -> msize_type {
         if ((stop - start) % step != 0) {
             return static_cast<msize_type>((stop - start) / step + 1);
         } else {

@@ -94,7 +94,7 @@ namespace matsar {
         return base2dec(strs, 16);
     }
 
-    auto reVal(int num) -> char {
+    inline auto reVal(int num) -> char {
         if (num >= 0 && num <= 9)
             return (char) (num + '0');
         else

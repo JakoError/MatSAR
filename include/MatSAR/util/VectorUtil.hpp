@@ -274,7 +274,7 @@ namespace matsar {
                 return Range(IT(0), end, IT(1));
             }
 
-            auto fRange(float64 start, float64 end, float64 step) -> vector<float64> {
+            inline auto fRange(float64 start, float64 end, float64 step) -> vector<float64> {
                 if (start >= end - step)
                     return {};
                 auto r_size = vector<float64>::size_type(std::ceil((end - start) / step));
@@ -287,11 +287,11 @@ namespace matsar {
                 return r;
             }
 
-            auto fRange(float64 start, float64 end) -> vector<float64> {
+            inline auto fRange(float64 start, float64 end) -> vector<float64> {
                 return fRange(start, end, 1);
             }
 
-            auto fRange(float64 end) -> vector<float64> {
+            inline auto fRange(float64 end) -> vector<float64> {
                 return fRange(0, end, 1);
             }
         }

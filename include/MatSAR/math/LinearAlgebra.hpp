@@ -86,7 +86,7 @@ namespace matsar {
 
     namespace Math {
         namespace Internal {
-            auto LAPACK_SVD(double *a, double *s, double *u, double *vt,
+            inline auto LAPACK_SVD(double *a, double *s, double *u, double *vt,
                             char jobu, char jobvt,
                             lapack_int m, lapack_int n,
                             lapack_int lda,
@@ -95,7 +95,7 @@ namespace matsar {
                 return LAPACKE_dgesvd_work(CblasColMajor, jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork);
             }
 
-            auto LAPACK_SVD(lapack_complex_float *a, float *s, lapack_complex_float *u, lapack_complex_float *vt,
+            inline auto LAPACK_SVD(lapack_complex_float *a, float *s, lapack_complex_float *u, lapack_complex_float *vt,
                             char jobu, char jobvt,
                             lapack_int m, lapack_int n,
                             lapack_int lda,
@@ -106,7 +106,7 @@ namespace matsar {
                                            rwork);
             }
 
-            auto LAPACK_SVD(lapack_complex_double *a, double *s, lapack_complex_double *u, lapack_complex_double *vt,
+            inline auto LAPACK_SVD(lapack_complex_double *a, double *s, lapack_complex_double *u, lapack_complex_double *vt,
                             char jobu, char jobvt,
                             lapack_int m, lapack_int n,
                             lapack_int lda,
@@ -124,7 +124,7 @@ namespace matsar {
                                       lapack_int ldu, lapack_int ldvt) -> lapack_int = delete;
 
             template<>
-            auto LAPACK_SVD_WORK_SIZE<float64>(char jobu, char jobvt,
+            inline auto LAPACK_SVD_WORK_SIZE<float64>(char jobu, char jobvt,
                                                lapack_int m, lapack_int n,
                                                lapack_int lda,
                                                lapack_int ldu, lapack_int ldvt) -> lapack_int {
@@ -136,7 +136,7 @@ namespace matsar {
             }
 
             template<>
-            auto LAPACK_SVD_WORK_SIZE<complex64>(char jobu, char jobvt,
+            inline auto LAPACK_SVD_WORK_SIZE<complex64>(char jobu, char jobvt,
                                                  lapack_int m, lapack_int n,
                                                  lapack_int lda,
                                                  lapack_int ldu,
@@ -149,7 +149,7 @@ namespace matsar {
             }
 
             template<>
-            auto LAPACK_SVD_WORK_SIZE<complex128>(char jobu, char jobvt,
+            inline auto LAPACK_SVD_WORK_SIZE<complex128>(char jobu, char jobvt,
                                                   lapack_int m, lapack_int n,
                                                   lapack_int lda,
                                                   lapack_int ldu,
@@ -198,7 +198,7 @@ namespace matsar {
                 }
             }
 
-            auto do_svd(const Matrix<float64> &A, const bool &compute_uv, const bool &full_matrices) -> vector<Matrix<float64>> {
+            inline auto do_svd(const Matrix<float64> &A, const bool &compute_uv, const bool &full_matrices) -> vector<Matrix<float64>> {
                 using T = float64;
 
                 auto m = static_cast<lapack_int>(A.getShape()[0]), n = static_cast<lapack_int>(A.getShape()[1]);
@@ -468,15 +468,15 @@ namespace matsar {
 
 ///LU decomposition
     namespace Math {
-        auto LAPACK_LU(lapack_int m, lapack_int n, float64 *data, lapack_int lda, lapack_int *ipiv) -> lapack_int {
+        inline auto LAPACK_LU(lapack_int m, lapack_int n, float64 *data, lapack_int lda, lapack_int *ipiv) -> lapack_int {
             return LAPACKE_dgetrf2(CblasColMajor, m, n, data, lda, ipiv);
         }
 
-        auto LAPACK_LU(lapack_int m, lapack_int n, complex64 *data, lapack_int lda, lapack_int *ipiv) -> lapack_int {
+        inline auto LAPACK_LU(lapack_int m, lapack_int n, complex64 *data, lapack_int lda, lapack_int *ipiv) -> lapack_int {
             return LAPACKE_cgetrf2(CblasColMajor, m, n, data, lda, ipiv);
         }
 
-        auto LAPACK_LU(lapack_int m, lapack_int n, complex128 *data, lapack_int lda, lapack_int *ipiv) -> lapack_int {
+        inline auto LAPACK_LU(lapack_int m, lapack_int n, complex128 *data, lapack_int lda, lapack_int *ipiv) -> lapack_int {
             return LAPACKE_zgetrf2(CblasColMajor, m, n, data, lda, ipiv);
         }
 
@@ -1092,7 +1092,7 @@ namespace matsar {
             return r;
         }
 
-        auto spdiags(const Matrix<double> &A) -> tuple<Matrix<double>, Matrix<double>> {
+        inline auto spdiags(const Matrix<double> &A) -> tuple<Matrix<double>, Matrix<double>> {
             Matrix<double> temp(A);
             int m = temp.getShape()[1], n = temp.getShape()[0];
             if (m == 0 || n == 0) {
@@ -1174,7 +1174,7 @@ namespace matsar {
             return std::make_tuple(res_m.T(), idx);
         }
 
-        auto spdiags(const Matrix<double> A, const Matrix<double> d) -> Matrix<double> {
+        inline auto spdiags(const Matrix<double> A, const Matrix<double> d) -> Matrix<double> {
             if (A.getSize() < 1 || d.getSize() < 1) {
                 return {};
             }

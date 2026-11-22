@@ -18,6 +18,12 @@ foreach(t IN LISTS MATSAR_TESTS)
     add_test(NAME ${t} COMMAND ${t})
 endforeach()
 
+# Two translation units including MatSAR.hpp: catches non-inline definitions in headers.
+add_executable(test_multi_tu test_multi_tu.cpp multi_tu_other.cpp)
+target_link_libraries(test_multi_tu PRIVATE matsar)
+target_include_directories(test_multi_tu PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_multi_tu COMMAND test_multi_tu)
+
 # Death test: invalid-shape op prints a *Exception message and exit()s.
 add_executable(death_invalid_shape death_invalid_shape.cpp)
 target_link_libraries(death_invalid_shape PRIVATE matsar)
@@ -98,6 +104,17 @@ if(MATSAR_BUILD_EXPERIMENTAL_TESTS)
         add_test(NAME death_matop_${case} COMMAND death_matop ${case})
         set_tests_properties(death_matop_${case} PROPERTIES PASS_REGULAR_EXPRESSION "${regex}")
     endforeach()
+
+    # Every math header in two translation units of one program (link-time check).
+    add_executable(test_math_multi_tu math/multi_tu_a.cpp math/multi_tu_b.cpp)
+    target_link_libraries(test_math_multi_tu PRIVATE matsar)
+    target_compile_definitions(test_math_multi_tu PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+    add_test(NAME test_math_multi_tu COMMAND test_math_multi_tu)
+    if(WIN32 AND MATSAR_WITH_BLAS AND DEFINED MATSAR_BLAS_DLL)
+        add_custom_command(TARGET test_math_multi_tu POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${MATSAR_BLAS_DLL}" "$<TARGET_FILE_DIR:test_math_multi_tu>")
+    endif()
 
     # Self-test for the harness's own helpers (approx_eq / build<T> / check_matrix).
     add_executable(selftest_helpers math/selftest_helpers.cpp)

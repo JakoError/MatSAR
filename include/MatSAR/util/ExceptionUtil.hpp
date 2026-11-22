@@ -96,7 +96,7 @@ namespace matsar {
                 }
             };
 
-            void throw_value_error(const string &msg, bool to_exit = true) {
+            inline void throw_value_error(const string &msg, bool to_exit = true) {
                 try {
                     throw ValueError(msg);
                 } catch (ValueError &e) {
@@ -109,7 +109,7 @@ namespace matsar {
                 }
             }
 
-            void throw_logical_error(const string &msg, bool to_exit = true) {
+            inline void throw_logical_error(const string &msg, bool to_exit = true) {
                 try {
                     throw logic_error(msg);
                 } catch (logic_error &e) {
@@ -122,7 +122,7 @@ namespace matsar {
                 }
             }
 
-            void throw_out_of_range_error(const string &msg, bool to_exit = true) {
+            inline void throw_out_of_range_error(const string &msg, bool to_exit = true) {
                 try {
                     throw out_of_range(msg);
                 } catch (out_of_range &e) {
@@ -152,7 +152,7 @@ namespace matsar {
                 }
             }
 
-            void throw_broadcast_exception(const string &msg, bool to_exit = true) {
+            inline void throw_broadcast_exception(const string &msg, bool to_exit = true) {
                 try {
                     throw BroadcastException(msg);
                 } catch (BroadcastException &e) {
@@ -165,7 +165,7 @@ namespace matsar {
                 }
             }
 
-            void throw_broadcast_exception(const string &shape_str, const string &target_str, bool to_exit = true) {
+            inline void throw_broadcast_exception(const string &shape_str, const string &target_str, bool to_exit = true) {
                 try {
                     throw BroadcastException("broadcast failed: cannot broadcast " + shape_str +
                                              " to " + target_str);
@@ -179,7 +179,7 @@ namespace matsar {
                 }
             }
 
-            void throw_shape_exception(const string &msg, bool to_exit = true) {
+            inline void throw_shape_exception(const string &msg, bool to_exit = true) {
                 try {
                     throw ShapeException(msg);
                 } catch (ShapeException &e) {
@@ -192,8 +192,8 @@ namespace matsar {
                 }
             }
 
-            void throw_shape_exception(const string &pre_msg, const string &shape1_str, const string &shape2_str,
-                                       bool to_exit = true) {
+            inline void throw_shape_exception(const string &pre_msg, const string &shape1_str, const string &shape2_str,
+                                              bool to_exit = true) {
                 try {
                     stringstream ss;
                     ss << pre_msg << "Matrix shape not match: shape1 = " << shape1_str << " shape2 = " << shape2_str;
@@ -211,7 +211,7 @@ namespace matsar {
             /**
              * Unconditional exit!
              */
-            void throw_runtime_error_exception(const string &msg) {
+            inline void throw_runtime_error_exception(const string &msg) {
                 try {
                     throw runtime_error(msg);
                 } catch (BroadcastException &e) {
@@ -223,7 +223,7 @@ namespace matsar {
                 }
             }
 
-            void throw_warning(const string &msg) {
+            inline void throw_warning(const string &msg) {
                 flush(std::cout);
                 flush(std::cerr);
                 std::cerr << "WARNING: " << msg << std::endl;

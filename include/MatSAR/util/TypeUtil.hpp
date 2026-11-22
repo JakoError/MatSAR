@@ -329,7 +329,7 @@ namespace matsar {
     class None {
     };
 
-    None none = None();
+    inline None none = None();   // inline: one object for every translation unit
 
     template<typename dType>
     class Container {

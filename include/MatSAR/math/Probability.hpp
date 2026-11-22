@@ -48,7 +48,7 @@ namespace matsar {
          * @return the maximum along the given dimension of the matrix
          */
         template<Calculable dType>
-        auto max(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
+        inline auto max(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
             auto dim_idx = dim - 1;
             if (dim_idx >= m.getDims())
                 return {m};
@@ -87,7 +87,7 @@ namespace matsar {
          * @return the minimum along the given dimension of the matrix
          */
         template<Calculable dType>
-        auto min(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
+        inline auto min(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
             auto dim_idx = dim - 1;
             if (dim_idx >= m.getDims())
                 return {m};
@@ -123,7 +123,7 @@ namespace matsar {
          * @related the range function is equivalent to calling the min and max functions
          */
         template<Calculable dType>
-        auto range(const Matrix<dType> &m, msize_type dim = 1) -> tuple<Matrix<dType>, Matrix<dType>> {
+        inline auto range(const Matrix<dType> &m, msize_type dim = 1) -> tuple<Matrix<dType>, Matrix<dType>> {
             return {min(m, dim), max(m, dim)};
         }
 
@@ -134,7 +134,7 @@ namespace matsar {
          * @return the median along the given dimension of the matrix
          */
         template<typename TargetType = void, Calculable dType>
-        auto median(const Matrix<dType> &m, msize_type dim = 1)
+        inline auto median(const Matrix<dType> &m, msize_type dim = 1)
                 -> Matrix<resolve_t<TargetType, real_promote_t<dType>>> {
             using Out = resolve_t<TargetType, real_promote_t<dType>>;
             static_assert(calculable_type<Out>::value, "median: output type must be Calculable");
@@ -193,7 +193,7 @@ namespace matsar {
          * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
         template<typename TargetType = void, Calculable dType>
-        auto mean(const Matrix<dType> &m, msize_type dim = 1)
+        inline auto mean(const Matrix<dType> &m, msize_type dim = 1)
                 -> Matrix<resolve_t<TargetType, real_promote_t<dType>>> {
             using Out = resolve_t<TargetType, real_promote_t<dType>>;
             static_assert(calculable_type<Out>::value, "mean: output type must be Calculable");
@@ -232,7 +232,7 @@ namespace matsar {
          * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
         template<typename TargetType = void, Calculable dType>
-        auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1)
+        inline auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1)
                 -> Matrix<resolve_t<TargetType, magnitude_t<dType>>> {
             using Out = resolve_t<TargetType, magnitude_t<dType>>;
             static_assert(calculable_type<Out>::value, "var: output type must be Calculable");
@@ -298,7 +298,7 @@ namespace matsar {
          * @return floating-point matrix: the matrix elements mapped through the normal distribution
          */
         template<RealType RT>
-        auto normpdf(const Matrix<RT> &m, float_max mu = 0., float_max sigma = 1.) -> Matrix<real_max> {
+        inline auto normpdf(const Matrix<RT> &m, float_max mu = 0., float_max sigma = 1.) -> Matrix<real_max> {
             Matrix<real_max> r(m);
             auto stat1 = sigma * std::sqrt(2 * PI);
             for (auto &i: r) {
@@ -316,7 +316,7 @@ namespace matsar {
          * @return floating-point matrix: the matrix elements mapped through the normal distribution
          */
         template<RealType RT>
-        auto normpdf(const Matrix<RT> &m, Matrix<float_max> mu, Matrix<float_max> sigma) -> Matrix<real_max> {
+        inline auto normpdf(const Matrix<RT> &m, Matrix<float_max> mu, Matrix<float_max> sigma) -> Matrix<real_max> {
             mu = mu.broadcast(m.getShape());
             sigma = sigma.broadcast(m.getShape());
             Matrix<real_max> r(m);
@@ -336,7 +336,7 @@ namespace matsar {
          * @param shape the shape of the target matrix
          * @return floating-point matrix: a random matrix from the normal distribution
          */
-        auto normrnd(float_max mu = 0., float_max sigma = 1., const mshape_type &shape = {1}) -> Matrix<real_max> {
+        inline auto normrnd(float_max mu = 0., float_max sigma = 1., const mshape_type &shape = {1}) -> Matrix<real_max> {
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -353,7 +353,7 @@ namespace matsar {
          * @param shape the shape of the target matrix
          * @return floating-point matrix: a random matrix from the normal distribution
          */
-        auto normrnd(const Matrix<float_max> &mu, const Matrix<float_max> &sigma,
+        inline auto normrnd(const Matrix<float_max> &mu, const Matrix<float_max> &sigma,
                      const mshape_type &shape = {1}) -> Matrix<real_max> {
             if (mu.getShape() != shape || sigma.getShape() != shape)
                 throw_shape_exception("mu matrix or sigma matrix size differs from the specified shape");
@@ -373,7 +373,7 @@ namespace matsar {
          * @return floating-point matrix tuple {mu,sigma*sigma}
          */
         template<RealType RT1, RealType RT2>
-        auto normstat(RT1 mu, RT2 sigma) -> tuple<real_max, real_max> {
+        inline auto normstat(RT1 mu, RT2 sigma) -> tuple<real_max, real_max> {
             return {mu, mul(sigma, sigma)};
         }
 
@@ -382,7 +382,7 @@ namespace matsar {
          * @return floating-point matrix tuple {mu,sigma*sigma}
          */
         template<RealType RT1, RealType RT2>
-        auto normstat(const Matrix<RT1> &mu, const Matrix<RT2> &sigma) -> tuple<Matrix<real_max>, Matrix<real_max>> {
+        inline auto normstat(const Matrix<RT1> &mu, const Matrix<RT2> &sigma) -> tuple<Matrix<real_max>, Matrix<real_max>> {
             Matrix<real_max> b_mu(mu);
             Matrix<real_max> b_sigma(sigma);
             Matrix<real_max>::broadcast(mu, sigma);
@@ -398,7 +398,7 @@ namespace matsar {
          * @return floating-point matrix: the matrix elements mapped through the binomial distribution
          */
         template<RealType RT>
-        auto binopdf(const Matrix<RT> &m, float64 n, float64 p) -> Matrix<float64> {
+        inline auto binopdf(const Matrix<RT> &m, float64 n, float64 p) -> Matrix<float64> {
             Matrix<float64> r(m.getShape(), 0.);
             auto iter_m = m.getData();
             for (auto &i: r) {
@@ -417,7 +417,7 @@ namespace matsar {
          * @return floating-point matrix: the matrix elements mapped through the binomial distribution
          */
         template<RealType RT>
-        auto binopdf(const Matrix<RT> &m, Matrix<float64> n, Matrix<float64> p) -> Matrix<float64> {
+        inline auto binopdf(const Matrix<RT> &m, Matrix<float64> n, Matrix<float64> p) -> Matrix<float64> {
             n = n.broadcast(m.getShape());
             p = p.broadcast(m.getShape());
 
@@ -443,7 +443,7 @@ namespace matsar {
          * @param shape the shape of the target matrix
          * @return floating-point matrix: a random matrix from the binomial distribution
          */
-        auto binornd(float64 n = 1, float64 p = 0.5, const mshape_type &shape = {1}) -> Matrix<real_max> {
+        inline auto binornd(float64 n = 1, float64 p = 0.5, const mshape_type &shape = {1}) -> Matrix<real_max> {
             if (std::round(n) != n || p < 0 || p > 1)
                 return Matrix<real_max>(shape, NAN);
             Matrix<real_max> r(shape, 0.);
@@ -461,7 +461,7 @@ namespace matsar {
          * @param p the success probability of the binomial distribution
          * @return floating-point matrix: a random matrix from the binomial distribution
          */
-        auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p) -> Matrix<real_max> {
+        inline auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p) -> Matrix<real_max> {
             if (n.getShape() != p.getShape())
                 throw_shape_exception("n matrix and p matrix have different sizes");
             Matrix<real_max> r(n.getShape(), 0.);
@@ -486,7 +486,7 @@ namespace matsar {
          * @param shape the size of the target matrix
          * @return floating-point matrix: a random matrix from the binomial distribution
          */
-        auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p,
+        inline auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p,
                      const mshape_type &shape = {1}) -> Matrix<real_max> {
             if (n.getShape() != shape || p.getShape() != shape)
                 throw_shape_exception("n matrix or p matrix differs in shape from the specified matrix");
@@ -510,7 +510,7 @@ namespace matsar {
          * @return floating-point matrix tuple {n*p,n*p*(1-p)}
          */
         template<RealType RT1, RealType RT2>
-        auto binostat(RT1 n, RT2 p) -> tuple<real_max, real_max> {
+        inline auto binostat(RT1 n, RT2 p) -> tuple<real_max, real_max> {
             //check n/p legal
             if ((isFloat<RT1>() && std::round(n) != n) || p < 0 || p > 1)
                 return {NAN, NAN};
@@ -523,7 +523,7 @@ namespace matsar {
          * @return floating-point matrix tuple {mu,sigma*sigma}
          */
         template<RealType RT1, RealType RT2>
-        auto binostat(const Matrix<RT1> &n, const Matrix<RT2> &p) -> tuple<Matrix<real_max>, Matrix<real_max>> {
+        inline auto binostat(const Matrix<RT1> &n, const Matrix<RT2> &p) -> tuple<Matrix<real_max>, Matrix<real_max>> {
             auto mu = mul(n, p);
             return {mu, mul(mu, 1 - p)};
         }
@@ -536,7 +536,7 @@ namespace matsar {
          * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
          * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
          */
-        auto unifpdf(float64 x, float64 a = 0, float64 b = 1) -> float64 {
+        inline auto unifpdf(float64 x, float64 a = 0, float64 b = 1) -> float64 {
             if (x < a || x > b)
                 return 0;
             return 1 / (b - a);
@@ -548,7 +548,7 @@ namespace matsar {
          * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
          * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
          */
-        auto unifpdf(const Matrix<float64> &x, const Matrix<float64> &a = {0},
+        inline auto unifpdf(const Matrix<float64> &x, const Matrix<float64> &a = {0},
                      const Matrix<float64> &b = {1}) -> Matrix<float64> {
             bool x_single = x.isSingle();
             bool a_single = a.isSingle();
@@ -581,7 +581,7 @@ namespace matsar {
         * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
         * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
         */
-        auto unifstat(float64 a, float64 b) -> tuple<float64, float64> {
+        inline auto unifstat(float64 a, float64 b) -> tuple<float64, float64> {
             return {(a + b) / 2, pow((a - b), 2) / 12};
         }
 
@@ -590,7 +590,7 @@ namespace matsar {
         * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
         * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
         */
-        auto unifstat(const Matrix<float64> &a, const Matrix<float64> &b) -> tuple<Matrix<float64>, Matrix<float64>> {
+        inline auto unifstat(const Matrix<float64> &a, const Matrix<float64> &b) -> tuple<Matrix<float64>, Matrix<float64>> {
             if (a.getShape() != b.getShape())
                 throw_shape_exception("unifstat: matrices a b must have the same size");
             return {(a + b) / 2, ((a - b) ^ 2) / 12};
@@ -603,7 +603,7 @@ namespace matsar {
          * @param shape the dimensions of the target matrix
          * @return floating-point matrix: a random matrix from the (0,1) uniform distribution
          */
-        auto rand(const mshape_type &shape) -> Matrix<real_max> {
+        inline auto rand(const mshape_type &shape) -> Matrix<real_max> {
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -618,7 +618,7 @@ namespace matsar {
          * @param n indicates that an n*n matrix is generated
          * @return floating-point matrix: a random matrix from the (0,1) uniform distribution
          */
-        auto rand(msize_type n) -> Matrix<real_max> {
+        inline auto rand(msize_type n) -> Matrix<real_max> {
             return rand({n, n});
         }
 
@@ -629,7 +629,7 @@ namespace matsar {
          * @param shape the shape of the target matrix
          * @return integer matrix: a random matrix from the [imin,imax] uniform distribution
          */
-        auto randi(int64 imin, int64 imax, const mshape_type &shape) -> Matrix<int64> {
+        inline auto randi(int64 imin, int64 imax, const mshape_type &shape) -> Matrix<int64> {
             if (imin > imax)
                 throw_value_error("randi requires the minimum of the integer uniform distribution to be less than or equal to the maximum");
             Matrix<int64> r(shape, 0.);
@@ -647,7 +647,7 @@ namespace matsar {
          * @param shape the shape of the target matrix
          * @return integer matrix: a matrix from the [1,imax] uniform distribution
          */
-        auto randi(int64 imax, const mshape_type &shape) -> Matrix<int64> {
+        inline auto randi(int64 imax, const mshape_type &shape) -> Matrix<int64> {
             return randi(1, imax, shape);
         }
 
@@ -658,7 +658,7 @@ namespace matsar {
          * @param n indicates that an n*n matrix is generated
          * @return integer matrix: a random matrix from the [imin,imax] uniform distribution
          */
-        auto randi(int64 imin, int64 imax, msize_type n) -> Matrix<int64> {
+        inline auto randi(int64 imin, int64 imax, msize_type n) -> Matrix<int64> {
             return randi(imin, imax, {n, n});
         }
 
@@ -668,7 +668,7 @@ namespace matsar {
          * @param n indicates that an n*n matrix is generated
          * @return integer matrix: a matrix from the [1,imax] uniform distribution
          */
-        auto randi(int64 imax, msize_type n) -> Matrix<int64> {
+        inline auto randi(int64 imax, msize_type n) -> Matrix<int64> {
             return randi(1, imax, {n, n});
         }
 
@@ -677,7 +677,7 @@ namespace matsar {
          * @param shape the shape of the target matrix
          * @return floating-point matrix: a standard normal distribution matrix
          */
-        auto randn(const mshape_type &shape) -> Matrix<real_max> {
+        inline auto randn(const mshape_type &shape) -> Matrix<real_max> {
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -692,7 +692,7 @@ namespace matsar {
          * @param n indicates that an n*n matrix is generated
          * @return floating-point matrix: a standard normal distribution matrix
          */
-        auto randn(int64 n) -> Matrix<real_max> {
+        inline auto randn(int64 n) -> Matrix<real_max> {
             return randn({n, n});
         }
 
@@ -716,7 +716,7 @@ namespace matsar {
          * @hint uses an offset-based algorithm
          */
         template<IntType IT>
-        auto randperm(IT n) -> Matrix<IT> {
+        inline auto randperm(IT n) -> Matrix<IT> {
             if (n < 0) throw_value_error("randperm: n should be positive");
             unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
             auto rand_seq = rand(mshape_type{n});
@@ -739,7 +739,7 @@ namespace matsar {
          * @return integer row array
          */
         template<IntType IT>
-        auto randperm(IT n, IT k) -> Matrix<IT> {
+        inline auto randperm(IT n, IT k) -> Matrix<IT> {
             if (n < 0) throw_value_error("randperm: n should be positive");
             if (k < 0 || k > n) throw_value_error("randperm: k value should be greater than or equal to 0 or less than or equal to n");
             unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
@@ -774,7 +774,7 @@ namespace matsar {
          * @param nu the degrees of freedom of the chi-squared distribution
          * @hint std::tgamma function
          */
-        auto chi2pdf(float64 x, float64 nu) -> float64 {
+        inline auto chi2pdf(float64 x, float64 nu) -> float64 {
             if (x < 0) return 0;
             if (nu < 0) return NAN;
             auto v2 = nu / 2;
@@ -787,7 +787,7 @@ namespace matsar {
          * @param nu the degrees of freedom of the chi-squared distribution
          * @hint the algorithm can be optimized using matlab's find-based exclusion method
          */
-        auto chi2pdf(const Matrix<float64> &x, const Matrix<float64> &nu) -> Matrix<float64> {
+        inline auto chi2pdf(const Matrix<float64> &x, const Matrix<float64> &nu) -> Matrix<float64> {
             if (x.getShape() != nu.getShape() && !x.isSingle() && !nu.isSingle())
                 throw_shape_exception("chi2pdf: x and nu have different dimensions");
             mshape_type shape = nu.isSingle() ? x.getShape() : nu.getShape();
@@ -811,7 +811,7 @@ namespace matsar {
          * @param x the x value passed to the function
          * @param mu the mean of the exponential distribution
          */
-        auto exppdf(float64 x, float64 mu = 1) -> float64 {
+        inline auto exppdf(float64 x, float64 mu = 1) -> float64 {
             return 1 / mu * std::exp(-x / mu);
         }
 
@@ -820,7 +820,7 @@ namespace matsar {
          * @param x the x value passed to the function
          * @param mu the mean of the exponential distribution
          */
-        auto exppdf(const Matrix<float64> &x, const Matrix<float64> &mu = {1}) -> Matrix<float64> {
+        inline auto exppdf(const Matrix<float64> &x, const Matrix<float64> &mu = {1}) -> Matrix<float64> {
             return 1 / mu * exp(-x / mu);
         }
 
@@ -829,7 +829,7 @@ namespace matsar {
          * @param mu the mean of the exponential distribution
          * @param shape the size of the target matrix
          */
-        auto exprnd(float64 mu, const mshape_type &shape = {1}) -> Matrix<float64> {
+        inline auto exprnd(float64 mu, const mshape_type &shape = {1}) -> Matrix<float64> {
             Matrix<float64> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -844,7 +844,7 @@ namespace matsar {
          * @return floating-point matrix tuple {mu,mu*mu}
          */
         template<RealType RT>
-        auto expstat(const RT &mu) -> tuple<real_max, real_max> {
+        inline auto expstat(const RT &mu) -> tuple<real_max, real_max> {
             real_max tmp = mu;
             return {tmp, tmp * tmp};
         }
@@ -854,7 +854,7 @@ namespace matsar {
          * @return floating-point matrix tuple {mu,mu*mu}
          */
         template<RealType RT>
-        auto expstat(const Matrix<RT> &mu) -> tuple<Matrix<real_max>, Matrix<real_max>> {
+        inline auto expstat(const Matrix<RT> &mu) -> tuple<Matrix<real_max>, Matrix<real_max>> {
             Matrix<real_max> tmp(mu);
             return {tmp, tmp ^ 2};
         }
@@ -867,7 +867,7 @@ namespace matsar {
          * @param x the x value passed to the function; must be an integer; non-integer values return 0
          * @param lambda the rate parameter of the Poisson distribution, must be positive
          */
-        auto poisspdf(float_max x, float_max lambda) -> float_max {
+        inline auto poisspdf(float_max x, float_max lambda) -> float_max {
             if (x < 0 || x != std::round(x))
                 return 0;
             if (lambda < 0)
@@ -880,7 +880,7 @@ namespace matsar {
          * @param x the x value passed to the function; must be an integer; non-integer values return 0
          * @param lambda the rate parameter of the Poisson distribution, must be positive
          */
-        auto poisspdf(const Matrix<float64> &x, const Matrix<float64> &lambda) -> Matrix<float64> {
+        inline auto poisspdf(const Matrix<float64> &x, const Matrix<float64> &lambda) -> Matrix<float64> {
             if (x.getShape() != lambda.getShape() && !x.isSingle() && !lambda.isSingle())
                 throw_shape_exception("poisspdf: x and lambda have different dimensions");
             mshape_type shape;
@@ -906,7 +906,7 @@ namespace matsar {
          * @param lambda the rate parameter of the Poisson distribution, must be positive
          * @param shape the size of the target matrix
          */
-        auto poissrnd(float64 lambda, const mshape_type &shape = {1}) -> Matrix<float64> {
+        inline auto poissrnd(float64 lambda, const mshape_type &shape = {1}) -> Matrix<float64> {
             Matrix<float64> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -923,7 +923,7 @@ namespace matsar {
          * @param x the x value passed to the function; must be non-negative; negative values return 0
          * @param b the scale value of the Rayleigh distribution
          */
-        auto raylpdf(float64 x, float64 b) -> float64 {
+        inline auto raylpdf(float64 x, float64 b) -> float64 {
             if (x < 0) return 0;
             if (b <= 0) return NAN;
             auto b2 = b * b;
@@ -935,7 +935,7 @@ namespace matsar {
          * @param x the x value passed to the function; must be non-negative; negative values return 0
          * @param b the scale value of the Rayleigh distribution
          */
-        auto raylpdf(const Matrix<float64> &x, const Matrix<float64> &b) -> Matrix<float64> {
+        inline auto raylpdf(const Matrix<float64> &x, const Matrix<float64> &b) -> Matrix<float64> {
             bool x_single = x.isSingle();
             bool b_single = b.isSingle();
             if (x.getShape() != b.getShape() && !x_single && !b_single)
@@ -966,7 +966,7 @@ namespace matsar {
          * @param lambda the scale parameter of the Weibull distribution
          * @param k the shape parameter of the Weibull distribution
          */
-        auto weibpdf(float64 x, float64 lambda, float64 k) -> float64 {
+        inline auto weibpdf(float64 x, float64 lambda, float64 k) -> float64 {
             if (x < 0) return 0;
             if (lambda <= 0 || k <= 0) return NAN;
             auto lambda_re = 1 / lambda;
@@ -981,7 +981,7 @@ namespace matsar {
          * @param lambda the scale parameter of the Weibull distribution
          * @param k the shape parameter of the Weibull distribution
          */
-        auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda, const Matrix<float64> &k) -> Matrix<float64> {
+        inline auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda, const Matrix<float64> &k) -> Matrix<float64> {
             bool x_single = x.isSingle();
             bool lambda_single = lambda.isSingle();
             bool k_single = k.isSingle();
