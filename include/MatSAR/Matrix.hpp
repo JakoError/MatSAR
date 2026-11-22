@@ -1972,18 +1972,22 @@ namespace matsar {
         }
 
         /**
-         * Only symmetric two-dimensional matrices are diag
+         * Only square two-dimensional matrices are diag: every element off the main diagonal is
+         * zero. Trailing singleton dimensions are ignored (a 1x1 or 3x3x1 matrix is 2-D here),
+         * and an empty matrix is diagonal, as it is square (see isSquare).
          */
         [[nodiscard]] auto isDiag() const -> bool {
-            auto m = squeezeHigh();
-            // diag bind with 2d
-            if (!m.is2D(true))
+            if (isEmpty())
+                return true;
+            auto s = squeezeShapeHigh(shape);
+            if (s.size() > 2)
                 return false;
-            if (m.shape[0] != m.shape[1])
+            size_type n = s[0];
+            if ((s.size() == 2 ? s[1] : 1) != n)
                 return false;
-            for (size_type i = 0; i < shape[0]; ++i) {
-                for (size_type j = 0; j < shape[1]; ++j) {
-                    if (i != j && m.getEle(i, j) != 0)
+            for (size_type j = 0; j < n; ++j) {   // column-major storage: (i, j) is data[i + j * n]
+                for (size_type i = 0; i < n; ++i) {
+                    if (i != j && data[i + j * n] != dType(0))
                         return false;
                 }
             }
