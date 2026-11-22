@@ -31,7 +31,7 @@ namespace matsar {
                                 __attribute__((unused)) const msize_type &k = 1,
                                 __attribute__((unused)) void *work = nullptr) {
                     *dst_iter = true;
-                    for (msize_type i = 0; i < n; ++i) {
+                    for (msize_type i = 0; i < n; ++i, ++src_iter) {
                         if (!*src_iter) {
                             *dst_iter = false;
                             break;
@@ -48,7 +48,7 @@ namespace matsar {
                                 __attribute__((unused)) const msize_type &k = 1,
                                 __attribute__((unused)) void *work = nullptr) {
                     *dst_iter = false;
-                    for (msize_type i = 0; i < n; ++i) {
+                    for (msize_type i = 0; i < n; ++i, ++src_iter) {
                         if (*src_iter) {
                             *dst_iter = true;
                             break;
@@ -65,7 +65,7 @@ namespace matsar {
                                 __attribute__((unused)) const msize_type &k = 1,
                                 __attribute__((unused)) void *work = nullptr) {
                     *dst_iter = true;
-                    for (msize_type i = 0; i < n; ++i) {
+                    for (msize_type i = 0; i < n; ++i, ++src_iter) {
                         if (*src_iter == 0) {
                             *dst_iter = false;
                             break;
@@ -82,7 +82,7 @@ namespace matsar {
                                 __attribute__((unused)) const msize_type &k = 1,
                                 __attribute__((unused)) void *work = nullptr) {
                     *dst_iter = false;
-                    for (msize_type i = 0; i < n; ++i) {
+                    for (msize_type i = 0; i < n; ++i, ++src_iter) {
                         if (*src_iter != 0) {
                             *dst_iter = true;
                             break;

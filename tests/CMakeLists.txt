@@ -62,4 +62,13 @@ if(MATSAR_BUILD_EXPERIMENTAL_TESTS)
             ${CMAKE_CURRENT_SOURCE_DIR}/math/include)   # approx.hpp/golden.hpp/rng.hpp
     target_compile_definitions(selftest_helpers PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
     add_test(NAME selftest_helpers COMMAND selftest_helpers)
+
+    # Hand-derived value tests: regressions for fixed wrong-result bugs.
+    add_executable(test_mathvalues math/test_values.cpp)
+    target_link_libraries(test_mathvalues PRIVATE matsar)
+    target_include_directories(test_mathvalues PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}                 # doctest.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/math/include)
+    target_compile_definitions(test_mathvalues PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+    add_test(NAME test_mathvalues COMMAND test_mathvalues)
 endif()
