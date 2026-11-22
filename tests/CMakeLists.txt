@@ -65,6 +65,40 @@ if(MATSAR_BUILD_EXPERIMENTAL_TESTS)
     target_compile_definitions(test_mathtrig PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
     add_test(NAME test_mathtrig COMMAND test_mathtrig)
 
+    # Value tests for MatrixOperation.hpp (golden_matop.hpp + hand-derived cases).
+    add_executable(test_mathmatop math/test_matop.cpp)
+    target_link_libraries(test_mathmatop PRIVATE matsar)
+    target_include_directories(test_mathmatop PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}                 # doctest.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/math/include    # approx.hpp/golden.hpp/rng.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/math/golden)    # golden_matop.hpp
+    target_compile_definitions(test_mathmatop PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+    add_test(NAME test_mathmatop COMMAND test_mathmatop)
+
+    # Death tests for MatrixOperation: one executable, the case is chosen by argv[1].
+    add_executable(death_matop math/death_matop.cpp)
+    target_link_libraries(death_matop PRIVATE matsar)
+    target_compile_definitions(death_matop PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+    foreach(case_regex IN ITEMS
+            "ipermute_range|ValueError: ipermute: The number in dimorder must be from 1 to n"
+            "ipermute_repeated|ValueError: ipermute: The numbers in dimorder are repeated"
+            "factorial_nonint|ValueError: Factorial requires an integer"
+            "factorial_negative|ValueError: Factorial cannot be negative"
+            "numden_zero|ValueError: numden: 0/0 is undefined"
+            "expm_nonsquare|ValueError: expm: requires a square matrix"
+            "logm_negative|ValueError: logm: .*negative real axis.*logm<complex128>"
+            "logm_singular|ValueError: logm: the matrix is singular"
+            "mpower_singular|ValueError: mpower: the matrix is singular"
+            "mpower_two_matrices|ValueError: mpower: the base or the exponent must be a scalar"
+            "mpower_negative_base|ValueError: mpower: .*negative base.*complex")
+        string(FIND "${case_regex}" "|" bar)
+        string(SUBSTRING "${case_regex}" 0 ${bar} case)
+        math(EXPR msg_start "${bar} + 1")
+        string(SUBSTRING "${case_regex}" ${msg_start} -1 regex)
+        add_test(NAME death_matop_${case} COMMAND death_matop ${case})
+        set_tests_properties(death_matop_${case} PROPERTIES PASS_REGULAR_EXPRESSION "${regex}")
+    endforeach()
+
     # Self-test for the harness's own helpers (approx_eq / build<T> / check_matrix).
     add_executable(selftest_helpers math/selftest_helpers.cpp)
     target_link_libraries(selftest_helpers PRIVATE matsar)

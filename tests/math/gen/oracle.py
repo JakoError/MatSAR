@@ -78,3 +78,132 @@ TRIG_BINARY_ORACLE = {
     "pol2cart_x": _binary(lambda theta, rho: rho * mp.cos(theta)),
     "pol2cart_y": _binary(lambda theta, rho: rho * mp.sin(theta)),
 }
+
+
+# ---- MatrixOperation ---------------------------------------------------------------
+# Rounding and integer functions are computed exactly in Python (no floating-point
+# reference error at all); exp/log/gamma come from mpmath like the trig references.
+# MATLAB semantics: round() rounds half away from zero (not NumPy's half-to-even), and
+# round(x, n) rounds the exact value of x to n decimal digits (n < 0: to tens, hundreds, ...).
+import decimal
+from fractions import Fraction
+
+
+def _finite(f):   # f on finite x; NaN/Inf pass through unchanged (as in C and MATLAB)
+    return lambda x: float(f(x)) if math.isfinite(x) else x
+
+
+def _round_digits(x, n):
+    if not math.isfinite(x):
+        return x
+    with decimal.localcontext() as ctx:
+        ctx.prec = 400
+        q = decimal.Decimal(1).scaleb(-n)                     # 10^-n
+        r = float(decimal.Decimal(x).quantize(q, rounding=decimal.ROUND_HALF_UP))
+    return math.copysign(r, x) if r == 0 else r
+
+
+def _exact(f):
+    return np.vectorize(_finite(f), otypes=[np.float64])
+
+
+def _gamma(v, x):
+    return math.copysign(math.inf, x) if x == 0 else mp.gamma(v)   # C tgamma: pole at +-0
+
+
+def _gammaln(v, x):
+    return math.inf if x == 0 else mp.loggamma(v)
+
+
+MATOP_ORACLE = {
+    "abs": np.vectorize(math.fabs, otypes=[np.float64]), "ceil": _exact(math.ceil), "floor": _exact(math.floor),
+    "fix": _exact(math.trunc), "round": _exact(lambda x: _round_digits(x, 0)),
+    "sqrt": _elementwise(lambda v, x: mp.sqrt(v)),
+    "exp": _elementwise(lambda v, x: mp.exp(v)), "exp2": _elementwise(lambda v, x: mp.mpf(2) ** v),
+    "log": _elementwise(lambda v, x: mp.log(v)), "ln": _elementwise(lambda v, x: mp.log(v)),
+    "log2": _elementwise(lambda v, x: mp.log(v, 2)), "log10": _elementwise(lambda v, x: mp.log10(v)),
+    "gamma": _elementwise(_gamma), "gammaln": _elementwise(_gammaln),
+}
+
+
+def round_digits(a, n):
+    return np.vectorize(lambda x: _round_digits(float(x), n), otypes=[np.float64])(a)
+
+
+def _is_prime(n):
+    if n < 2:
+        return False
+    if n % 2 == 0:
+        return n == 2
+    i = 3
+    while i * i <= n:
+        if n % i == 0:
+            return False
+        i += 2
+    return True
+
+
+def _factorial(x):
+    if x != math.floor(x) or x < 0:
+        return math.nan
+    try:
+        return float(math.factorial(int(x)))
+    except OverflowError:
+        return math.inf
+
+
+def _nchoosek(n, k):   # MatSAR: NaN for a non-integer, negative, or k > n argument
+    if n != math.floor(n) or k != math.floor(k) or n < 0 or k < 0 or k > n:
+        return math.nan
+    try:
+        return float(math.comb(int(n), int(k)))
+    except OverflowError:
+        return math.inf
+
+
+_int2 = lambda f: np.vectorize(lambda a, b: float(f(int(a), int(b))), otypes=[np.float64])
+MATOP_INT_ORACLE = {
+    "isPrime": np.vectorize(lambda x: float(_is_prime(int(x))), otypes=[np.float64]),
+    "factorial": np.vectorize(lambda x: _factorial(float(x)), otypes=[np.float64]),
+}
+MATOP_BINARY_ORACLE = {
+    "gcd": _int2(math.gcd),                                        # always >= 0
+    "numden_num": _int2(lambda a, b: Fraction(a, b).numerator),    # sign on the numerator
+    "numden_den": _int2(lambda a, b: Fraction(a, b).denominator),
+    "nchoosek": np.vectorize(lambda a, b: _nchoosek(float(a), float(b)), otypes=[np.float64]),
+}
+
+
+# Matrix functions (MATLAB expm / logm / mpower: functions of the matrix, not of each
+# element), evaluated by mpmath at 40 digits and rounded once to double.
+def _to_mp(a):
+    return mp.matrix(np.asarray(a, dtype=np.float64).tolist())
+
+
+def _from_mp(M):
+    out = np.empty((M.rows, M.cols))
+    for i in range(M.rows):
+        for j in range(M.cols):
+            v = M[i, j]
+            if isinstance(v, mp.mpc):
+                assert abs(v.imag) <= mp.mpf(10) ** -30 * max(1, abs(v)), "complex result"
+                v = v.real
+            out[i, j] = float(v)
+    return out
+
+
+MATRIX_ORACLE = {
+    "expm": lambda a: _from_mp(mp.expm(_to_mp(a))),
+    "logm": lambda a: _from_mp(mp.logm(_to_mp(a))),
+}
+
+
+def mpower(a, p):            # A^p for a scalar p (integer: repeated products; else principal power)
+    A = _to_mp(a)
+    if p == int(p):
+        return _from_mp(A ** int(p))
+    return _from_mp(mp.powm(A, mp.mpf(p)))
+
+
+def mpower_base(s, a):       # s^A = expm(log(s) * A), s > 0
+    return _from_mp(mp.expm(mp.log(mp.mpf(s)) * _to_mp(a)))
