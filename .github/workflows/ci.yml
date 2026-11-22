@@ -142,4 +142,7 @@ jobs:
       - name: Regenerate goldens
         run: python tests/math/gen/generate.py
       - name: Fail if goldens drifted
-        run: git diff --exit-code tests/math/golden/golden_mathfunc.hpp
+        # Covers every generated header; --porcelain also catches a header that is missing or uncommitted.
+        run: |
+          git status --porcelain tests/math/golden
+          test -z "$(git status --porcelain tests/math/golden)"

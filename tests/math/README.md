@@ -70,9 +70,11 @@ g++ -std=c++17 -D_GNU_SOURCE -DMATSAR_ENABLE_EXPERIMENTAL -O0 \
 | `gen/cases.py` | **the case spec you edit** (curated + seeded-random per function) |
 | `gen/oracle.py` | tag → the NumPy reference call |
 | `gen/generate.py` | emits the golden header (deterministic) |
-| `gen/requirements.txt` | pinned `numpy==2.1.1` |
+| `gen/requirements.txt` | pinned `numpy==2.1.1` + `mpmath==1.3.0` (Trigonometry references: correctly rounded, platform-independent) |
 | `golden/golden_mathfunc.hpp` | **GENERATED + committed** golden vectors — do not hand-edit |
+| `golden/golden_trig.hpp` | **GENERATED + committed** Trigonometry goldens (domain-aware inputs, int64 subset, binary/broadcast) |
 | `test_mathfunc.cpp` | doctest: Layer 1 (golden replay) + Layer 2 (properties) |
+| `test_trig.cpp` | doctest: golden replay for every `Trigonometry.hpp` function (`test_mathtrig`) |
 | `selftest_helpers.cpp` | self-test for the harness's own helpers |
 
 ## Run it

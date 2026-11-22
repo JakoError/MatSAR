@@ -54,6 +54,16 @@ if(MATSAR_BUILD_EXPERIMENTAL_TESTS)
     target_compile_definitions(test_mathfunc PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
     add_test(NAME test_mathfunc COMMAND test_mathfunc)
 
+    # NumPy-golden replay for Trigonometry.hpp (golden_trig.hpp).
+    add_executable(test_mathtrig math/test_trig.cpp)
+    target_link_libraries(test_mathtrig PRIVATE matsar)
+    target_include_directories(test_mathtrig PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}                 # doctest.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/math/include    # approx.hpp/golden.hpp/rng.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/math/golden)    # golden_trig.hpp
+    target_compile_definitions(test_mathtrig PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+    add_test(NAME test_mathtrig COMMAND test_mathtrig)
+
     # Self-test for the harness's own helpers (approx_eq / build<T> / check_matrix).
     add_executable(selftest_helpers math/selftest_helpers.cpp)
     target_link_libraries(selftest_helpers PRIVATE matsar)
