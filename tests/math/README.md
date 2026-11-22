@@ -70,13 +70,17 @@ g++ -std=c++17 -D_GNU_SOURCE -DMATSAR_ENABLE_EXPERIMENTAL -O0 \
 | `gen/cases.py` | **the case spec you edit** (curated + seeded-random per function) |
 | `gen/oracle.py` | tag → the NumPy reference call |
 | `gen/generate.py` | emits the golden header (deterministic) |
-| `gen/requirements.txt` | pinned `numpy==2.1.1` + `mpmath==1.3.0` (Trigonometry / MatrixOperation references: correctly rounded, platform-independent) |
+| `gen/requirements.txt` | pinned `numpy==2.1.1` + `mpmath==1.3.0` (Trigonometry / MatrixOperation / Probability references: correctly rounded, platform-independent) |
 | `golden/golden_mathfunc.hpp` | **GENERATED + committed** golden vectors — do not hand-edit |
 | `golden/golden_trig.hpp` | **GENERATED + committed** Trigonometry goldens (domain-aware inputs, int64 subset, binary/broadcast) |
 | `golden/golden_matop.hpp` | **GENERATED + committed** MatrixOperation goldens: exact Python references (rounding, gcd, numden, factorial, nchoosek), mpmath for exp/log/gamma and for `expm` / `logm` / `mpower` |
+| `golden/golden_prob.hpp` | **GENERATED + committed** Probability goldens: exact NumPy for max/min/median/var, mpmath densities (tolerance grows with \|ln pdf\| in deep tails) |
 | `test_mathfunc.cpp` | doctest: Layer 1 (golden replay) + Layer 2 (properties) |
 | `test_trig.cpp` | doctest: golden replay for every `Trigonometry.hpp` function (`test_mathtrig`) |
 | `test_matop.cpp` | doctest: golden replay + hand-derived cases for `MatrixOperation.hpp` (`test_mathmatop`) |
+| `test_prob.cpp` | doctest: golden replay for `Probability.hpp` + statistical checks of every random generator (`test_mathprob`) |
+| `death_prob.cpp` | Probability error cases, one per `argv[1]` (CTest `death_prob_<case>`) |
+| `multi_tu_a.cpp`, `multi_tu_b.cpp` | every math header in two translation units of one program (`test_math_multi_tu`, a link-time check) |
 | `death_matop.cpp` | MatrixOperation error cases, one per `argv[1]` (CTest `death_matop_<case>` matches the ValueError text) |
 | `selftest_helpers.cpp` | self-test for the harness's own helpers |
 

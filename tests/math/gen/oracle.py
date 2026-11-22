@@ -207,3 +207,108 @@ def mpower(a, p):            # A^p for a scalar p (integer: repeated products; e
 
 def mpower_base(s, a):       # s^A = expm(log(s) * A), s > 0
     return _from_mp(mp.expm(mp.log(mp.mpf(s)) * _to_mp(a)))
+
+
+# ---- Probability -------------------------------------------------------------------
+# Reductions: exact NumPy (max/min omit NaN as MATLAB does; an all-NaN slice is NaN).
+# Densities: mpmath at 40 digits from the double inputs, rounded once. Conventions (MATLAB /
+# SciPy): a NaN x gives NaN; an invalid parameter gives NaN; x outside the support gives 0
+# (for the discrete ones also a non-integer x).
+import warnings
+
+
+def _keep(f):
+    def g(a, axis):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)     # all-NaN slice
+            if axis is None:
+                return np.asarray([f(a, axis=None)], dtype=np.float64)
+            return f(a, axis=axis, keepdims=True)
+    return g
+
+
+PROB_REDUCE_ORACLE = {
+    "max": _keep(np.nanmax), "min": _keep(np.nanmin), "median": _keep(np.median),
+    "var_sample": _keep(lambda a, axis=None, **kw: np.var(a, axis=axis, ddof=1, **kw)),
+}
+
+_NAN, _INF = mp.nan, mp.inf
+
+
+def _is_int(v):
+    return v == mp.floor(v)
+
+
+def _normpdf(x, mu, s):
+    if s <= 0: return _NAN
+    if mp.isinf(x): return mp.mpf(0)
+    z = (x - mu) / s
+    return mp.exp(-z * z / 2) / (s * mp.sqrt(2 * mp.pi))
+
+
+def _binopdf(x, n, p):
+    if n < 0 or not _is_int(n) or p < 0 or p > 1: return _NAN
+    if not mp.isfinite(x) or not _is_int(x) or x < 0 or x > n: return mp.mpf(0)
+    return mp.binomial(n, x) * mp.power(p, x) * mp.power(1 - p, n - x)
+
+
+def _poisspdf(x, lam):
+    if lam < 0: return _NAN
+    if not mp.isfinite(x) or not _is_int(x) or x < 0: return mp.mpf(0)
+    if lam == 0: return mp.mpf(1) if x == 0 else mp.mpf(0)
+    return mp.exp(-lam + x * mp.log(lam) - mp.loggamma(x + 1))
+
+
+def _chi2pdf(x, nu):
+    if nu <= 0: return _NAN
+    if x < 0 or mp.isinf(x): return mp.mpf(0)
+    if x == 0: return _INF if nu < 2 else (mp.mpf(1) / 2 if nu == 2 else mp.mpf(0))
+    k = nu / 2
+    return mp.exp((k - 1) * mp.log(x) - x / 2 - k * mp.log(2) - mp.loggamma(k))
+
+
+def _exppdf(x, mu):
+    if mu <= 0: return _NAN
+    if x < 0 or mp.isinf(x): return mp.mpf(0)
+    return mp.exp(-x / mu) / mu
+
+
+def _raylpdf(x, b):
+    if b <= 0: return _NAN
+    if x < 0 or mp.isinf(x): return mp.mpf(0)
+    return x / (b * b) * mp.exp(-x * x / (2 * b * b))
+
+
+def _weibpdf(x, lam, k):
+    if lam <= 0 or k <= 0: return _NAN
+    if x < 0 or mp.isinf(x): return mp.mpf(0)
+    if x == 0: return _INF if k < 1 else (1 / lam if k == 1 else mp.mpf(0))
+    t = x / lam
+    return k / lam * mp.power(t, k - 1) * mp.exp(-mp.power(t, k))
+
+
+def _unifpdf(x, a, b):
+    if a >= b: return _NAN
+    return 1 / (b - a) if a <= x <= b else mp.mpf(0)
+
+
+def _pdf(f):
+    """f(x, *params) on doubles -> np.float64 array; NaN x -> NaN."""
+    def g(xs, params):
+        ps = [mp.mpf(float(v)) for v in params]
+        out = []
+        for x in np.asarray(xs, dtype=np.float64).ravel(order="C"):
+            if math.isnan(x):
+                out.append(math.nan)
+                continue
+            v = f(mp.mpf(float(x)), *ps)
+            out.append(math.nan if mp.isnan(v) else float(v))
+        return np.asarray(out, dtype=np.float64).reshape(np.shape(xs))
+    return g
+
+
+PROB_PDF_ORACLE = {
+    "normpdf": _pdf(_normpdf), "binopdf": _pdf(_binopdf), "poisspdf": _pdf(_poisspdf),
+    "chi2pdf": _pdf(_chi2pdf), "exppdf": _pdf(_exppdf), "raylpdf": _pdf(_raylpdf),
+    "weibpdf": _pdf(_weibpdf), "unifpdf": _pdf(_unifpdf),
+}

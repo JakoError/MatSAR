@@ -220,3 +220,56 @@ MATFUN_TOL = {"expm": 1e-13, "logm": 1e-13, "mpower_int": 1e-13, "mpower_frac": 
 MPOWER_P = [0, 1, 2, 3, 7, -1, -2, 0.5, 1.5, -0.5, 1 / 3]
 MPOWER_BASES = [2, 0.5, 10, 2.718281828459045]
 MPOWER_RANDOM = dict(sizes=[2, 3, 4], seed=3403)
+
+
+# ---- Probability -------------------------------------------------------------------
+# Reductions (dim is MatSAR's 1-based dim; stored 0-based like mean/var, -1 = global).
+PROB_REDUCE_SHAPES = [(5,), (3, 4), (4, 3), (2, 6)]
+PROB_REDUCE_RANDOM = dict(count=10, lo=-50, hi=50, seed=3501)
+PROB_REDUCE_CURATED = [   # (name, rows, axis); NaN placement: first, middle, last, all
+    ("nan_first", [[float("nan"), 1, 2], [3, float("nan"), 4]], 1),
+    ("nan_mid", [[1, float("nan"), 2], [5, 0, float("nan")]], 1),
+    ("nan_col", [[float("nan"), 1], [float("nan"), 2]], 0),
+    ("nan_all", [[float("nan"), float("nan")]], None),
+    ("nan_global", [[1, float("nan"), -4], [7, 2, float("nan")]], None),
+]
+PROB_REDUCE_TOL = {"max": (0.0, 0.0), "min": (0.0, 0.0), "median": (0.0, 0.0), "var_sample": (1e-12, 1e-13)}
+
+# Densities: each case is (params, x points); random x per case from PROB_PDF_RANDOM.
+_PDF = dict(rtol=1e-13, atol=1e-300)
+_X_EDGE = [float("nan"), float("inf"), -float("inf")]
+PROB_PDF_CASES = {
+    "normpdf": dict(cases=[
+        ((0, 1), [0, -0.0, 1, -1, 2.5, 5, -8, 10]), ((2, 0.5), [2, 1.5, 3, 0, 4.2]),
+        ((-3, 10), [-3, 0, 20, -40]), ((0, -1), [0, 1]), ((0, 0), [0, 1])],
+        random=dict(span=6), **_PDF),
+    "binopdf": dict(cases=[
+        ((10, 0.3), [0, 1, 3, 7, 10, -1, 11, 2.5]), ((1, 0.5), [0, 1]), ((0, 0.5), [0, 1]),
+        ((20, 0), [0, 1, 20]), ((20, 1), [0, 19, 20]), ((100, 0.07), [0, 7, 30, 100]),
+        ((1000, 0.5), [500, 450, 0, 1000]), ((2000, 0.5), [1000, 900, 1100]), ((5000, 0.001), [0, 5, 20]),
+        ((1000000, 3e-7), [0, 1, 2, 999999, 1000000]),   # tiny p: 1 - p loses digits (x = 0 branch)
+        ((3.5, 0.5), [1]), ((-1, 0.5), [0]), ((10, 1.5), [1])],
+        random=dict(integer=True), **_PDF),
+    "poisspdf": dict(cases=[
+        ((0, ), [0, 1, 2]), ((0.5, ), [0, 1, 4]), ((4, ), [0, 1, 4, 10, 2.5, -1]),
+        ((30, ), [0, 30, 60]), ((200, ), [150, 170, 171, 200, 250]), ((1000, ), [900, 1000, 1100]),
+        ((-1, ), [0, 1])],
+        random=dict(integer=True), **_PDF),
+    "chi2pdf": dict(cases=[
+        ((1, ), [0, 0.1, 1, 2, 5, -1]), ((2, ), [0, 0.5, 2, 10]), ((3, ), [0, 1, 3, 8]),
+        ((10, ), [0.5, 10, 30]), ((0.5, ), [0, 0.01, 1]), ((100, ), [50, 100, 150]),
+        ((400, ), [350, 400, 450]), ((1000, ), [1000, 900]), ((0, ), [1]), ((-1, ), [1])],
+        random=dict(span=3), **_PDF),
+    "exppdf": dict(cases=[
+        ((1, ), [0, 0.5, 1, 10, 100, -1]), ((0.5, ), [0, 0.25, 3]), ((10, ), [0, 5, 100]),
+        ((0, ), [1]), ((-2, ), [1])], random=dict(span=8), **_PDF),
+    "raylpdf": dict(cases=[((1, ), [0, 0.5, 1, 3, -1]), ((2.5, ), [0, 1, 2.5, 10]), ((0, ), [1])],
+                    random=dict(span=4), **_PDF),
+    "weibpdf": dict(cases=[
+        ((1, 1), [0, 0.1, 1, 2, 5, -1]), ((2, 0.5), [0, 0.1, 1, 8]), ((1.5, 3), [0, 0.5, 1.5, 3]),
+        ((1, 0), [1]), ((0, 1), [1])], random=dict(span=3), **_PDF),
+    "unifpdf": dict(cases=[((0, 1), [0, 0.5, 1, -0.1, 1.1]), ((-2, 3), [-2, 0, 3, 3.5]), ((1, 1), [1]),
+                           ((2, 1), [1.5])], random=dict(span=1.5), rtol=0.0, atol=0.0),
+}
+PROB_PDF_RANDOM = dict(count=6, seed=3601)
+PROB_PDF_LOG_RTOL = 2e-15   # per unit of max |ln pdf| in a case, on top of rtol

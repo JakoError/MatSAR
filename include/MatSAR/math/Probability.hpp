@@ -9,6 +9,11 @@
 
 #include <random>
 #include <algorithm>
+#include <cmath>
+#include <limits>
+#include <numeric>
+#include <tuple>
+#include <vector>
 
 //#ifndef _USE_MATH_DEFINES
 //#define _USE_MATH_DEFINES
@@ -41,82 +46,82 @@
 namespace matsar {
 ///Matrix probability computation functions
     namespace Math {
+        namespace ProbDetail {
+            template<typename T>
+            auto is_nan(const T &v) -> bool {
+                if constexpr (std::is_floating_point_v<T>)
+                    return std::isnan(v);
+                else
+                    return false;
+            }
+
+            /// the "best" element along dim (max: greater, min: less). NaN is skipped, as in MATLAB;
+            /// a slice holding only NaN gives NaN.
+            template<typename dType, typename Better>
+            auto extreme(const Matrix<dType> &m, msize_type dim, Better better) -> Matrix<dType> {
+                static_assert(!complex_type<dType>::value, "max / min: complex matrices are not supported");
+                auto take = [&better](const dType &best, const dType &v) {
+                    return is_nan(best) || (!is_nan(v) && better(v, best));
+                };
+                if (m.isEmpty())
+                    return {};
+                auto dim_idx = dim - 1;
+                if (dim_idx >= m.getDims())
+                    return m;
+                if (dim_idx < 0) {
+                    dType best = m.getData()[0];
+                    for (msize_type i = 1; i < m.getSize(); ++i)
+                        if (take(best, m.getData()[i]))
+                            best = m.getData()[i];
+                    return Matrix<dType>(mshape_type{1}, best);
+                }
+                auto shape = m.getShape();
+                auto step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
+                auto unit_size = step_size * shape[dim_idx];
+                auto step_num = shape[dim_idx];
+                auto unit_num = m.getSize() / unit_size;
+
+                auto r_shape = m.getShape();
+                r_shape[dim_idx] = 1;
+                Matrix<dType> r(r_shape, dType(0));
+
+                auto iter_r = r.getData(), iter_m = m.getData();
+                for (msize_type i = 0; i < unit_num; ++i) {
+                    for (msize_type j = 0; j < step_size; ++j) {
+                        *iter_r = *(iter_m + j);
+                        for (msize_type k = 1; k < step_num; ++k) {
+                            const auto &item = *(iter_m + j + step_size * k);
+                            if (take(*iter_r, item))
+                                *iter_r = item;
+                        }
+                        iter_r++;
+                    }
+                    iter_m += unit_size;
+                }
+                return r;
+            }
+        }
+
         /**
-         * Return the maximum along the given dimension of the matrix
-         * @param m supports all Calculable matrices
+         * Return the maximum along the given dimension of the matrix (NaN is skipped, as in MATLAB)
+         * @param m a real-valued matrix
          * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          * @return the maximum along the given dimension of the matrix
          */
         template<Calculable dType>
-        inline auto max(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
-            auto dim_idx = dim - 1;
-            if (dim_idx >= m.getDims())
-                return {m};
-            if (dim_idx < 0)
-                return {m.max()};
-            auto shape = m.getShape();
-            auto step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
-            auto unit_size = step_size * shape[dim_idx];
-            auto step_num = shape[dim_idx];
-            auto unit_num = m.getSize() / unit_size;
-
-            auto r_shape = m.getShape();
-            r_shape[dim_idx] = 1;
-            Matrix<dType> r(r_shape, 0., m.getData());
-
-            auto iter_r = r.getData(), iter_m = m.getData();
-            for (msize_type i = 0; i < unit_num; ++i) {
-                for (msize_type j = 0; j < step_size; ++j) {
-                    *iter_r = *(iter_m + j);
-                    for (msize_type k = 1; k < step_num; ++k) {
-                        auto &item = *(iter_m + j + step_size * k);
-                        if (item > *iter_r)
-                            *iter_r = item;
-                    }
-                    iter_r++;
-                }
-                iter_m += unit_size;
-            }
-            return r;
+        auto max(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
+            return ProbDetail::extreme(m, dim, [](const dType &a, const dType &b) { return a > b; });
         }
 
         /**
-         * Return the minimum along the given dimension of the matrix
-         * @param m supports all Calculable matrices
+         * Return the minimum along the given dimension of the matrix (NaN is skipped, as in MATLAB)
+         * @param m a real-valued matrix
          * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          * @return the minimum along the given dimension of the matrix
          */
         template<Calculable dType>
-        inline auto min(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
-            auto dim_idx = dim - 1;
-            if (dim_idx >= m.getDims())
-                return {m};
-            if (dim_idx < 0)
-                return {m.min()};
-            auto shape = m.getShape();
-            auto step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
-            auto unit_size = step_size * shape[dim_idx];
-            auto step_num = shape[dim_idx];
-            auto unit_num = m.getSize() / unit_size;
-
-            auto r_shape = m.getShape();
-            r_shape[dim_idx] = 1;
-            Matrix<dType> r(r_shape, 0., m.getData());
-
-            auto iter_r = r.getData(), iter_m = m.getData();
-            for (msize_type i = 0; i < unit_num; ++i) {
-                for (msize_type j = 0; j < step_size; ++j) {
-                    *iter_r = *(iter_m + j);
-                    for (msize_type k = 1; k < step_num; ++k) {
-                        auto &item = *(iter_m + j + step_size * k);
-                        if (item < *iter_r)
-                            *iter_r = item;
-                    }
-                    iter_r++;
-                }
-                iter_m += unit_size;
-            }
-            return r;
+        auto min(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
+            return ProbDetail::extreme(m, dim, [](const dType &a, const dType &b) { return a < b; });
         }
 
         /**
@@ -138,6 +143,8 @@ namespace matsar {
                 -> Matrix<resolve_t<TargetType, real_promote_t<dType>>> {
             using Out = resolve_t<TargetType, real_promote_t<dType>>;
             static_assert(calculable_type<Out>::value, "median: output type must be Calculable");
+            if (m.isEmpty())
+                return {};
             auto dim_idx = dim - 1;
             if (dim_idx >= m.getDims())
                 return {m};
@@ -157,7 +164,7 @@ namespace matsar {
             auto step_num = shape[dim_idx];
             auto unit_num = m.getSize() / unit_size;
 
-            auto sort_m = matsar::Math::sort(m, dim);
+            auto sort_m = matsar::Math::sort(m, dim_idx);   // sort takes the 0-based axis
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
             Matrix<Out> r(r_shape, 0., m.getData());
@@ -287,56 +294,174 @@ namespace matsar {
         }
     }
     ///Distribution functions
+    ///Conventions (MATLAB / SciPy): a NaN argument gives NaN; an invalid parameter gives NaN;
+    ///x outside the support gives 0 (for the discrete distributions also a non-integer x).
+    ///Matrix arguments broadcast against each other like Matrix arithmetic.
     namespace Math {
-//        static const float_max PI = static_cast<float_max>(3.14159265358979323846);
+        namespace ProbDetail {
+            inline auto is_integer(float64 v) -> bool { return std::isfinite(v) && v == std::floor(v); }
+
+            /// the common shape of broadcasting arguments (trailing singleton dims appended, as Matrix does)
+            inline auto broadcast_shape(const char *name, std::initializer_list<mshape_type> shapes) -> mshape_type {
+                size_t dims = 0;
+                for (const auto &s: shapes)
+                    dims = std::max(dims, s.size());
+                mshape_type out(dims, 1);
+                for (auto s: shapes) {
+                    s.resize(dims, 1);
+                    for (size_t i = 0; i < dims; ++i) {
+                        if (s[i] == out[i] || s[i] == 1)
+                            continue;
+                        if (out[i] == 1)
+                            out[i] = s[i];
+                        else
+                            throw_shape_exception(std::string(name) + ": the arguments cannot be broadcast to one shape");
+                    }
+                }
+                return out;
+            }
+
+            template<typename F, typename... Ms>
+            auto map_expanded(F f, const mshape_type &shape, const Ms &...ms) -> Matrix<float64> {
+                Matrix<float64> r(shape, 0.);
+                for (msize_type i = 0; i < r.getSize(); ++i)
+                    r.getData()[i] = f(ms.getData()[i]...);
+                return r;
+            }
+
+            /// f applied element by element to broadcast Matrix<float64> arguments
+            template<typename F, typename... Ms>
+            auto map(const char *name, F f, const Ms &...ms) -> Matrix<float64> {
+                const auto shape = broadcast_shape(name, {ms.getShape()...});
+                auto expand = [&shape](const Matrix<float64> &m) { return m.getShape() == shape ? m : m.broadcast(shape); };
+                return map_expanded(f, shape, expand(ms)...);
+            }
+
+            // Binomial, Poisson and gamma densities by C. Loader's saddle-point expansion ("Fast and
+            // accurate computation of binomial probabilities", 2000; also R's dbinom / dpois): the
+            // density is exp(-(Stirling-series errors) - (deviance terms)), sums of small terms with no
+            // large cancellation, so it stays accurate for any n where n! / p^x would over- or underflow.
+
+            /// log(n!) - log(sqrt(2 pi n) (n / e)^n), n > 0
+            inline auto stirlerr(float64 n) -> float64 {
+                if (n <= 15)
+                    return std::lgamma(n + 1) - (n + 0.5) * std::log(n) + n - 0.5 * std::log(2 * PI);
+                const float64 nn = n * n;
+                const float64 s0 = 1. / 12, s1 = 1. / 360, s2 = 1. / 1260, s3 = 1. / 1680, s4 = 1. / 1188;
+                if (n > 500)
+                    return (s0 - s1 / nn) / n;
+                if (n > 80)
+                    return (s0 - (s1 - s2 / nn) / nn) / n;
+                if (n > 35)
+                    return (s0 - (s1 - (s2 - s3 / nn) / nn) / nn) / n;
+                return (s0 - (s1 - (s2 - (s3 - s4 / nn) / nn) / nn) / nn) / n;
+            }
+
+            /// the deviance term x log(x / np) + np - x, by its series when x is close to np
+            inline auto bd0(float64 x, float64 np) -> float64 {
+                if (std::abs(x - np) < 0.1 * (x + np)) {
+                    float64 v = (x - np) / (x + np);
+                    float64 s = (x - np) * v;
+                    float64 ej = 2 * x * v;
+                    v *= v;
+                    for (int j = 1; j < 1000; ++j) {
+                        ej *= v;
+                        const float64 s1 = s + ej / (2 * j + 1);
+                        if (s1 == s)
+                            return s1;
+                        s = s1;
+                    }
+                }
+                return x * std::log(x / np) + np - x;
+            }
+
+            /// binomial probability of x successes in n trials; integers 0 <= x <= n, 0 <= p <= 1
+            inline auto dbinom(float64 x, float64 n, float64 p) -> float64 {
+                const float64 q = 1 - p;
+                if (p == 0)
+                    return x == 0 ? 1 : 0;
+                if (q == 0)
+                    return x == n ? 1 : 0;
+                if (x == 0) {
+                    if (n == 0)
+                        return 1;
+                    return std::exp(p < 0.1 ? -bd0(n, n * q) - n * p : n * std::log(q));
+                }
+                if (x == n)
+                    return std::exp(q < 0.1 ? -bd0(n, n * p) - n * q : n * std::log(p));
+                const float64 lc = stirlerr(n) - stirlerr(x) - stirlerr(n - x) - bd0(x, n * p) - bd0(n - x, n * q);
+                const float64 lf = std::log(2 * PI) + std::log(x) + std::log1p(-x / n);
+                return std::exp(lc - 0.5 * lf);
+            }
+
+            /// Poisson density at x >= 0 (any real x: also the gamma density kernel), lambda >= 0
+            inline auto dpois(float64 x, float64 lambda) -> float64 {
+                if (lambda == 0)
+                    return x == 0 ? 1 : 0;
+                if (!std::isfinite(lambda))
+                    return 0;
+                if (x == 0)
+                    return std::exp(-lambda);
+                if (x <= lambda * std::numeric_limits<float64>::min())
+                    return std::exp(-lambda);
+                if (lambda < x * std::numeric_limits<float64>::min())
+                    return std::exp(-lambda + x * std::log(lambda) - std::lgamma(x + 1));
+                return std::exp(-stirlerr(x) - bd0(x, lambda)) / std::sqrt(2 * PI * x);
+            }
+
+            /// gamma density, x > 0 finite, shape > 0, scale > 0
+            inline auto dgamma(float64 x, float64 shape, float64 scale) -> float64 {
+                if (shape < 1)
+                    return dpois(shape, x / scale) * shape / x;
+                return dpois(shape - 1, x / scale) / scale;
+            }
+        }
 
         /**
-         * Map every element of the matrix through the normal distribution
+         * Normal density, element by element
          * @param m must be a real-valued matrix
          * @param mu the mean of the normal distribution
-         * @param sigma the standard deviation of the normal distribution
-         * @return floating-point matrix: the matrix elements mapped through the normal distribution
+         * @param sigma the standard deviation, > 0 (otherwise NaN)
+         * @return floating-point matrix: the density at each element
          */
         template<RealType RT>
-        inline auto normpdf(const Matrix<RT> &m, float_max mu = 0., float_max sigma = 1.) -> Matrix<real_max> {
+        auto normpdf(const Matrix<RT> &m, float_max mu = 0., float_max sigma = 1.) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            auto stat1 = sigma * std::sqrt(2 * PI);
+            const auto norm = sigma * std::sqrt(2 * PI);
             for (auto &i: r) {
-                auto stat2 = (i - mu) / sigma;
-                i = std::exp(-stat2 * stat2 / 2.) / stat1;
+                if (!(sigma > 0)) {
+                    i = NAN;
+                    continue;
+                }
+                auto z = (i - mu) / sigma;
+                i = std::exp(-z * z / 2.) / norm;
             }
             return r;
         }
 
         /**
-         * Map every element of the matrix through the normal distribution
-         * @param m the matrix must be a real-valued matrix
-         * @param mu the mean of the normal distribution; a broadcast operation is applied to the mu matrix
-         * @param sigma the standard deviation of the normal distribution; a broadcast operation is applied to the sigma matrix
-         * @return floating-point matrix: the matrix elements mapped through the normal distribution
+         * Normal density with parameter matrices (broadcast against m)
          */
         template<RealType RT>
-        inline auto normpdf(const Matrix<RT> &m, Matrix<float_max> mu, Matrix<float_max> sigma) -> Matrix<real_max> {
-            mu = mu.broadcast(m.getShape());
-            sigma = sigma.broadcast(m.getShape());
-            Matrix<real_max> r(m);
-            auto stat1 = std::sqrt(2 * PI);
-            for (auto iter = r.begin(), iter_mu = mu.begin(), iter_sigma = sigma.begin();
-                 iter != r.end(); ++iter, ++iter_mu, ++iter_sigma) {
-                auto stat2 = (*iter - *iter_mu) / *iter_sigma;
-                *iter = std::exp(-stat2 * stat2 / 2.) / (stat1 * *iter_sigma);
-            }
-            return r;
+        auto normpdf(const Matrix<RT> &m, const Matrix<float_max> &mu, const Matrix<float_max> &sigma)
+                -> Matrix<real_max> {
+            return ProbDetail::map("normpdf", [](float64 x, float64 mu_, float64 sigma_) -> float64 {
+                if (!(sigma_ > 0))
+                    return NAN;
+                auto z = (x - mu_) / sigma_;
+                return std::exp(-z * z / 2.) / (sigma_ * std::sqrt(2 * PI));
+            }, Matrix<float64>(m), mu, sigma);
         }
 
         /**
-         * Generate a random matrix from the normal distribution
-         * @param mu the mean of the normal distribution
-         * @param sigma the standard deviation of the normal distribution
-         * @param shape the shape of the target matrix
-         * @return floating-point matrix: a random matrix from the normal distribution
+         * Random matrix from the normal distribution
+         * @param sigma the standard deviation: 0 gives mu exactly, < 0 (or NaN) gives NaN
          */
         inline auto normrnd(float_max mu = 0., float_max sigma = 1., const mshape_type &shape = {1}) -> Matrix<real_max> {
+            if (!(sigma >= 0) || std::isnan(mu))
+                return Matrix<real_max>(shape, NAN);
+            if (sigma == 0)
+                return Matrix<real_max>(shape, mu);
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -347,253 +472,188 @@ namespace matsar {
         }
 
         /**
-         * Generate a random matrix from the normal distribution
-         * @param mu the mean of the normal distribution; a broadcast operation is applied to the mu matrix
-         * @param sigma the standard deviation of the normal distribution; a broadcast operation is applied to the sigma matrix
-         * @param shape the shape of the target matrix
-         * @return floating-point matrix: a random matrix from the normal distribution
+         * Random matrix from the normal distribution, one draw per element of mu and sigma
+         * @param shape the result shape; mu and sigma must have it (empty: the shape of mu)
          */
         inline auto normrnd(const Matrix<float_max> &mu, const Matrix<float_max> &sigma,
-                     const mshape_type &shape = {1}) -> Matrix<real_max> {
+                            mshape_type shape = {}) -> Matrix<real_max> {
+            if (shape.empty())
+                shape = mu.getShape();
             if (mu.getShape() != shape || sigma.getShape() != shape)
-                throw_shape_exception("mu matrix or sigma matrix size differs from the specified shape");
+                throw_shape_exception("normrnd: mu and sigma must have the requested shape");
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            for (auto iter = r.begin(), iter_mu = mu.begin(), iter_sigma = sigma.begin();
-                 iter != r.end(); ++iter, ++iter_mu, ++iter_sigma) {
-                normal_distribution<float_max> normal(*iter_mu, *iter_sigma);
-                *iter = normal(gen);
+            for (msize_type i = 0; i < r.getSize(); ++i) {
+                const auto m = mu.getData()[i], s = sigma.getData()[i];
+                if (!(s >= 0) || std::isnan(m))
+                    r.getData()[i] = NAN;
+                else if (s == 0)
+                    r.getData()[i] = m;
+                else
+                    r.getData()[i] = normal_distribution<float_max>(m, s)(gen);
             }
             return r;
         }
 
         /**
-         * The mean and variance of the normal distribution
-         * @return floating-point matrix tuple {mu,sigma*sigma}
+         * The mean and variance of the normal distribution: {mu, sigma^2}; NaN for sigma < 0
          */
         template<RealType RT1, RealType RT2>
-        inline auto normstat(RT1 mu, RT2 sigma) -> tuple<real_max, real_max> {
-            return {mu, mul(sigma, sigma)};
+        auto normstat(RT1 mu, RT2 sigma) -> tuple<real_max, real_max> {
+            if (sigma < 0)
+                return {NAN, NAN};
+            return {real_max(mu), real_max(sigma) * real_max(sigma)};
         }
 
         /**
-         * The mean and variance of the normal distribution
-         * @return floating-point matrix tuple {mu,sigma*sigma}
+         * The mean and variance of the normal distribution, for broadcast parameter matrices
          */
         template<RealType RT1, RealType RT2>
-        inline auto normstat(const Matrix<RT1> &mu, const Matrix<RT2> &sigma) -> tuple<Matrix<real_max>, Matrix<real_max>> {
-            Matrix<real_max> b_mu(mu);
-            Matrix<real_max> b_sigma(sigma);
-            Matrix<real_max>::broadcast(mu, sigma);
-            return {b_mu, mul(b_sigma, b_sigma)};
+        auto normstat(const Matrix<RT1> &mu, const Matrix<RT2> &sigma) -> tuple<Matrix<real_max>, Matrix<real_max>> {
+            Matrix<float64> m(mu), s(sigma);
+            return {ProbDetail::map("normstat", [](float64 m_, float64 s_) { return std::get<0>(normstat(m_, s_)); }, m, s),
+                    ProbDetail::map("normstat", [](float64 m_, float64 s_) { return std::get<1>(normstat(m_, s_)); }, m, s)};
         }
     }
     namespace Math {
         /**
-         * Map every element of the matrix through the binomial distribution
-         * @param m must be a real-valued matrix; floating-point values are rounded
-         * @param n the number of trials of the binomial distribution
-         * @param p the success probability of the binomial distribution
-         * @return floating-point matrix: the matrix elements mapped through the binomial distribution
+         * Binomial probability of x successes in n trials with success probability p
+         * (0 for x outside 0..n or not an integer; NaN unless n is a non-negative integer and
+         * 0 <= p <= 1).
+         */
+        inline auto binopdf(float64 x, float64 n, float64 p) -> float64 {
+            if (std::isnan(x) || !ProbDetail::is_integer(n) || n < 0 || !(p >= 0 && p <= 1))
+                return NAN;
+            if (!ProbDetail::is_integer(x) || x < 0 || x > n)
+                return 0;
+            return ProbDetail::dbinom(x, n, p);
+        }
+
+        /**
+         * Binomial probability of each element of m
+         * @param m real-valued matrix of success counts
          */
         template<RealType RT>
-        inline auto binopdf(const Matrix<RT> &m, float64 n, float64 p) -> Matrix<float64> {
-            Matrix<float64> r(m.getShape(), 0.);
-            auto iter_m = m.getData();
-            for (auto &i: r) {
-                if (*iter_m >= 0 || *iter_m <= n)
-                    i = nchoosek<float64>(n, *iter_m) * pow(p, *iter_m) * pow(1 - p, n - *iter_m);
-                iter_m++;
-            }
+        auto binopdf(const Matrix<RT> &m, float64 n, float64 p) -> Matrix<float64> {
+            Matrix<float64> r(m);
+            for (auto &i: r)
+                i = binopdf(i, n, p);
             return r;
         }
 
         /**
-         * Map every element of the matrix through the binomial distribution
-         * @param m must be a real-valued matrix; floating-point values are rounded
-         * @param n matrix the number of trials of the binomial distribution
-         * @param p matrix the success probability of the binomial distribution
-         * @return floating-point matrix: the matrix elements mapped through the binomial distribution
+         * Binomial probability with parameter matrices (broadcast against m)
          */
         template<RealType RT>
-        inline auto binopdf(const Matrix<RT> &m, Matrix<float64> n, Matrix<float64> p) -> Matrix<float64> {
-            n = n.broadcast(m.getShape());
-            p = p.broadcast(m.getShape());
+        auto binopdf(const Matrix<RT> &m, const Matrix<float64> &n, const Matrix<float64> &p) -> Matrix<float64> {
+            return ProbDetail::map("binopdf", [](float64 x, float64 n_, float64 p_) { return binopdf(x, n_, p_); },
+                                   Matrix<float64>(m), n, p);
+        }
 
-            Matrix<float64> r(m.getShape(), 0.);
-            auto iter_m = m.getData();
-            auto iter_n = n.getData();
-            auto iter_p = p.getData();
-            for (auto &i: r) {
-                if (*iter_m >= 0 || *iter_m <= n)
-                    i = nchoosek<float64>(*iter_n, *iter_m) * pow(*iter_p, *iter_m) *
-                        pow(1 - *iter_p, *iter_n - *iter_m);
-                iter_m++;
-                iter_n++;
-                iter_p++;
+        namespace ProbDetail {
+            inline auto binornd_one(float64 n, float64 p, std::mt19937 &gen) -> float64 {
+                if (!is_integer(n) || n < 0 || !(p >= 0 && p <= 1))
+                    return NAN;
+                return static_cast<float64>(std::binomial_distribution<int64>(static_cast<int64>(n), p)(gen));
             }
-            return r;
         }
 
         /**
-         * Generate a random matrix from the binomial distribution
-         * @param n the number of trials of the binomial distribution
-         * @param p the success probability of the binomial distribution
-         * @param shape the shape of the target matrix
-         * @return floating-point matrix: a random matrix from the binomial distribution
+         * Random matrix from the binomial distribution (NaN for invalid n or p)
          */
         inline auto binornd(float64 n = 1, float64 p = 0.5, const mshape_type &shape = {1}) -> Matrix<real_max> {
-            if (std::round(n) != n || p < 0 || p > 1)
-                return Matrix<real_max>(shape, NAN);
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::binomial_distribution<> bino(static_cast<int>(n), p);
             for (auto &i: r)
-                i = bino(gen);
+                i = ProbDetail::binornd_one(n, p, gen);
             return r;
         }
 
         /**
-         * Generate a random matrix from multiple binomial distributions
-         * @param n the number of trials of the binomial distribution
-         * @param p the success probability of the binomial distribution
-         * @return floating-point matrix: a random matrix from the binomial distribution
+         * Random matrix from the binomial distribution, one draw per element of n and p
+         * (same shapes; NaN for invalid elements)
          */
         inline auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p) -> Matrix<real_max> {
             if (n.getShape() != p.getShape())
-                throw_shape_exception("n matrix and p matrix have different sizes");
+                throw_shape_exception("binornd: n and p have different sizes");
             Matrix<real_max> r(n.getShape(), 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            for (auto iter = r.begin(), iter_n = n.begin(), iter_p = p.begin();
-                 iter != r.end(); ++iter, ++iter_n, ++iter_p) {
-                if (std::round(*iter_n) != *iter_n || *iter_p < 0 || *iter_p > 1)
-                    *iter = NAN;
-                else {
-                    std::binomial_distribution<> bino(static_cast<int>(*iter_n), *iter_p);
-                    *iter = bino(gen);
-                }
-            }
+            for (msize_type i = 0; i < r.getSize(); ++i)
+                r.getData()[i] = ProbDetail::binornd_one(n.getData()[i], p.getData()[i], gen);
             return r;
         }
 
         /**
-         * Generate a random matrix from multiple binomial distributions
-         * @param n the number of trials of the binomial distribution
-         * @param p the success probability of the binomial distribution
-         * @param shape the size of the target matrix
-         * @return floating-point matrix: a random matrix from the binomial distribution
+         * As binornd(n, p), with the result shape stated (n and p must have it)
          */
         inline auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p,
-                     const mshape_type &shape = {1}) -> Matrix<real_max> {
+                            const mshape_type &shape) -> Matrix<real_max> {
             if (n.getShape() != shape || p.getShape() != shape)
-                throw_shape_exception("n matrix or p matrix differs in shape from the specified matrix");
-            Matrix<real_max> r(shape, 0.);
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            for (auto iter = r.begin(), iter_n = n.begin(), iter_p = p.begin();
-                 iter != r.end(); ++iter, ++iter_n, ++iter_p) {
-                if (std::round(*iter_n) != *iter_n || *iter_p < 0 || *iter_p > 1)
-                    *iter = NAN;
-                else {
-                    std::binomial_distribution<> bino(static_cast<int>(*iter_n), *iter_p);
-                    *iter = bino(gen);
-                }
-            }
-            return r;
+                throw_shape_exception("binornd: n and p must have the requested shape");
+            return binornd(n, p);
         }
 
         /**
-         * The mean and variance of the binomial distribution
-         * @return floating-point matrix tuple {n*p,n*p*(1-p)}
+         * The mean and variance of the binomial distribution: {n p, n p (1 - p)}; NaN for invalid n or p
          */
         template<RealType RT1, RealType RT2>
-        inline auto binostat(RT1 n, RT2 p) -> tuple<real_max, real_max> {
-            //check n/p legal
-            if ((isFloat<RT1>() && std::round(n) != n) || p < 0 || p > 1)
+        auto binostat(RT1 n, RT2 p) -> tuple<real_max, real_max> {
+            if (!ProbDetail::is_integer(n) || n < 0 || !(p >= 0 && p <= 1))
                 return {NAN, NAN};
-            auto mu = n * p;
-            return {mu, mu * (1 - p)};
+            auto mu = real_max(n) * real_max(p);
+            return {mu, mu * (1 - real_max(p))};
         }
 
         /**
-         * The mean and variance of the binomial distribution
-         * @return floating-point matrix tuple {mu,sigma*sigma}
+         * The mean and variance of the binomial distribution, for broadcast parameter matrices
          */
         template<RealType RT1, RealType RT2>
-        inline auto binostat(const Matrix<RT1> &n, const Matrix<RT2> &p) -> tuple<Matrix<real_max>, Matrix<real_max>> {
-            auto mu = mul(n, p);
-            return {mu, mul(mu, 1 - p)};
+        auto binostat(const Matrix<RT1> &n, const Matrix<RT2> &p) -> tuple<Matrix<real_max>, Matrix<real_max>> {
+            Matrix<float64> n_(n), p_(p);
+            return {ProbDetail::map("binostat", [](float64 a, float64 b) { return std::get<0>(binostat(a, b)); }, n_, p_),
+                    ProbDetail::map("binostat", [](float64 a, float64 b) { return std::get<1>(binostat(a, b)); }, n_, p_)};
         }
     }
     namespace Math {
         //Continuous uniform distribution
         /**
-         * Compute the value of the continuous uniform distribution function
-         * @param x the x value passed to the function; x must lie within [a,b]
-         * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
-         * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
+         * Density of the continuous uniform distribution on [a, b]: 1 / (b - a) inside, 0 outside,
+         * NaN unless a < b
          */
         inline auto unifpdf(float64 x, float64 a = 0, float64 b = 1) -> float64 {
-            if (x < a || x > b)
-                return 0;
-            return 1 / (b - a);
+            if (std::isnan(x) || !(a < b))
+                return NAN;
+            return (x < a || x > b) ? 0 : 1 / (b - a);
         }
 
         /**
-         * Compute the value of the continuous uniform distribution function
-         * @param x the x value passed to the function; x must lie within [a,b]
-         * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
-         * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
+         * Uniform density with matrix arguments (broadcast against each other)
          */
         inline auto unifpdf(const Matrix<float64> &x, const Matrix<float64> &a = {0},
-                     const Matrix<float64> &b = {1}) -> Matrix<float64> {
-            bool x_single = x.isSingle();
-            bool a_single = a.isSingle();
-            bool b_single = b.isSingle();
-            if (a.getShape() != b.getShape() || (x.getShape() != a.getShape() && !a_single))
-                throw_shape_exception("unifpdf: matrices a,b must have the same size, and must equal the size of matrix x");
-            mshape_type shape;
-            if (!x.isSingle())
-                shape = x.getShape();
-            else
-                shape = a.getShape();
-            Matrix<float64> r(shape, 0.);
-            auto iter_x = x.begin();
-            auto iter_a = a.begin();
-            auto iter_b = b.begin();
-            for (auto &i: r) {
-                i = unifpdf(*iter_x, *iter_a, *iter_b);
-                if (!x_single)
-                    iter_x++;
-                if (!a_single)
-                    iter_a++;
-                if (!b_single)
-                    iter_b++;
-            }
-            return r;
+                            const Matrix<float64> &b = {1}) -> Matrix<float64> {
+            return ProbDetail::map("unifpdf", [](float64 x_, float64 a_, float64 b_) { return unifpdf(x_, a_, b_); },
+                                   x, a, b);
         }
 
         /**
-        * Compute the expected value and variance of the continuous uniform distribution
-        * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
-        * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
+        * The mean and variance of the continuous uniform distribution: {(a + b) / 2, (b - a)^2 / 12};
+        * NaN unless a < b
         */
         inline auto unifstat(float64 a, float64 b) -> tuple<float64, float64> {
-            return {(a + b) / 2, pow((a - b), 2) / 12};
+            if (!(a < b))
+                return {NAN, NAN};
+            return {(a + b) / 2, (b - a) * (b - a) / 12};
         }
 
         /**
-        * Compute the expected value and variance of the continuous uniform distribution
-        * @param a the left boundary of the continuous uniform function; defaults to 0 for the standard distribution
-        * @param b the right boundary of the continuous uniform function; defaults to 1 for the standard distribution
+        * The mean and variance of the continuous uniform distribution, for broadcast matrices
         */
         inline auto unifstat(const Matrix<float64> &a, const Matrix<float64> &b) -> tuple<Matrix<float64>, Matrix<float64>> {
-            if (a.getShape() != b.getShape())
-                throw_shape_exception("unifstat: matrices a b must have the same size");
-            return {(a + b) / 2, ((a - b) ^ 2) / 12};
+            return {ProbDetail::map("unifstat", [](float64 a_, float64 b_) { return std::get<0>(unifstat(a_, b_)); }, a, b),
+                    ProbDetail::map("unifstat", [](float64 a_, float64 b_) { return std::get<1>(unifstat(a_, b_)); }, a, b)};
         }
     }
 
@@ -632,7 +692,7 @@ namespace matsar {
         inline auto randi(int64 imin, int64 imax, const mshape_type &shape) -> Matrix<int64> {
             if (imin > imax)
                 throw_value_error("randi requires the minimum of the integer uniform distribution to be less than or equal to the maximum");
-            Matrix<int64> r(shape, 0.);
+            Matrix<int64> r(shape, int64(0));
             std::random_device rd;
             std::mt19937 gen(rd());
             std::uniform_int_distribution<int64> uniform(imin, imax);
@@ -653,10 +713,7 @@ namespace matsar {
 
         /**
          * Generate a matrix from the [imin,imax] uniform distribution
-         * @param imin the minimum value of the uniform distribution
-         * @param imax the maximum value of the uniform distribution
          * @param n indicates that an n*n matrix is generated
-         * @return integer matrix: a random matrix from the [imin,imax] uniform distribution
          */
         inline auto randi(int64 imin, int64 imax, msize_type n) -> Matrix<int64> {
             return randi(imin, imax, {n, n});
@@ -664,9 +721,7 @@ namespace matsar {
 
         /**
          * Generate a matrix from the [1,imax] uniform distribution
-         * @param imax the maximum value of the uniform distribution
          * @param n indicates that an n*n matrix is generated
-         * @return integer matrix: a matrix from the [1,imax] uniform distribution
          */
         inline auto randi(int64 imax, msize_type n) -> Matrix<int64> {
             return randi(1, imax, {n, n});
@@ -675,7 +730,6 @@ namespace matsar {
         /**
          * Generate a standard normal distribution matrix
          * @param shape the shape of the target matrix
-         * @return floating-point matrix: a standard normal distribution matrix
          */
         inline auto randn(const mshape_type &shape) -> Matrix<real_max> {
             Matrix<real_max> r(shape, 0.);
@@ -690,146 +744,92 @@ namespace matsar {
         /**
          * Generate a standard normal distribution matrix
          * @param n indicates that an n*n matrix is generated
-         * @return floating-point matrix: a standard normal distribution matrix
          */
         inline auto randn(int64 n) -> Matrix<real_max> {
             return randn({n, n});
         }
 
-        template<Calculable T>
-        class val_idx {
-        public:
-            T val = 0;
-            size_t idx = 0;
-
-            val_idx() = default;
-
-            val_idx(T val, size_t idx) : val(val), idx(idx) {}
-
-            ~val_idx() = default;
-        };
-
         /**
-         * Generate a random permutation of integers
-         * @param n the number of integers in the sampling interval
-         * @return integer row array
-         * @hint uses an offset-based algorithm
+         * k distinct integers drawn at random from 1..n, in random order (a partial Fisher-Yates
+         * shuffle: every ordered selection is equally likely)
          */
         template<IntType IT>
-        inline auto randperm(IT n) -> Matrix<IT> {
-            if (n < 0) throw_value_error("randperm: n should be positive");
-            unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
-            auto rand_seq = rand(mshape_type{n});
-            for (IT i = 0; i < n; ++i) {
-                val_idx_seq.get()[i].val = rand_seq(i);
-                val_idx_seq.get()[i].idx = i + 1;
+        auto randperm(IT n, IT k) -> Matrix<IT> {
+            if (n < 0) throw_value_error("randperm: n must be non-negative");
+            if (k < 0 || k > n) throw_value_error("randperm: k must be between 0 and n");
+            std::vector<IT> values(static_cast<size_t>(n));
+            std::iota(values.begin(), values.end(), IT(1));
+            std::random_device rd;
+            std::mt19937_64 gen(rd());
+            for (int64 i = 0; i < static_cast<int64>(k); ++i) {
+                std::uniform_int_distribution<int64> pick(i, static_cast<int64>(n) - 1);
+                std::swap(values[static_cast<size_t>(i)], values[static_cast<size_t>(pick(gen))]);
             }
-            std::sort(&val_idx_seq.get()[0], &val_idx_seq.get()[n],
-                      [](val_idx<real_max> v1, val_idx<real_max> v2) { return v1.val < v2.val; });
-            Matrix<IT> r({n}, 0.);
-            for (IT i = 0; i < n; ++i)
-                r(i) = val_idx_seq.get()[i].idx;
+            Matrix<IT> r(mshape_type{static_cast<msize_type>(k)}, IT(0));
+            for (msize_type i = 0; i < r.getSize(); ++i)
+                r(i) = values[static_cast<size_t>(i)];
             return r;
         }
 
         /**
-         * Generate a random permutation of integers
-         * @param n the number of integers in the sampling interval
-         * @param k the number of integers to select
-         * @return integer row array
+         * A random permutation of the integers 1..n
          */
         template<IntType IT>
-        inline auto randperm(IT n, IT k) -> Matrix<IT> {
-            if (n < 0) throw_value_error("randperm: n should be positive");
-            if (k < 0 || k > n) throw_value_error("randperm: k value should be greater than or equal to 0 or less than or equal to n");
-            unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
-            auto rand_seq = rand(mshape_type{n});
-            for (IT i = 0; i < n; ++i) {
-                val_idx_seq.get()[i].val = rand_seq(i);
-                val_idx_seq.get()[i].idx = i + 1;
-            }
-            std::sort(&val_idx_seq.get()[0], &val_idx_seq.get()[n],
-                      [](val_idx<real_max> v1, val_idx<real_max> v2) { return v1.val < v2.val; });
-            Matrix<IT> r({k}, 0.);
-            for (IT i = 0; i < k; ++i)
-                r(i) = val_idx_seq.get()[i].idx;
-            return r;
+        auto randperm(IT n) -> Matrix<IT> {
+            return randperm(n, n);
         }
     }
 
     namespace Math {
-//        //Chi-squared distribution
-//        /**
-//         * Compute the value of the chi-squared distribution function
-//         * @param x
-//         * @param nu
-//         */
-//        auto chi2cdf(float64 x, float64 nu) {
-//            std::chi_squared_distribution<float64> chi2(nu);
-//
-//        }
         /**
-         * Compute the value of the chi-squared distribution function
-         * @param x the x value passed to the function
-         * @param nu the degrees of freedom of the chi-squared distribution
-         * @hint std::tgamma function
+         * Density of the chi-squared distribution with nu degrees of freedom (nu > 0, otherwise
+         * NaN), as the gamma density with shape nu / 2 and scale 2
          */
         inline auto chi2pdf(float64 x, float64 nu) -> float64 {
-            if (x < 0) return 0;
-            if (nu < 0) return NAN;
-            auto v2 = nu / 2;
-            return std::pow(x, v2 - 1) * std::exp(-x / 2) / std::exp2(v2) / std::tgamma(v2);
+            if (std::isnan(x) || !(nu > 0))
+                return NAN;
+            if (x < 0 || std::isinf(x))
+                return 0;
+            if (x == 0)
+                return nu < 2 ? INFINITY : (nu == 2 ? 0.5 : 0);
+            return ProbDetail::dgamma(x, nu / 2, 2);
         }
 
         /**
-         * Compute the value of the chi-squared distribution function
-         * @param x the x value passed to the function
-         * @param nu the degrees of freedom of the chi-squared distribution
-         * @hint the algorithm can be optimized using matlab's find-based exclusion method
+         * Chi-squared density with matrix arguments (broadcast against each other)
          */
         inline auto chi2pdf(const Matrix<float64> &x, const Matrix<float64> &nu) -> Matrix<float64> {
-            if (x.getShape() != nu.getShape() && !x.isSingle() && !nu.isSingle())
-                throw_shape_exception("chi2pdf: x and nu have different dimensions");
-            mshape_type shape = nu.isSingle() ? x.getShape() : nu.getShape();
-            Matrix<float64> r(shape, 0.);
-            auto iter_x = x.begin();
-            auto iter_nu = nu.begin();
-            for (auto &i: r) {
-                i = chi2pdf(*iter_x, *iter_nu);
-                if (!x.isSingle())
-                    iter_x++;
-                if (!nu.isSingle())
-                    iter_nu++;
-            }
-            return r;
+            return ProbDetail::map("chi2pdf", [](float64 x_, float64 nu_) { return chi2pdf(x_, nu_); }, x, nu);
         }
     }
     namespace Math {
         //Exponential distribution
         /**
-         * Compute the value of the exponential distribution function
-         * @param x the x value passed to the function
-         * @param mu the mean of the exponential distribution
+         * Density of the exponential distribution with mean mu (> 0, otherwise NaN); 0 for x < 0
          */
         inline auto exppdf(float64 x, float64 mu = 1) -> float64 {
-            return 1 / mu * std::exp(-x / mu);
+            if (std::isnan(x) || !(mu > 0))
+                return NAN;
+            if (x < 0)
+                return 0;
+            return std::exp(-x / mu) / mu;
         }
 
         /**
-         * Compute the value of the exponential distribution function
-         * @param x the x value passed to the function
-         * @param mu the mean of the exponential distribution
+         * Exponential density with matrix arguments (broadcast against each other)
          */
         inline auto exppdf(const Matrix<float64> &x, const Matrix<float64> &mu = {1}) -> Matrix<float64> {
-            return 1 / mu * exp(-x / mu);
+            return ProbDetail::map("exppdf", [](float64 x_, float64 mu_) { return exppdf(x_, mu_); }, x, mu);
         }
 
         /**
-         * Generate a random matrix from the exponential distribution
-         * @param mu the mean of the exponential distribution
-         * @param shape the size of the target matrix
+         * Random matrix from the exponential distribution with mean mu (0 gives zeros; < 0 or NaN gives NaN)
          */
         inline auto exprnd(float64 mu, const mshape_type &shape = {1}) -> Matrix<float64> {
+            if (!(mu >= 0))
+                return Matrix<float64>(shape, NAN);
+            if (mu == 0)
+                return Matrix<float64>(shape, 0.);
             Matrix<float64> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -840,172 +840,110 @@ namespace matsar {
         }
 
         /**
-         * The mean and variance of the exponential distribution
-         * @return floating-point matrix tuple {mu,mu*mu}
+         * The mean and variance of the exponential distribution: {mu, mu^2}; NaN for mu < 0
          */
         template<RealType RT>
-        inline auto expstat(const RT &mu) -> tuple<real_max, real_max> {
+        auto expstat(const RT &mu) -> tuple<real_max, real_max> {
             real_max tmp = mu;
+            if (tmp < 0)
+                return {NAN, NAN};
             return {tmp, tmp * tmp};
         }
 
         /**
-         * The mean and variance of the exponential distribution
-         * @return floating-point matrix tuple {mu,mu*mu}
+         * The mean and variance of the exponential distribution, element by element
          */
         template<RealType RT>
-        inline auto expstat(const Matrix<RT> &mu) -> tuple<Matrix<real_max>, Matrix<real_max>> {
-            Matrix<real_max> tmp(mu);
-            return {tmp, tmp ^ 2};
+        auto expstat(const Matrix<RT> &mu) -> tuple<Matrix<real_max>, Matrix<real_max>> {
+            Matrix<float64> m(mu);
+            return {ProbDetail::map("expstat", [](float64 v) { return std::get<0>(expstat(v)); }, m),
+                    ProbDetail::map("expstat", [](float64 v) { return std::get<1>(expstat(v)); }, m)};
         }
     }
 
     namespace Math {
         //Poisson distribution
         /**
-         * Compute the value of the Poisson distribution function
-         * @param x the x value passed to the function; must be an integer; non-integer values return 0
-         * @param lambda the rate parameter of the Poisson distribution, must be positive
+         * Poisson probability of x events at rate lambda (>= 0, otherwise NaN); 0 for x < 0 or
+         * not an integer
          */
         inline auto poisspdf(float_max x, float_max lambda) -> float_max {
-            if (x < 0 || x != std::round(x))
-                return 0;
-            if (lambda < 0)
+            if (std::isnan(x) || !(lambda >= 0))
                 return NAN;
-            return pow(lambda, x) / matsar::factorial<float_max>(x) * std::exp(-lambda);
+            if (!ProbDetail::is_integer(x) || x < 0)
+                return 0;
+            return ProbDetail::dpois(x, lambda);
         }
 
         /**
-         * Compute the value of the Poisson distribution function
-         * @param x the x value passed to the function; must be an integer; non-integer values return 0
-         * @param lambda the rate parameter of the Poisson distribution, must be positive
+         * Poisson probability with matrix arguments (broadcast against each other)
          */
         inline auto poisspdf(const Matrix<float64> &x, const Matrix<float64> &lambda) -> Matrix<float64> {
-            if (x.getShape() != lambda.getShape() && !x.isSingle() && !lambda.isSingle())
-                throw_shape_exception("poisspdf: x and lambda have different dimensions");
-            mshape_type shape;
-            if (!x.isSingle())
-                shape = x.getShape();
-            else
-                shape = lambda.getShape();
-            Matrix<float64> r(shape, 0.);
-            auto iter_x = x.begin();
-            auto iter_lambda = lambda.begin();
-            for (auto &i: r) {
-                i = poisspdf(*iter_x, *iter_lambda);
-                if (!x.isSingle())
-                    iter_x++;
-                if (!lambda.isSingle())
-                    iter_lambda++;
-            }
-            return r;
+            return ProbDetail::map("poisspdf", [](float64 x_, float64 l_) { return poisspdf(x_, l_); }, x, lambda);
         }
 
         /**
-         * Generate a random matrix from the Poisson distribution
-         * @param lambda the rate parameter of the Poisson distribution, must be positive
-         * @param shape the size of the target matrix
+         * Random matrix from the Poisson distribution (lambda 0 gives zeros; < 0 or NaN gives NaN)
          */
         inline auto poissrnd(float64 lambda, const mshape_type &shape = {1}) -> Matrix<float64> {
+            if (!(lambda >= 0))
+                return Matrix<float64>(shape, NAN);
+            if (lambda == 0)
+                return Matrix<float64>(shape, 0.);
             Matrix<float64> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::poisson_distribution<> poisson(lambda);
+            std::poisson_distribution<int64> poisson(lambda);
             for (auto &i: r)
-                i = poisson(gen);
+                i = static_cast<float64>(poisson(gen));
             return r;
         }
     }
     namespace Math {
         //Rayleigh distribution
         /**
-         * Compute the value of the Rayleigh distribution function
-         * @param x the x value passed to the function; must be non-negative; negative values return 0
-         * @param b the scale value of the Rayleigh distribution
+         * Density of the Rayleigh distribution with scale b (> 0, otherwise NaN); 0 for x < 0
          */
         inline auto raylpdf(float64 x, float64 b) -> float64 {
-            if (x < 0) return 0;
-            if (b <= 0) return NAN;
+            if (std::isnan(x) || !(b > 0))
+                return NAN;
+            if (x < 0 || std::isinf(x))
+                return 0;
             auto b2 = b * b;
             return x / b2 * std::exp(-x * x / 2 / b2);
         }
 
         /**
-         * Compute the value of the Rayleigh distribution function
-         * @param x the x value passed to the function; must be non-negative; negative values return 0
-         * @param b the scale value of the Rayleigh distribution
+         * Rayleigh density with matrix arguments (broadcast against each other)
          */
         inline auto raylpdf(const Matrix<float64> &x, const Matrix<float64> &b) -> Matrix<float64> {
-            bool x_single = x.isSingle();
-            bool b_single = b.isSingle();
-            if (x.getShape() != b.getShape() && !x_single && !b_single)
-                throw_shape_exception("raylpdf: x and b have different sizes");
-            mshape_type shape;
-            if (!x_single)
-                shape = x.getShape();
-            else
-                shape = b.getShape();
-            Matrix<float64> r(shape, 0.);
-            auto iter_x = x.begin();
-            auto iter_b = b.begin();
-            for (auto &i: r) {
-                i = raylpdf(*iter_x, *iter_b);
-                if (!x_single)
-                    iter_x++;
-                if (!b_single)
-                    iter_b++;
-            }
-            return r;
+            return ProbDetail::map("raylpdf", [](float64 x_, float64 b_) { return raylpdf(x_, b_); }, x, b);
         }
     }
     namespace Math {
         //Weibull distribution
         /**
-         * Compute the value of the Weibull distribution function
-         * @param x the x value passed to the function; must be non-negative; negative values give a Weibull value of 0
-         * @param lambda the scale parameter of the Weibull distribution
-         * @param k the shape parameter of the Weibull distribution
+         * Density of the Weibull distribution with scale lambda and shape k (both > 0, otherwise
+         * NaN): k / lambda (x / lambda)^(k - 1) exp(-(x / lambda)^k); 0 for x < 0. At x = 0 it is
+         * Inf for k < 1 and 1 / lambda for k = 1 (the exponent is taken separately: the old
+         * exp(-(t^(k-1)) * t) was exp(-Inf * 0) = NaN there).
          */
         inline auto weibpdf(float64 x, float64 lambda, float64 k) -> float64 {
-            if (x < 0) return 0;
-            if (lambda <= 0 || k <= 0) return NAN;
-            auto lambda_re = 1 / lambda;
-            auto x_lambda_re = x * lambda_re;
-            auto stat1 = std::pow(x_lambda_re, k - 1);
-            return k * lambda_re * stat1 * std::exp(-stat1 * x_lambda_re);
+            if (std::isnan(x) || !(lambda > 0) || !(k > 0))
+                return NAN;
+            if (x < 0 || std::isinf(x))
+                return 0;
+            const auto t = x / lambda;
+            return k / lambda * std::pow(t, k - 1) * std::exp(-std::pow(t, k));
         }
 
         /**
-         * Compute the value of the Weibull distribution function
-         * @param x the x value passed to the function; must be non-negative; negative values give a Weibull value of 0
-         * @param lambda the scale parameter of the Weibull distribution
-         * @param k the shape parameter of the Weibull distribution
+         * Weibull density with matrix arguments (broadcast against each other)
          */
-        inline auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda, const Matrix<float64> &k) -> Matrix<float64> {
-            bool x_single = x.isSingle();
-            bool lambda_single = lambda.isSingle();
-            bool k_single = k.isSingle();
-            if (lambda.getShape() != k.getShape() || (!lambda_single && x.getShape() != lambda.getShape()))
-                throw_shape_exception("weibpdf: the lambda k matrices must have the same size, and match the size of x");
-            mshape_type shape;
-            if (!x_single)
-                shape = x.getShape();
-            else
-                shape = lambda.getShape();
-            Matrix<float64> r(shape, 0.);
-            auto iter_x = x.begin();
-            auto iter_lambda = lambda.begin();
-            auto iter_k = k.begin();
-            for (auto &i: r) {
-                i = weibpdf(*iter_x, *iter_lambda, *iter_k);
-                if (!x_single)
-                    iter_x++;
-                if (!lambda_single)
-                    iter_lambda++;
-                if (!k_single)
-                    iter_k++;
-            }
-            return r;
+        inline auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda, const Matrix<float64> &k)
+                -> Matrix<float64> {
+            return ProbDetail::map("weibpdf", [](float64 x_, float64 l_, float64 k_) { return weibpdf(x_, l_, k_); },
+                                   x, lambda, k);
         }
     }
 }

@@ -105,6 +105,35 @@ if(MATSAR_BUILD_EXPERIMENTAL_TESTS)
         set_tests_properties(death_matop_${case} PROPERTIES PASS_REGULAR_EXPRESSION "${regex}")
     endforeach()
 
+    # Value tests for Probability.hpp (golden_prob.hpp + statistical checks of the generators).
+    add_executable(test_mathprob math/test_prob.cpp)
+    target_link_libraries(test_mathprob PRIVATE matsar)
+    target_include_directories(test_mathprob PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}                 # doctest.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/math/include    # approx.hpp/golden.hpp/rng.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/math/golden)    # golden_prob.hpp
+    target_compile_definitions(test_mathprob PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+    add_test(NAME test_mathprob COMMAND test_mathprob)
+
+    # Death tests for Probability: one executable, the case is chosen by argv[1].
+    add_executable(death_prob math/death_prob.cpp)
+    target_link_libraries(death_prob PRIVATE matsar)
+    target_compile_definitions(death_prob PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+    foreach(case_regex IN ITEMS
+            "randi_order|ValueError: randi requires the minimum"
+            "randperm_k|ValueError: randperm: k"
+            "randperm_negative|ValueError: randperm: n"
+            "normrnd_shape|ShapeException: normrnd"
+            "unifpdf_shape|ShapeException: unifpdf"
+            "pdf_shape|ShapeException: poisspdf")
+        string(FIND "${case_regex}" "|" bar)
+        string(SUBSTRING "${case_regex}" 0 ${bar} case)
+        math(EXPR msg_start "${bar} + 1")
+        string(SUBSTRING "${case_regex}" ${msg_start} -1 regex)
+        add_test(NAME death_prob_${case} COMMAND death_prob ${case})
+        set_tests_properties(death_prob_${case} PROPERTIES PASS_REGULAR_EXPRESSION "${regex}")
+    endforeach()
+
     # Every math header in two translation units of one program (link-time check).
     add_executable(test_math_multi_tu math/multi_tu_a.cpp math/multi_tu_b.cpp)
     target_link_libraries(test_math_multi_tu PRIVATE matsar)
