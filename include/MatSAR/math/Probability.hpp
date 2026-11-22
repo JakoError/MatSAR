@@ -678,7 +678,13 @@ namespace matsar {
          * @return floating-point matrix: a standard normal distribution matrix
          */
         auto randn(const mshape_type &shape) -> Matrix<real_max> {
-            return rand(shape);
+            Matrix<real_max> r(shape, 0.);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::normal_distribution<real_max> normal(0, 1);
+            for (auto &i: r)
+                i = normal(gen);
+            return r;
         }
 
         /**

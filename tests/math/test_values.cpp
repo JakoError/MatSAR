@@ -6,8 +6,28 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include <MatSAR/math/LogicFunctions.hpp>
+#include <MatSAR/math/Probability.hpp>
 
 using namespace matsar;
+
+namespace {
+    // Sample moments computed directly (not via Math::mean/var, which are under test elsewhere).
+    template<typename dType>
+    void moments(const Matrix<dType> &r, double &mean, double &var, double &lo, double &hi) {
+        double s = 0, ss = 0;
+        lo = hi = static_cast<double>(*r.begin());
+        for (const auto &x: r) {
+            const double v = static_cast<double>(x);
+            s += v;
+            ss += v * v;
+            lo = v < lo ? v : lo;
+            hi = v > hi ? v : hi;
+        }
+        const double n = static_cast<double>(r.getSize());
+        mean = s / n;
+        var = (ss - n * mean * mean) / (n - 1);
+    }
+}
 
 // all/any used to inspect only the first element of each reduced slice.
 TEST_CASE("all / any · global reduce looks past the first element") {
@@ -46,4 +66,18 @@ TEST_CASE("all / any · reduce along a dimension looks past the first element") 
     auto all_bcols = Math::all(Matrix<bool>{{true, true}, {false, true}}, 0);
     CHECK(all_bcols(0, 0) == false);   // column 0 = [true, false]
     CHECK(all_bcols(0, 1) == true);
+}
+
+// randn used to return rand(): uniform on (0,1), mean 0.5, variance 1/12.
+// Sample size 40000: std error of the mean is 0.005 and of the variance ~0.007, so the
+// tolerances below are > 7 sigma (no flakes), while uniform output misses by far.
+TEST_CASE("randn · draws from the standard normal distribution") {
+    auto r = Math::randn({200, 200});
+    REQUIRE(r.getSize() == 40000);
+    double mean, var, lo, hi;
+    moments(r, mean, var, lo, hi);
+    CHECK(std::abs(mean - 0.0) < 0.05);
+    CHECK(std::abs(var - 1.0) < 0.05);
+    CHECK(lo < -2.0);   // P(all 40000 draws >= -2) is ~0 for N(0,1); impossible for uniform(0,1)
+    CHECK(hi > 2.0);
 }
