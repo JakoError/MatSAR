@@ -7,6 +7,8 @@
 #include "doctest.h"
 #include <MatSAR/math/LogicFunctions.hpp>
 #include <MatSAR/math/Probability.hpp>
+#include <MatSAR/math/DigitalSignal.hpp>
+#include <vector>
 
 using namespace matsar;
 
@@ -26,6 +28,17 @@ namespace {
         const double n = static_cast<double>(r.getSize());
         mean = s / n;
         var = (ss - n * mean * mean) / (n - 1);
+    }
+
+    Matrix<int64> vec(std::vector<int64> v) { return Matrix<int64>(v); }   // 1-D, shape {n}
+
+    template<typename dType>
+    void check_vec(const Matrix<dType> &got, const std::vector<int64> &want) {
+        REQUIRE(got.getSize() == static_cast<msize_type>(want.size()));
+        for (std::size_t i = 0; i < want.size(); ++i) {
+            CAPTURE(i);
+            CHECK(got(i) == want[i]);
+        }
     }
 }
 
@@ -94,4 +107,23 @@ TEST_CASE("exprnd · mu is the mean of the exponential distribution") {
     CHECK(std::abs(mean - 2.5) < 0.1);
     CHECK(std::abs(var - 6.25) < 1.0);   // variance = mu^2; std error ~0.09
     CHECK(lo >= 0.0);
+}
+
+// conv(u, v, "same") returns |u| elements starting at offset floor(|v|/2) of the full
+// convolution (MATLAB convention). It used |v|-2, which is only right for |v| = 3 or 4.
+TEST_CASE("conv · documented MATLAB example (full / same / valid)") {
+    auto u = vec({-1, 2, 3, -2, 0, 1, 2});
+    auto v = vec({2, 4, -1, 1});
+    check_vec(Math::conv(u, v), {-2, 0, 15, 5, -9, 7, 6, 7, -1, 2});   // hand-computed
+    check_vec(Math::conv(u, v, "same"), {15, 5, -9, 7, 6, 7, -1});
+    check_vec(Math::conv(u, v, "valid"), {5, -9, 7, 6});
+}
+
+TEST_CASE("conv · \"same\" is centred for every kernel length") {
+    // |v| = 1: full = [3 6 9], offset 0
+    check_vec(Math::conv(vec({1, 2, 3}), vec({3}), "same"), {3, 6, 9});
+    // |v| = 2: full = [0 1 2 3], offset 1
+    check_vec(Math::conv(vec({1, 2, 3}), vec({0, 1}), "same"), {1, 2, 3});
+    // |v| = 5 (box filter): full = [1 3 6 10 15 20 18 15 11 6], offset 2
+    check_vec(Math::conv(vec({1, 2, 3, 4, 5, 6}), vec({1, 1, 1, 1, 1}), "same"), {6, 10, 15, 20, 18, 15});
 }

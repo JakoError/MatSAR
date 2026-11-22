@@ -41,7 +41,7 @@ namespace matsar {
                 offset = 0;
             } else if (mode == "same") {
                 r_size = U.getSize();
-                offset = V.getSize() - 2;
+                offset = V.getSize() / 2;   // centre of the full result (MATLAB: floor(|v|/2))
             } else if (mode == "valid") {
                 r_size = U.getSize() - V.getSize() + 1;
                 if (r_size <= 0) return {};
