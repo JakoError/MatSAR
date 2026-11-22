@@ -309,7 +309,7 @@ namespace matsar {
                 if (pick_check[dimorder[i]]) {
                     throw_value_error("permute: The numbers in dimorder are repeated");
                 }
-                pick_check[dimorder[i]] = false;
+                pick_check[dimorder[i]] = true;
                 if (i != dimorder[i]) {
                     r_shape[i] = m.getShape()[dimorder[i]];
                 }

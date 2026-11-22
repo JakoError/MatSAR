@@ -8,6 +8,7 @@
 #include <MatSAR/math/LogicFunctions.hpp>
 #include <MatSAR/math/Probability.hpp>
 #include <MatSAR/math/DigitalSignal.hpp>
+#include <MatSAR/math/MatrixOperation.hpp>
 #include <vector>
 
 using namespace matsar;
@@ -126,4 +127,21 @@ TEST_CASE("conv · \"same\" is centred for every kernel length") {
     check_vec(Math::conv(vec({1, 2, 3}), vec({0, 1}), "same"), {1, 2, 3});
     // |v| = 5 (box filter): full = [1 3 6 10 15 20 18 15 11 6], offset 2
     check_vec(Math::conv(vec({1, 2, 3, 4, 5, 6}), vec({1, 1, 1, 1, 1}), "same"), {6, 10, 15, 20, 18, 15});
+}
+
+// permute: a valid reorder must still work once the repeated-dimension guard is live
+// (guards against a guard that fires on every input). B = permute(A, {3,1,2}) has
+// size(B) = {size(A,3), size(A,1), size(A,2)} and B(k,i,j) = A(i,j,k).
+TEST_CASE("permute · valid 3-D reorder") {
+    Matrix<int64> a(mshape_type{2, 3, 4}, int64(0));
+    for (msize_type i = 0; i < 2; ++i)
+        for (msize_type j = 0; j < 3; ++j)
+            for (msize_type k = 0; k < 4; ++k)
+                a(mshape_type{i, j, k}) = 100 * i + 10 * j + k;
+    auto b = Math::permute(a, {3, 1, 2});
+    REQUIRE(b.getShape() == mshape_type{4, 2, 3});
+    CHECK(b(mshape_type{0, 0, 0}) == 0);
+    CHECK(b(mshape_type{3, 1, 2}) == 123);   // = a(1,2,3)
+    CHECK(b(mshape_type{2, 0, 1}) == 12);    // = a(0,1,2)
+    CHECK(b(mshape_type{1, 1, 0}) == 101);   // = a(1,0,1)
 }

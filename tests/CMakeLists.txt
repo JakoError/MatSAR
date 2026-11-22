@@ -71,4 +71,12 @@ if(MATSAR_BUILD_EXPERIMENTAL_TESTS)
             ${CMAKE_CURRENT_SOURCE_DIR}/math/include)
     target_compile_definitions(test_mathvalues PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
     add_test(NAME test_mathvalues COMMAND test_mathvalues)
+
+    # Death test: permute() rejects a repeated dimension with its own ValueError.
+    add_executable(death_permute_repeated math/death_permute_repeated.cpp)
+    target_link_libraries(death_permute_repeated PRIVATE matsar)
+    target_compile_definitions(death_permute_repeated PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+    add_test(NAME death_permute_repeated COMMAND death_permute_repeated)
+    set_tests_properties(death_permute_repeated PROPERTIES
+            PASS_REGULAR_EXPRESSION "ValueError: permute: The numbers in dimorder are repeated")
 endif()
