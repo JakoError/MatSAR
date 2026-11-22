@@ -695,47 +695,51 @@ namespace matsar {
             if (!fA.is2D())
                 throw_value_error("eig requires a 2D matrix or a matrix that can be expanded to 2D");
             lapack_int m = fA.getShape()[0], n = fA.getShape()[1];
-            mshape_type S_shape = {std::min(m, n)};
-            Matrix<float64> S(S_shape, 0., A.getData());
-            unique_ptr<float64> size(new float64);
+            if (m != n)
+                throw_value_error("eig requires a square matrix");
             unique_ptr<float64[]> wr(new float64[m]);
             unique_ptr<float64[]> wi(new float64[m]);
-            unique_ptr<float64[]> vl(new float64[m * n]);
-            unique_ptr<float64[]> vr(new float64[m * n]);
-            int lda = (int) m;
-            int ldvl = (int) m;
-            int ldvr = (int) n;
-            auto info = LAPACKE_dgeev(LAPACK_COL_MAJOR, 'V', 'V', m, fA.getData(), lda, wr.get(), wi.get(),
-                                      vl.get(),
-                                      ldvl, vr.get(), ldvr);
+            unique_ptr<float64[]> vl(new float64[m * m]);
+            unique_ptr<float64[]> vr(new float64[m * m]);
+            auto info = LAPACKE_dgeev(LAPACK_COL_MAJOR, 'V', 'V', m, fA.getData(), m, wr.get(), wi.get(),
+                                      vl.get(), m, vr.get(), m);
             if (info != 0) {
                 A.debug();
                 throw_warning("eig works badly error code:" + to_string(info));
             }
-            vector<Matrix<Out>> V_D_W(3);
-            vector<float64> eig_v;
-            for (int i = 0; i < m; i++) {
-                eig_v.push_back(wr.get()[i]);
+            constexpr bool complex_out = complex_type<Out>::value;
+            if constexpr (!complex_out) {
+                for (lapack_int j = 0; j < m; ++j)
+                    if (wi[j] != 0)
+                        throw_value_error("eig: the matrix has complex eigenvalues; request a complex result, "
+                                          "e.g. eig<complex128>(A)");
             }
-
-            vector<float64> l_eigenvector;
-            vector<float64> r_eigenvector;
-
-            for (int i = 0; i < m; i++) {
-                for (int j = 0; j < n; j++) {
-                    l_eigenvector.push_back(vl.get()[n * j + i]);
-                    r_eigenvector.push_back(vr.get()[n * j + i]);
+            // Column c of dgeev's VR / VL (column-major, leading dimension m). A complex-conjugate
+            // eigenvalue pair (wi[c] > 0, wi[c+1] < 0) is stored as two real columns:
+            // x_c = X(:,c) + i*X(:,c+1) and x_{c+1} = conj(x_c).
+            auto entry = [&](const float64 *X, lapack_int r, lapack_int c) -> complex128 {
+                const float64 x = X[r + c * m];
+                if (wi[c] > 0) return {x, X[r + (c + 1) * m]};
+                if (wi[c] < 0) return {X[r + (c - 1) * m], -x};
+                return {x, 0};
+            };
+            Matrix<Out> V(mshape_type{m, m}, Out(0)), D(mshape_type{m, m}, Out(0)), W(mshape_type{m, m}, Out(0));
+            for (lapack_int c = 0; c < m; ++c) {
+                for (lapack_int r = 0; r < m; ++r) {
+                    if constexpr (complex_out) {
+                        V(r, c) = Out(entry(vr.get(), r, c));   // right eigenvectors: A*V = V*D
+                        W(r, c) = Out(entry(vl.get(), r, c));   // left eigenvectors:  W'*A = D*W'
+                    } else {
+                        V(r, c) = Out(vr[r + c * m]);
+                        W(r, c) = Out(vl[r + c * m]);
+                    }
                 }
+                if constexpr (complex_out)
+                    D(c, c) = Out(wr[c], wi[c]);
+                else
+                    D(c, c) = Out(wr[c]);
             }
-
-            Matrix<float64> V(l_eigenvector);
-            Matrix<float64> W(r_eigenvector);
-            V = V.reshape({m, n});
-            W = W.reshape({m, n});
-            V_D_W[0] = V;
-            V_D_W[1] = diag(Matrix<float64>(eig_v));
-            V_D_W[2] = W;
-            return V_D_W;
+            return {V, D, W};
         }
 
         /**
@@ -762,16 +766,17 @@ namespace matsar {
             vector<float64> a(shape[1]);
             vector<float64> b(shape[1]);
 
+            // eigenvectors are the COLUMNS of V (right) and W (left); s_j = |w_j||v_j| / |w_j . v_j|
             for (int j = 0; j < shape[1]; j++) {
                 float64 mul = 0;
                 float64 norm_a = 0;
                 float64 norm_b = 0;
                 for (int i = 0; i < shape[0]; i++) {
-                    mul += V(j, i) * W(j, i);
-                    norm_a += std::pow(V(j, i), 2);
-                    norm_b += std::pow(W(j, i), 2);
+                    mul += V(i, j) * W(i, j);
+                    norm_a += std::pow(V(i, j), 2);
+                    norm_b += std::pow(W(i, j), 2);
                 }
-                s[j] = std::sqrt(norm_a) * std::sqrt(norm_b) / mul;
+                s[j] = std::sqrt(norm_a) * std::sqrt(norm_b) / std::abs(mul);
             }
             V_D_s[0] = V;
             V_D_s[1] = D;
@@ -1200,7 +1205,8 @@ namespace matsar {
             vector<Matrix<dType>> V_D_W = eig(A);
             auto inter_m = diag(V_D_W[1]);
             matrix_fun(inter_m, fun_name);
-            return mmul(mmul(inv(V_D_W[0]), diag(inter_m)), (V_D_W[0]));
+            // V holds the right eigenvectors as columns: f(A) = V f(D) V^-1
+            return mmul(mmul(V_D_W[0], diag(inter_m)), inv(V_D_W[0]));
         }
     }
 }

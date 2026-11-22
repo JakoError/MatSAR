@@ -79,4 +79,23 @@ if(MATSAR_BUILD_EXPERIMENTAL_TESTS)
     add_test(NAME death_permute_repeated COMMAND death_permute_repeated)
     set_tests_properties(death_permute_repeated PROPERTIES
             PASS_REGULAR_EXPRESSION "ValueError: permute: The numbers in dimorder are repeated")
+
+    # LAPACK-backed value tests (eig): only when OpenBLAS (+ LAPACKE) is enabled.
+    if(MATSAR_WITH_BLAS)
+        add_executable(test_mathlinalg math/test_linalg_values.cpp)
+        target_include_directories(test_mathlinalg PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        add_executable(death_eig_complex_real math/death_eig_complex_real.cpp)
+        foreach(t test_mathlinalg death_eig_complex_real)
+            target_link_libraries(${t} PRIVATE matsar)
+            target_compile_definitions(${t} PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+            add_test(NAME ${t} COMMAND ${t})
+            if(WIN32 AND DEFINED MATSAR_BLAS_DLL)
+                add_custom_command(TARGET ${t} POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${MATSAR_BLAS_DLL}" "$<TARGET_FILE_DIR:${t}>")
+            endif()
+        endforeach()
+        set_tests_properties(death_eig_complex_real PROPERTIES
+                PASS_REGULAR_EXPRESSION "ValueError: eig: .*complex eigenvalues")
+    endif()
 endif()
