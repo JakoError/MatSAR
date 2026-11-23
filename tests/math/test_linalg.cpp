@@ -82,8 +82,8 @@ TEST_CASE("golden · kron") {
 }
 
 TEST_CASE("kron · integer and complex element types") {
-    Matrix<int64> a = {{int64(1), int64(2)}, {int64(3), int64(4)}};
-    Matrix<int64> b = {{int64(0), int64(5)}, {int64(6), int64(7)}};
+    Matrix<int64> a = {{1, 2}, {3, 4}};
+    Matrix<int64> b = {{0, 5}, {6, 7}};
     auto k = Math::kron(a, b);
     static_assert(std::is_same_v<decltype(k), Matrix<int64>>);
     REQUIRE(k.getShape() == mshape_type{4, 4});

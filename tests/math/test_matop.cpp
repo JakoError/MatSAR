@@ -197,7 +197,7 @@ TEST_CASE("complex rounding is per component") {
 }
 
 TEST_CASE("ipermute inverts permute for every order of a 2x3x4 array") {
-    Matrix<int64> a(mshape_type{2, 3, 4}, int64(0));
+    Matrix<int64> a(mshape_type{2, 3, 4}, 0);
     for (msize_type i = 0; i < a.getSize(); ++i)
         a(i) = int64(i);
     const mshape_type orders[] = {{1, 2, 3}, {1, 3, 2}, {2, 1, 3}, {2, 3, 1}, {3, 1, 2}, {3, 2, 1}};
@@ -222,7 +222,7 @@ TEST_CASE("cat joins along the given (1-based) dimension; T transposes") {
     REQUIRE(v.getShape() == mshape_type{3, 3});
     CHECK(v(2, 0) == 7);
     CHECK(v(1, 2) == 6);
-    Matrix<int64> c(mshape_type{2, 1}, int64(0));                // a 2x1 column
+    Matrix<int64> c(mshape_type{2, 1}, 0);                       // a 2x1 column
     c(0, 0) = 10;
     c(1, 0) = 20;
     auto h = Math::cat(vector<Matrix<int64>>{a, c}, 2);           // columns
@@ -236,15 +236,14 @@ TEST_CASE("cat joins along the given (1-based) dimension; T transposes") {
 }
 
 TEST_CASE("isSquare / isDiag / isEmpty") {
-    // (a literal 0 inside a nested initializer is ambiguous for Matrix: it is also a null pointer)
-    Matrix<float64> sq = {{1.0, 0.0}, {0.0, 2.0}}, offd = {{1.0, 3.0}, {0.0, 2.0}}, wide = {{1.0, 0.0, 0.0}, {0.0, 2.0, 0.0}};
+    Matrix<int64> sq = {{1, 0}, {0, 2}}, offd = {{1, 3}, {0, 2}}, wide = {{1, 0, 0}, {0, 2, 0}};
     CHECK(Math::isSquare(sq));
     CHECK_FALSE(Math::isSquare(wide));
     CHECK(Math::isDiag(sq));
     CHECK_FALSE(Math::isDiag(offd));
-    CHECK_FALSE(Math::isDiag(Matrix<float64>{{1.0, 0.0}, {4.0, 2.0}}));   // below the diagonal
+    CHECK_FALSE(Math::isDiag(Matrix<int64>{{1, 0}, {4, 2}}));     // below the diagonal
     CHECK_FALSE(Math::isDiag(wide));                              // MatSAR: only square matrices are diagonal
-    CHECK(Math::isEmpty(Matrix<float64>()));
+    CHECK(Math::isEmpty(Matrix<int64>()));
     CHECK_FALSE(Math::isEmpty(sq));
 }
 
@@ -262,7 +261,7 @@ TEST_CASE("nnz / nonzeros follow storage (column-major) order") {
 }
 
 TEST_CASE("expm / logm / mpower: result types") {
-    Matrix<int64> ai = {{1, 1}, {1, int64(0)}};
+    Matrix<int64> ai = {{1, 1}, {1, 0}};
     static_assert(std::is_same_v<elem_t<decltype(Math::expm(ai))>, float64>);
     static_assert(std::is_same_v<elem_t<decltype(Math::logm(Matrix<float32>()))>, float64>);
     static_assert(std::is_same_v<elem_t<decltype(Math::expm(Matrix<complex64>()))>, complex128>);
@@ -323,9 +322,9 @@ TEST_CASE("expm(logm(A)) = A on the logm golden inputs") {
 
 TEST_CASE("mpower with a 1x1 matrix exponent or base is the scalar form") {
     Matrix<float64> A = {{2.0, 1.0}, {0.0, 3.0}};
-    Matrix<float64> p(mshape_type{1, 1}, 2.0);
+    Matrix<float64> p = {{2.0}};
     auto r = Math::mpower(A, p);
     CHECK(max_abs_diff(r, Math::mpower(A, 2)) == 0.0);
-    Matrix<float64> s(mshape_type{1, 1}, 2.0);
+    Matrix<float64> s = {{2.0}};
     CHECK(max_abs_diff(Math::mpower(s, A), Math::mpower(2.0, A)) == 0.0);
 }

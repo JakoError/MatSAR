@@ -133,7 +133,7 @@ TEST_CASE("conv · \"same\" is centred for every kernel length") {
 // (guards against a guard that fires on every input). B = permute(A, {3,1,2}) has
 // size(B) = {size(A,3), size(A,1), size(A,2)} and B(k,i,j) = A(i,j,k).
 TEST_CASE("permute · valid 3-D reorder") {
-    Matrix<int64> a(mshape_type{2, 3, 4}, int64(0));
+    Matrix<int64> a(mshape_type{2, 3, 4}, 0);
     for (msize_type i = 0; i < 2; ++i)
         for (msize_type j = 0; j < 3; ++j)
             for (msize_type k = 0; k < 4; ++k)
