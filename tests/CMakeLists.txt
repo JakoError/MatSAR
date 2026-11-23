@@ -34,16 +34,19 @@ set_tests_properties(death_invalid_shape PROPERTIES PASS_REGULAR_EXPRESSION "(Br
 # Death tests: a ragged nested list or vector is rejected, one CTest case per argv[1].
 add_executable(death_ragged death_ragged.cpp)
 target_link_libraries(death_ragged PRIVATE matsar)
-foreach(case_kind IN ITEMS
-        "list_long_row|initializer list" "list_short_row|initializer list" "list_3d|initializer list"
-        "from_rows|initializer list" "from_columns|initializer list"
-        "vec_2d|vector" "vec_3d|vector" "from_rows_vec|vector" "from_columns_vec|vector")
-    string(REPLACE "|" ";" parts "${case_kind}")
+foreach(case_regex IN ITEMS
+        "list_long_row|initializer list is ragged" "list_short_row|initializer list is ragged"
+        "list_3d|initializer list is ragged" "list_object|initializer list is ragged"
+        "list_mixed_depth|initializer list mixes elements and lists"
+        "from_rows|initializer list is ragged" "from_columns|initializer list is ragged"
+        "vec_2d|vector is ragged" "vec_3d|vector is ragged"
+        "from_rows_vec|vector is ragged" "from_columns_vec|vector is ragged")
+    string(REPLACE "|" ";" parts "${case_regex}")
     list(GET parts 0 case)
-    list(GET parts 1 kind)
+    list(GET parts 1 regex)
     add_test(NAME death_ragged_${case} COMMAND death_ragged ${case})
     set_tests_properties(death_ragged_${case} PROPERTIES
-            PASS_REGULAR_EXPRESSION "ValueError: Matrix: the nested ${kind} is ragged")
+            PASS_REGULAR_EXPRESSION "ValueError: Matrix: the nested ${regex}")
 endforeach()
 
 # BLAS-backed tests (only when OpenBLAS is enabled)

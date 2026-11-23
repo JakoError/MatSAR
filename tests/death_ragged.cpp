@@ -19,6 +19,11 @@ int main(int argc, char **argv) {
         Matrix<float64> m = {{1.0, 2.0, 3.0}, {4.0, 5.0}};
     } else if (!std::strcmp(c, "list_3d")) {
         Matrix<float64> m = {{{1.0, 2.0}, {3.0, 4.0}}, {{5.0}, {6.0}}};   // each block is even on its own
+    } else if (!std::strcmp(c, "list_mixed_depth")) {
+        Matrix<float64> m = {1.0, {2.0}};   // an element and a list side by side
+    } else if (!std::strcmp(c, "list_object")) {
+        std::initializer_list<std::initializer_list<float64>> rows = {{1.0, 2.0}, {3.0}};
+        Matrix<float64> m(rows);
     } else if (!std::strcmp(c, "from_rows")) {
         Matrix<float64>::fromRows({{1.0, 2.0}, {3.0}});
     } else if (!std::strcmp(c, "from_columns")) {
