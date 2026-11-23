@@ -1265,8 +1265,7 @@ namespace matsar {
         /// Build a matrix from explicit ROWS: each inner list is one row
         /// (NumPy/MATLAB-literal layout). Implemented as fromColumns(list).T().
         static auto fromRows(LIST2 list) -> Matrix<dType> {
-            Matrix<dType> m = fromColumns(list);
-            return m.isEmpty() ? m : m.T();
+            return fromColumns(list).T();
         }
 
         /// vector<vector> overloads of the explicit builders (same semantics as the
@@ -1283,8 +1282,7 @@ namespace matsar {
         }
 
         static auto fromRows(VEC2 vec) -> Matrix<dType> {
-            Matrix<dType> m = fromColumns(vec);
-            return m.isEmpty() ? m : m.T();
+            return fromColumns(vec).T();
         }
 
         Matrix(VEC1 vec) {
@@ -2034,15 +2032,18 @@ namespace matsar {
             return {squeezeShapeHigh(shape), data};
         }
 
-        /// Transpose: swaps the first two axes (applied to each 2-D page for N-D).
+        /// Transpose: swaps the first two axes (applied to each 2-D page for N-D). A 1-D {n}
+        /// matrix is an n x 1 column (as for m(i, j)), so its transpose is the 1 x n row.
         [[nodiscard]] auto T() const -> Matrix<dType> {
-            auto t_shape = shape;
+            if (isEmpty()) return *this;
+            const shape_type s = newAxis(shape, 2);   // at least two axes: {n} -> {n, 1}
+            auto t_shape = s;
             swap(t_shape[0], t_shape[1]);
             Matrix<dType> t(t_shape, 0.);
             size_type unit_size = t_shape[0] * t_shape[1];
             dType *iter = data, *iter_t = t.getData();
             for (size_type i = 0; i < size / unit_size; ++i) {
-                Base::T(iter, iter_t, shape[0], shape[1]);
+                Base::T(iter, iter_t, s[0], s[1]);
                 iter += unit_size;
                 iter_t += unit_size;
             }
