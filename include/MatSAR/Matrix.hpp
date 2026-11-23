@@ -1095,7 +1095,10 @@ namespace matsar {
             }
         };
 
-        Matrix(const shape_type &m_shape, dType *v) {
+        /// Copy `size` elements from a buffer (a null pointer gives zeros). A template so that a
+        /// literal 0, which is also a null pointer constant, picks the value constructor above.
+        template<typename P, std::enable_if_t<std::is_same_v<P, dType>, int> = 0>
+        Matrix(const shape_type &m_shape, P *v) {
             Base::checkShape(m_shape);
             this->shape = Util::VectorUtil::abs(m_shape);
             this->size = Util::VectorUtil::mul(this->shape);

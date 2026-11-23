@@ -75,6 +75,28 @@ TEST_CASE("vector<vector> constructor matches the row-wise default") {
 #endif
 }
 
+// A literal 0 is also a null pointer constant, so it must not pick Matrix(shape, dType *).
+TEST_CASE_TEMPLATE("Matrix(shape, 0) fills with zeros", T, float64, float32, int64, int32, bool, complex128) {
+    Matrix<T> m(mshape_type{2, 3}, 0);
+    REQUIRE(m.getShape() == mshape_type{2, 3});
+    for (msize_type i = 0; i < m.getSize(); ++i)
+        CHECK(m(i) == T(0));
+    Matrix<T> b({3}, 0);
+    REQUIRE(b.getShape() == mshape_type{3});
+    CHECK(b(2) == T(0));
+}
+
+TEST_CASE("Matrix(shape, pointer) copies the buffer; a null pointer gives zeros") {
+    float64 buf[] = {1, 2, 3, 4};
+    Matrix<float64> m(mshape_type{2, 2}, buf);
+    CHECK(m(0) == 1);
+    CHECK(m(3) == 4);
+    float64 *none = nullptr;
+    Matrix<float64> z(mshape_type{2, 2}, none);
+    CHECK(z(0) == 0);
+    CHECK(z(3) == 0);
+}
+
 TEST_CASE("fromRows / fromColumns accept vector<vector>") {
     std::vector<std::vector<int64>> vv = {{1, 2, 3}, {4, 5, 6}};
     auto r = Matrix<int64>::fromRows(vv);
