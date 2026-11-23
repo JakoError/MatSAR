@@ -1191,7 +1191,7 @@ namespace matsar {
         }
 
         [[nodiscard]] auto broadcast(shape_type target_shape) const -> Matrix<dType> {
-            if (shape == target_shape) return {*this};
+            if (shape == target_shape) return *this;   // a copy: `{*this}` would concatenate (cat squeezes a trailing 1)
             Matrix<dType> sqz = squeezeHigh();
             Matrix<dType> r(target_shape, 0.);
             if (sqz.getDims() > target_shape.size())
@@ -1510,7 +1510,7 @@ namespace matsar {
         }
 
         virtual auto operator+() const -> Matrix<dType> {
-            return {*this};
+            return *this;
         }
 
         virtual auto operator-() const -> Matrix<dType> {
@@ -1881,7 +1881,7 @@ namespace matsar {
         ///Auto predict shape
         [[nodiscard]] auto reshape(mshape_type new_shape) const -> Matrix<dType> {
             if (new_shape == shape)
-                return {*this};
+                return *this;
             shapePredict(size, new_shape);
             if (Util::VectorUtil::mul(new_shape) != size)
                 throw_value_error("reshape new shape must have the same size of matrix shape:" +
@@ -1900,7 +1900,7 @@ namespace matsar {
 
         [[nodiscard]] auto squeeze() const -> Matrix<dType> {
             if (shape.size() <= 2)
-                return {*this};
+                return *this;
             return {squeezeShape(shape), data};
         }
 

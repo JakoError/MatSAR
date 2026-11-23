@@ -37,3 +37,20 @@ TEST_CASE("isDiag: square, off-diagonal elements all zero") {
     CHECK(Matrix<int64>().isDiag());     // empty is square, so diagonal
     CHECK_FALSE(Matrix<int64>({1, 2}).isDiag());
 }
+
+// "Return a copy" written as `return {m}` list-initializes through the concatenating
+// initializer_list<Matrix> constructor, and cat() squeezes a trailing singleton dimension:
+// a 3x1 column came back with shape {3}. Each of these must keep the shape.
+TEST_CASE("copies keep a trailing singleton dimension") {
+    const Matrix<float64> col(mshape_type{3, 1}, 2.0);
+    const mshape_type s{3, 1};
+    CHECK(col.reshape(s).getShape() == s);
+    CHECK(col.broadcast(s).getShape() == s);
+    CHECK((+col).getShape() == s);
+    CHECK(col.squeeze().getShape() == s);   // a 2-D matrix is left as it is
+    CHECK(flip(col, 3).getShape() == s);    // a dim beyond the dimensions: the matrix itself
+    CHECK(rot90(col, 0).getShape() == s);
+    CHECK(rot90(col, 4).getShape() == s);
+    const Matrix<float64> one(mshape_type{1, 1}, 5.0);
+    CHECK(one.broadcast(mshape_type{1, 1}).getShape() == mshape_type{1, 1});
+}

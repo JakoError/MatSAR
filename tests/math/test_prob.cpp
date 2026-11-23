@@ -91,6 +91,18 @@ TEST_CASE("max / min / range: a dim beyond the dimensions returns the matrix") {
     CHECK(hi(0, 1) == 5.0);
 }
 
+// A column (3 x 1) kept its trailing singleton dimension only by accident of the copy path:
+// `return {m}` concatenated and came back with shape {3}.
+TEST_CASE("median / mean / var / max: a dim beyond the dimensions keeps a column's shape") {
+    const Matrix<float64> col(mshape_type{3, 1}, 2.0);
+    const mshape_type s{3, 1};
+    CHECK(Math::median(col, 3).getShape() == s);
+    CHECK(Math::mean(col, 3).getShape() == s);
+    CHECK(Math::var(col, false, 3).getShape() == s);
+    CHECK(Math::max(col, 3).getShape() == s);
+    CHECK(Math::min(col, 3).getShape() == s);
+}
+
 // ---- densities: matrix x, scalar parameters ----
 TEST_CASE("golden · normpdf") {
     for (const auto &c: normpdf_golden) {

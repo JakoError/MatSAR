@@ -147,7 +147,7 @@ namespace matsar {
                 return {};
             auto dim_idx = dim - 1;
             if (dim_idx >= m.getDims())
-                return {m};
+                return Matrix<Out>(m);
             if (dim_idx < 0) {
                 auto sort_m = m.sort();
                 auto iter = sort_m.getData() + sort_m.getSize() / 2;
@@ -206,7 +206,7 @@ namespace matsar {
             static_assert(calculable_type<Out>::value, "mean: output type must be Calculable");
             auto dim_idx = dim - 1;
             if (dim_idx >= m.getDims())
-                return {m};
+                return Matrix<Out>(m);
             // Divide in-place (operator/=) rather than via the free Matrix operator/,
             // which widens the result to arith_promote_t<Out> (float32 -> float64,
             // complex64 -> complex128) for ANY scalar divisor; that wider value is then
@@ -251,9 +251,9 @@ namespace matsar {
                 // back to the magnitude (abs) for complex inputs, keep the exact prior
                 // identity behavior for real inputs (Out == dType there).
                 if constexpr (complex_type<dType>::value) {
-                    return {abs(m)};
+                    return Matrix<Out>(abs(m));
                 } else {
-                    return {m};
+                    return Matrix<Out>(m);
                 }
             }
             // dim is 1-based (like median/max/min); sum's axis parameter is 0-based and
