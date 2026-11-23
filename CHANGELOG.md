@@ -7,6 +7,16 @@ is `0.x`, the public API may change between minor releases.
 
 ## [Unreleased]
 
+### Fixed
+- Nested initializer lists: each pair of braces is now one dimension, so rows of one
+  element (`{{1.0}, {2.0}}`, a 2x1 column) and `{{x}}` (1x1) compile; they used to be
+  ambiguous with the 1-D form. An element and a list side by side is a `ValueError`.
+- A ragged nested initializer list or `vector<vector<T>>` (rows of different lengths) is a
+  `ValueError`; it used to be copied past the end of the matrix buffer. An empty nested
+  vector gives an empty matrix instead of dereferencing an empty vector.
+- `Matrix<T>(shape, 0)` fills with zeros; the literal 0 used to be ambiguous with the
+  buffer constructor `Matrix(shape, T *)`.
+
 ## [0.1.0] - 2026-06-03
 
 Initial public release of the stable MatSAR core.
