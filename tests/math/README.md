@@ -144,6 +144,12 @@ The golden header is committed. **If you edit `cases.py` you must regenerate and
 CI's `golden-regen-guard` job fails when `generate.py`'s output differs from what's committed
 (byte-stable, pinned numpy). Python is needed only to regenerate, never to build or run the tests.
 
+Byte-stable across machines means every float a golden depends on -- inputs and tolerances too -- must
+come from IEEE basic operations (`+ - * /`, `sqrt`), exact `Fraction` arithmetic, or mpmath rounded once
+(`generate.py`: `_pow10`, `_cos`, `_hypot`, `mp.qr`, ...). NumPy's `**` / `exp` / `log` / trig / `hypot` and
+its BLAS products (`@`, `np.linalg`) can differ in the last bit between machines and NumPy builds. Check a
+change on a second platform (e.g. WSL with `pip install --target <dir> -r gen/requirements.txt`).
+
 ## Numerical notes
 Tolerances live per-function in `cases.py` (`rtol`/`atol`); integer cases use exact `0/0`. `approx_eq`
 treats `NaN` as matching `NaN` (domain-error cases) and requires sign-correct `Inf`. Global `cumsum`/`cumprod`

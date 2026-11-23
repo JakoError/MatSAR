@@ -154,7 +154,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          # A version with a numpy 2.1.1 wheel ('3.x' became 3.15 and built numpy from source).
+          python-version: '3.12'
       - name: Install pinned numpy
         run: pip install -r tests/math/gen/requirements.txt
       - name: Regenerate goldens

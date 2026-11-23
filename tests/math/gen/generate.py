@@ -154,6 +154,26 @@ def _arr(v):
     return np.asarray(v, dtype=np.float64)
 
 
+# Every float a golden depends on -- inputs and tolerances too -- comes from IEEE basic operations
+# (correctly rounded on every machine), exact rational arithmetic, or mpmath rounded once. NumPy's
+# pow / log / trig / hypot and its BLAS matrix products can differ in the last bit between machines
+# and NumPy builds, which breaks the byte-exact CI regen guard.
+def _mp_map(f):
+    return np.vectorize(lambda v: float(f(mp.mpf(float(v)))), otypes=[np.float64])
+
+
+_pow10 = _mp_map(lambda v: mp.power(10, v))
+_cos, _sin = _mp_map(mp.cos), _mp_map(mp.sin)
+
+
+def _hypot(x, y):
+    return float(mp.hypot(mp.mpf(float(x)), mp.mpf(float(y))))
+
+
+def _cmax_abs(re, im):   # max |re + i im| over the elements
+    return max((_hypot(x, y) for x, y in zip(np.ravel(re), np.ravel(im))), default=0.0)
+
+
 def _lit1(name, a, out, rtol, atol):
     return case_lit(name, _arr(a), None, _arr(out), rtol, atol, check53=False)
 
@@ -176,7 +196,7 @@ def build_matop_unary(tag, spec):
         shape = C.MATOP_SHAPES[int(rng.integers(len(C.MATOP_SHAPES)))]
         a = rng.uniform(r["lo"], r["hi"], size=shape)
         if r.get("log10"):
-            a = 10.0 ** a
+            a = _pow10(a)
         if r.get("signed"):
             a = a * rng.choice([-1.0, 1.0], size=shape)
         out.append(_lit1("%s/rnd%03d/%s" % (tag, i, _shape_tag(shape)), a, fn(a), spec["rtol"], spec["atol"]))
@@ -261,8 +281,9 @@ def build_logm():
             a = O.MATRIX_ORACLE["expm"](_scaled_normal(rng, n, norm))
             out.append(_matfun_lit("logm/rnd_expm/norm=%g/%dx%d" % (norm, n, n), a, None, fn(a), tol))
     for n in r["spd_sizes"]:                    # symmetric positive definite, spectrum 1e-2 .. 1e2
-        q, _ = np.linalg.qr(rng.standard_normal((n, n)))
-        a = (q * 10.0 ** rng.uniform(-2, 2, size=n)) @ q.T
+        q, _ = mp.qr(O.mp_matrix(rng.standard_normal((n, n))))
+        d = _pow10(rng.uniform(-2, 2, size=n))
+        a = O.mp_to_np(q * mp.diag([mp.mpf(float(v)) for v in d]) * q.T)
         out.append(_matfun_lit("logm/rnd_spd/%dx%d" % (n, n), a, None, fn(a), tol))
     return out
 
@@ -376,7 +397,8 @@ def _pdf_rtol(spec, out):
     if spec["rtol"] == 0:
         return 0.0
     pos = out[np.isfinite(out) & (out > 0)]
-    return spec["rtol"] + C.PROB_PDF_LOG_RTOL * (float(np.max(np.abs(np.log(pos)))) if pos.size else 0.0)
+    worst = max((abs(float(mp.log(mp.mpf(float(v))))) for v in pos), default=0.0)
+    return spec["rtol"] + C.PROB_PDF_LOG_RTOL * worst
 
 
 def build_prob_pdf(tag, spec):
@@ -431,7 +453,7 @@ def build_linalg_mean(tag):
     rng = np.random.default_rng(tag_seed("linalg/" + tag))
     for i in range(r["count"]):
         shape = C.LINALG_MEAN_SHAPES[i % len(C.LINALG_MEAN_SHAPES)]
-        a = 10.0 ** rng.uniform(r["lo"], r["hi"], size=shape)
+        a = _pow10(rng.uniform(r["lo"], r["hi"], size=shape))
         for axis in _reduce_axes(shape):
             out.append(case_lit("%s/rnd%03d/%s/ax%s" % (tag, i, _shape_tag(shape), "g" if axis is None else axis),
                                 a, axis, fn(a, axis), tol["rtol"], tol["atol"], check53=False))
@@ -490,8 +512,9 @@ def _ppval_lit(name, breaks, coefs, xs):
     for x in xs:
         if not np.isnan(x):
             for i, b in enumerate(breaks[:-1]):
-                t = abs(float(x) - float(b))
-                bound = max(bound, sum(abs(c) * t ** (len(coefs[i]) - 1 - k) for k, c in enumerate(coefs[i])))
+                t = Fraction(abs(float(x) - float(b)))
+                bound = max(bound, float(sum(abs(Fraction(c)) * t ** (len(coefs[i]) - 1 - k)
+                                             for k, c in enumerate(coefs[i]))))
     return case_lit_axis2(name, _arr(coefs), _arr(list(breaks) + list(xs)), len(breaks), _arr(want),
                           1e-14, 1e-14 * bound)
 
@@ -512,7 +535,7 @@ def build_expint_real():
     out = [_lit1("expint/points", C.EXPINT_REAL_POINTS, O.expint_real(C.EXPINT_REAL_POINTS), C.EXPINT_TOL, 0.0)]
     r = C.EXPINT_REAL_RANDOM
     rng = np.random.default_rng(r["seed"])
-    xs = (10.0 ** rng.uniform(r["lo"], r["hi"], size=r["count"])).reshape(3, 4)
+    xs = _pow10(rng.uniform(r["lo"], r["hi"], size=r["count"])).reshape(3, 4)
     out.append(_lit1("expint/rnd", xs, np.asarray(O.expint_real(xs.ravel())).reshape(xs.shape), C.EXPINT_TOL, 0.0))
     return out
 
@@ -522,11 +545,11 @@ def build_expint_complex():
     rng = np.random.default_rng(r["seed"])
     rho = r["radius"] * np.sqrt(rng.uniform(0, 1, size=r["count"]))
     theta = rng.uniform(-np.pi, np.pi, size=r["count"])
-    pts = list(C.EXPINT_COMPLEX_POINTS) + list(zip(rho * np.cos(theta), rho * np.sin(theta)))
+    pts = list(C.EXPINT_COMPLEX_POINTS) + list(zip(rho * _cos(theta), rho * _sin(theta)))
     out = []
     for re, im in pts:
         wr, wi = O.expint_complex(re, im)
-        atol = C.EXPINT_TOL * float(np.hypot(wr, wi))
+        atol = C.EXPINT_TOL * _hypot(wr, wi)
         out.append(_lit2("expint_c/z=%.17g%+.17gi" % (re, im), [re], [im], [wr, wi], 0.0, atol))
     return out
 
@@ -677,7 +700,7 @@ def build_inv(cplx):
         if cplx:
             xr, xi = O.mp_to_np(X, cplx=True)
             want = _cplx_out(xr, xi)
-            out.append(_lit_c("inv_c/%s" % nm, re, im, want, 0.0, tol * float(np.abs(xr + 1j * xi).max())))
+            out.append(_lit_c("inv_c/%s" % nm, re, im, want, 0.0, tol * _cmax_abs(xr, xi)))
         else:
             want = O.mp_to_np(X)
             out.append(_lit1("inv/%s" % nm, re, want, tol, tol * float(np.abs(want).max())))
@@ -700,7 +723,7 @@ def build_pinv(cplx):
         tol = _lapack_tol(_cond(A, cplx))
         if cplx:
             xr, xi = O.mp_to_np(X, cplx=True)
-            out.append(_lit_c("pinv_c/%s" % nm, re, im, _cplx_out(xr, xi), 0.0, tol * float(np.abs(xr + 1j * xi).max())))
+            out.append(_lit_c("pinv_c/%s" % nm, re, im, _cplx_out(xr, xi), 0.0, tol * _cmax_abs(xr, xi)))
         else:
             want = O.mp_to_np(X)
             out.append(_lit1("pinv/%s" % nm, re, want, tol, tol * float(np.abs(want).max())))
@@ -724,7 +747,9 @@ def build_lu():
         Ln, Un = O.mp_to_np(L), O.mp_to_np(U)
         tol = _lapack_tol(_cond(A, False))
         lit = lambda tag, w: _lit1("%s/%s" % (tag, nm), re, w, tol, tol * float(np.abs(w).max(initial=1)))
-        arrs["lu_L"].append(lit("lu_L", P.T @ Ln))
+        PL = np.zeros_like(Ln)   # P' * L, by row permutation (exact)
+        PL[perm, :] = Ln
+        arrs["lu_L"].append(lit("lu_L", PL))
         arrs["lu_U"].append(lit("lu_U", Un))
         arrs["lup_L"].append(lit("lup_L", Ln))
         arrs["lup_U"].append(lit("lup_U", Un))
