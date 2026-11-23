@@ -103,6 +103,37 @@ TEST_CASE("median / mean / var / max: a dim beyond the dimensions keeps a column
     CHECK(Math::min(col, 3).getShape() == s);
 }
 
+// MATLAB var(A, w, dim): a dim beyond the dimensions makes every element its own one-value
+// slice, whose variance is 0 (NaN for NaN or Inf: Inf - Inf). A one-value slice is normalized by
+// N, not N - 1, for either w, so the sample variance of one value is 0 too (it was 0/0 = NaN,
+// and the dim beyond the dimensions returned the matrix itself).
+TEST_CASE("var: one-value slices have variance 0, as MATLAB") {
+    const Matrix<float64> m = {{1.0, -2.0, 3.5}, {4.0, std::nan(""), INFINITY}};
+    for (bool w: {false, true}) {
+        CAPTURE(w);
+        auto v = Math::var(m, w, 3);
+        REQUIRE(v.getShape() == m.getShape());
+        CHECK(v(0, 0) == 0);
+        CHECK(v(0, 1) == 0);
+        CHECK(v(0, 2) == 0);
+        CHECK(v(1, 0) == 0);
+        CHECK(std::isnan(v(1, 1)));
+        CHECK(std::isnan(v(1, 2)));
+        const Matrix<float64> row = {{2.0, 7.0, -1.0}};                // along its singleton dim 1
+        auto r = Math::var(row, w, 1);
+        REQUIRE(r.getShape() == mshape_type{1, 3});
+        CHECK(r(0, 0) == 0);
+        CHECK(r(0, 2) == 0);
+        CHECK(Math::var(Matrix<float64>(mshape_type{1}, 5.0), w, 0)(0) == 0);   // global, one value
+    }
+    const Matrix<complex128> c = {{complex128(1, 2), complex128(-3, 0.5)}};
+    auto vc = Math::var(c, true, 3);
+    static_assert(std::is_same_v<decltype(vc), Matrix<float64>>);
+    REQUIRE(vc.getShape() == mshape_type{1, 2});
+    CHECK(vc(0, 0) == 0);   // was |c|: 2.236
+    CHECK(vc(0, 1) == 0);
+}
+
 // ---- densities: matrix x, scalar parameters ----
 TEST_CASE("golden · normpdf") {
     for (const auto &c: normpdf_golden) {

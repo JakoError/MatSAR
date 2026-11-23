@@ -236,7 +236,9 @@ namespace matsar {
     }
     namespace Math {
         /**
-         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
+         * variance, as MATLAB var: w = false normalizes by N, w = true by N - 1 (the sample
+         * variance); a slice of one value is normalized by N either way, so its variance is 0.
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, every element is a slice of one value: 0, or NaN for NaN / Inf
          */
         template<typename TargetType = void, Calculable dType>
         inline auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1)
@@ -245,16 +247,20 @@ namespace matsar {
             static_assert(calculable_type<Out>::value, "var: output type must be Calculable");
             msize_type dim_idx = dim - 1;
             if (m.isEmpty()) return {};
-            if (dim_idx >= m.getDims()) {
-                // magnitude_t collapses complex dType to a real Out, so the identity
-                // "return the matrix itself" has no type-preserving meaning here; fall
-                // back to the magnitude (abs) for complex inputs, keep the exact prior
-                // identity behavior for real inputs (Out == dType there).
-                if constexpr (complex_type<dType>::value) {
-                    return Matrix<Out>(abs(m));
-                } else {
-                    return Matrix<Out>(m);
+            if (dim_idx >= m.getDims()) {   // one-value slices: x - mean(x) is 0, or NaN for NaN / Inf
+                Matrix<Out> r(m.getShape(), Out(0));
+                const dType *src = m.getData();
+                Out *dst = r.getData();
+                for (msize_type k = 0; k < m.getSize(); ++k) {
+                    bool finite;
+                    if constexpr (complex_type<dType>::value)
+                        finite = std::isfinite(double(src[k].real())) && std::isfinite(double(src[k].imag()));
+                    else
+                        finite = std::isfinite(double(src[k]));
+                    if (!finite)
+                        dst[k] = Out(std::numeric_limits<double>::quiet_NaN());
                 }
+                return r;
             }
             // dim is 1-based (like median/max/min); sum's axis parameter is 0-based and
             // uses the `none` sentinel -- not a numeric value -- for a true global reduce.
@@ -274,7 +280,7 @@ namespace matsar {
             // return, triggering a spurious TypeLossException.
             if (dim_idx < 0) {
                 auto n = m.getSize();
-                auto denom = w ? n - 1 : n;
+                auto denom = w && n > 1 ? n - 1 : n;   // MATLAB: one value is normalized by N
                 auto mean_m = sum<real_promote_t<dType>>(m, none);
                 mean_m /= n;
                 auto acc = sum<Out>(abs(m - mean_m) ^ 2, none);
@@ -285,7 +291,7 @@ namespace matsar {
                 return acc;
             }
             auto n = m.getShape()[dim_idx];
-            auto denom = w ? n - 1 : n;
+            auto denom = w && n > 1 ? n - 1 : n;
             auto mean_m = sum<real_promote_t<dType>>(m, dim_idx);
             mean_m /= n;
             auto acc = sum<Out>(abs(m - mean_m) ^ 2, dim_idx);
