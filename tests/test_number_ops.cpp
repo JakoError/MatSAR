@@ -8,6 +8,7 @@
 #include <MatSAR/NumberOperation.hpp>
 #include <cmath>
 #include <complex>
+#include <limits>
 
 using namespace matsar;
 
@@ -62,4 +63,21 @@ TEST_CASE("nchoosek: exact while representable, no needless overflow") {
     CHECK(matsar::nchoosek(1000, 500) == doctest::Approx(2.7028824094543656e299).epsilon(1e-13));
     CHECK(std::isnan(matsar::nchoosek(3, 5)));
     CHECK(std::isnan(matsar::nchoosek(2.5, 1)));
+}
+
+// TypeUtil::eps(x) is MATLAB's eps(x): the distance from |x| to the next larger number.
+// It was x - nextafter(x, epsilon): half the spacing at a power of two, and negative at 0.
+TEST_CASE("eps: spacing to the next larger number, as MATLAB") {
+    using matsar::Util::TypeUtil::eps;
+    CHECK(eps(1.0) == std::ldexp(1.0, -52));
+    CHECK(eps(1.5) == std::ldexp(1.0, -52));
+    CHECK(eps(2.0) == std::ldexp(1.0, -51));
+    CHECK(eps(-2.0) == std::ldexp(1.0, -51));
+    CHECK(eps(0.0) == std::numeric_limits<double>::denorm_min());
+    CHECK(eps(1e-310) == std::numeric_limits<double>::denorm_min());
+    CHECK(eps(std::numeric_limits<double>::max()) == std::ldexp(1.0, 971));
+    CHECK(std::isnan(eps(std::numeric_limits<double>::infinity())));
+    CHECK(std::isnan(eps(std::numeric_limits<double>::quiet_NaN())));
+    CHECK(eps(1.0f) == std::ldexp(1.0f, -23));
+    CHECK(eps(0.0f) == std::numeric_limits<float>::denorm_min());
 }

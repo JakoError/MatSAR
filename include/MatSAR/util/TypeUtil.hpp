@@ -615,13 +615,21 @@ namespace matsar {
                 return {0, imag};
             }
 
-            static inline auto eps(float32 x) -> float32 {
-                return x - std::nextafterf(x, std::numeric_limits<float32>::epsilon());
+            /// MATLAB eps(x): the distance from |x| to the next larger number of the same type
+            /// (eps(1) = 2^-52, eps(0) = the smallest subnormal); NaN for Inf or NaN.
+            template<typename T>
+            static inline auto eps_of(T x) -> T {
+                const T ax = std::abs(x);
+                if (!std::isfinite(ax))
+                    return std::numeric_limits<T>::quiet_NaN();
+                if (ax == std::numeric_limits<T>::max())   // no larger finite number: same binade below
+                    return ax - std::nextafter(ax, T(0));
+                return std::nextafter(ax, std::numeric_limits<T>::infinity()) - ax;
             }
 
-            static inline auto eps(float64 x) -> float64 {
-                return x - std::nextafter(x, std::numeric_limits<float64>::epsilon());
-            }
+            static inline auto eps(float32 x) -> float32 { return eps_of(x); }
+
+            static inline auto eps(float64 x) -> float64 { return eps_of(x); }
         }
     }
 }
