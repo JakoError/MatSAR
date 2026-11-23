@@ -109,6 +109,22 @@ jobs:
         # Every experimental math test (BLAS-free here), its death tests, and the core suite.
         run: ctest --test-dir build --output-on-failure
 
+  # The LAPACK-backed math tests (LinearAlgebra: svd, lu, det, inv, pinv, eig, schur, ...)
+  # need LAPACKE, a separate package on Ubuntu.
+  linux-experimental-blas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y ninja-build libopenblas-dev liblapacke-dev
+      - name: Configure
+        run: cmake -G Ninja -B build -DMATSAR_BUILD_EXPERIMENTAL_TESTS=ON
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        # Every experimental math test including the LAPACK-backed ones, and the core suite.
+        run: ctest --test-dir build --output-on-failure
+
   windows-mingw-experimental:
     runs-on: windows-latest
     defaults:
