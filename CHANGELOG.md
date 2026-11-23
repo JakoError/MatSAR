@@ -16,6 +16,8 @@ is `0.x`, the public API may change between minor releases.
   vector gives an empty matrix instead of dereferencing an empty vector.
 - `Matrix<T>(shape, 0)` fills with zeros; the literal 0 used to be ambiguous with the
   buffer constructor `Matrix(shape, T *)`.
+- `T()` of a 1-D `{n}` matrix (an n x 1 column) is the 1 x n row, and of an empty matrix an
+  empty one; it used to write past the end of the shape, also through `rot90` of a vector.
 
 ## [0.1.0] - 2026-06-03
 
