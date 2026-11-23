@@ -273,3 +273,116 @@ PROB_PDF_CASES = {
 }
 PROB_PDF_RANDOM = dict(count=6, seed=3601)
 PROB_PDF_LOG_RTOL = 2e-15   # per unit of max |ln pdf| in a case, on top of rtol
+
+
+# ---- LinearAlgebra -----------------------------------------------------------------
+# geomean / harmmean: dim is MatSAR's 1-based dim, stored 0-based (-1 = global); axis 2 on a
+# 2-D input is dim 3, beyond the dimensions, which returns the input.
+LINALG_MEAN_SHAPES = [(5,), (3, 4), (4, 3)]
+LINALG_MEAN_RANDOM = dict(count=6, lo=-1.0, hi=2.0, seed=3701)   # log10 of the values
+LINALG_MEAN_CURATED = {   # (name, rows, axis)
+    "geomean": [
+        ("huge", [[1e300, 1e300, 1e300, 1e300]], 1),   # a plain product overflows
+        ("tiny", [[1e-300, 1e-300, 1e-300]], 1),       # ... or underflows
+        ("mixed_scale", [[1e200, 1e-200, 4]], None),
+        ("zero", [[0, 2, 8], [1, 2, 4]], 1),
+        ("negative", [[-1, -4], [2, 8]], 1),           # no real geometric mean: NaN
+        ("nan", [[float("nan"), 1], [2, 3]], 0),
+        ("inf", [[float("inf"), 1], [2, 3]], 0),
+        ("zero_inf", [[0, float("inf")], [1, 4]], 1),
+        ("beyond", [[1, 2], [3, 4]], 2),
+    ],
+    "harmmean": [
+        ("columns", [[1, 2], [4, 8]], 0),
+        ("rows", [[1, 2], [4, 8]], 1),
+        ("huge", [[1e300, 1e300, 1e300]], 1),
+        ("zero", [[0, 2, 8], [1, 2, 4]], 1),           # 1/0 = Inf, so the mean is 0
+        ("negative", [[-1, -4], [2, 8]], 1),
+        ("nan", [[float("nan"), 1], [2, 3]], 0),
+        ("inf", [[float("inf"), 2], [2, 3]], 0),
+        ("beyond", [[1, 2], [3, 4]], 2),
+    ],
+}
+LINALG_MEAN_TOL = dict(rtol=1e-14, atol=0.0)
+
+LINALG_KRON_SHAPES = [((2, 2), (2, 2)), ((1, 3), (2, 1)), ((2, 3), (3, 2)), ((3, 1), (1, 4)), ((1, 1), (2, 3))]
+LINALG_KRON_RANDOM = dict(lo=-9, hi=9, seed=3702)
+
+# Polynomials are MATLAB-ordered (highest power first). polyder drops leading zeros as MATLAB does.
+POLYDER_POINTS = [[3, 2, 1], [5], [], [0, 0, 3, 2, 1], [1, 0, 0, 0], [0, 0], [2, -1], [0.5, -0.25, 3, 7]]
+POLYDER2_POINTS = [([1, 1], [1, -1]), ([1, 2, 3], [4, 5]), ([0, 1], [1, 0]), ([5], [3]), ([2], [1, 0, -1]),
+                   ([1, 0, 0], [1, 0, 0, 0])]
+POLY_RANDOM = dict(count=4, max_degree=5, lo=-9, hi=9, seed=3703)
+POLYEVAL_POINTS = [([1, 2, 3], [0, 1, 2, -1.5, 1000, float("nan")]), ([], [1, 2]), ([7], [0, 5]),
+                   ([1, 0, 0, 0, -1], [1, -1, 2, 0.5])]
+POLYEVAL_RANDOM = dict(count=4, max_degree=6, seed=3704)          # positive: no cancellation
+# ppval: (breaks, coefs with one row per piece as in MATLAB, query points)
+PPVAL_CASES = {
+    "linear": ([0, 1, 2], [[1, 0], [2, 1]], [-1, 0, 0.5, 1, 1.5, 2, 3, float("nan")]),
+    "one_piece": ([0, 2], [[1, -1, 2]], [-1, 0, 1, 2, 5]),
+    "cubic": ([-1, 0, 0.5, 2], [[1, 0, -2, 1], [0.5, 1, 0, -1], [-1, 2, 3, 0.25]],
+              [-2, -1, -0.5, 0, 0.25, 0.5, 1, 2, 2.5]),
+    "constant": ([1, 3, 4], [[5], [-2]], [0, 1, 2.9, 3, 4, 10]),
+}
+PPVAL_RANDOM = dict(count=3, pieces=4, order=4, seed=3705)
+
+# Expint (MATLAB expint = E1). A real result is NaN for x < 0, where E1 is complex.
+EXPINT_REAL_POINTS = [1e-300, 1e-10, 1e-5, 1e-3, 0.1, 0.5, 1, 1.5, 2, 5, 10, 20, 50, 100, 700, 750,
+                      0, float("inf"), float("nan"), -0.5, -1, -float("inf")]
+EXPINT_REAL_RANDOM = dict(count=12, lo=-3.0, hi=2.5, seed=3706)   # log10 of x
+EXPINT_COMPLEX_POINTS = [(-1, 0), (-0.5, 0), (-10, 0), (-50, 0), (-700, 0), (1, 0), (1e-8, 0), (0.25, 0),
+                         (1, 1), (0, 1), (0, -1), (-1, 1), (-1, -1), (-10, 1), (-10, 0.01), (-10, -0.01),
+                         (-3, 4), (0, 10), (30, 30), (-30, 5), (-30, 30), (0.001, 0.001), (5, -2), (100, 1),
+                         (-0.1, 1e-10), (2, 1e-12)]
+EXPINT_COMPLEX_RANDOM = dict(count=24, radius=40.0, seed=3707)
+EXPINT_TOL = 1e-13            # real: relative; complex: |got - want| <= tol * |want|
+
+# spdiags (MATLAB): B holds the diagonals as columns, placed by MATLAB's rule for m >= n / m < n.
+SPDIAGS_CURATED = {
+    "matlab_doc": [[11, 0, 13, 0], [0, 22, 0, 24], [0, 0, 33, 0], [41, 0, 0, 44], [0, 52, 0, 0],
+                   [0, 0, 63, 0], [0, 0, 0, 74]],
+    "tall": [[1, 2, 0], [0, 3, 4], [5, 0, 6], [0, 7, 0]],
+    "wide": [[1, 2, 0, 0, 3], [0, 4, 5, 0, 0], [6, 0, 7, 8, 0]],
+    "square": [[1, 0, 2, 0], [0, 3, 0, 0], [4, 0, 5, 6], [0, 0, 0, 7]],
+    "zeros": [[0, 0, 0], [0, 0, 0]],
+    "one": [[9]],
+    "row": [[0, 1, 0, 2]],
+    "column": [[0], [1], [0], [2]],
+}
+SPDIAGS_RANDOM = dict(shapes=[(4, 3), (3, 5), (4, 4), (2, 6), (6, 2)], density=0.4, seed=3708)
+SPDIAGS_EXTRACT = {   # (matrix name, diagonals): unsorted, repeated and out-of-range diagonals
+    "tall": [1, -1, 0, 5, -7, 1], "wide": [-2, 3, 0, 4], "square": [0, 2, -2, -3, 3], "row": [0, 1, 3, -1],
+    "column": [0, -1, -3, 1],
+}
+
+# LAPACK-backed: references are mpmath at 40 digits, rounded once (never NumPy's LAPACK, whose
+# last bits depend on the platform BLAS). Random inputs are kept well-conditioned (cond_max);
+# tolerances are normwise: |got - want| <= tol * |want| + tol * max|want|.
+LAPACK_TOL_FLOOR = 1e-13
+LAPACK_TOL_COND = 50      # tol = max(floor, 50 * eps * cond)
+CONDEIG_RTOL = 1e-10
+LAPACK_COND_MAX = 1e3
+LAPACK_SQUARE_SIZES = [1, 2, 3, 4, 5, 6]
+LAPACK_RECT_SHAPES = [(3, 2), (2, 3), (5, 3), (3, 5), (4, 1), (1, 4), (6, 4)]
+LAPACK_RANDOM = dict(seed=3801)
+LAPACK_CURATED_SQUARE = {
+    "odd_swap": [[4, 3], [6, 3]],               # det -6: one row swap
+    "permutation": [[0, 1, 0], [0, 0, 1], [1, 0, 0]],
+    "singular": [[1, 2], [2, 4]],
+    "hilbert4": [[1.0 / (i + j + 1) for j in range(4)] for i in range(4)],
+    "triangular": [[2, 1, 0], [0, 3, 1], [0, 0, 4]],
+    "rotation": [[0, -1], [1, 0]],
+}
+RANK_CASES = [  # (shape, rank): integer products of random factors
+    ((3, 3), 3), ((3, 3), 2), ((3, 3), 1), ((4, 6), 2), ((6, 4), 3), ((5, 5), 4), ((2, 2), 0), ((1, 5), 1)]
+RANK_TOL_CASES = [([[1, 0, 0], [0, 1e-3, 0], [0, 0, 1e-8]], 1e-5, 2), ([[1, 0], [0, 1e-3]], 1e-2, 1),
+                  ([[3, 0], [0, 2]], 2.5, 1), ([[3, 0], [0, 2]], 0.5, 2)]
+EIG_CURATED = {
+    "triangular": [[2, 1], [0, 3]],
+    "rotation": [[1, 2], [-2, 1]],              # 1 +- 2i
+    "symmetric": [[2, -1, 0], [-1, 2, -1], [0, -1, 2]],
+    "companion": [[0, 0, 6], [1, 0, -11], [0, 1, 6]],   # roots 1, 2, 3
+    "block": [[1, 2, 0], [-2, 1, 0], [0, 0, 3]],
+}
+POLYVALM_CASES = [([1, 2, 3], [[1, 2], [3, 4]]), ([2], [[5, 6], [7, 8]]), ([1, 0, 0, -1], [[0, 1], [1, 0]]),
+                  ([1, -6, 11, -6], [[2, 1, 0], [0, 3, 1], [0, 0, 1]]), ([1, 1], [[4]])]

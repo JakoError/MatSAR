@@ -312,3 +312,247 @@ PROB_PDF_ORACLE = {
     "chi2pdf": _pdf(_chi2pdf), "exppdf": _pdf(_exppdf), "raylpdf": _pdf(_raylpdf),
     "weibpdf": _pdf(_weibpdf), "unifpdf": _pdf(_unifpdf),
 }
+
+
+# ---- LinearAlgebra -----------------------------------------------------------------
+from fractions import Fraction
+
+
+def _gmean_slice(v):
+    """Geometric mean; NaN for a NaN or negative element (no real mean), and for 0 * Inf."""
+    v = [float(x) for x in v]
+    if any(math.isnan(x) or x < 0 for x in v):
+        return math.nan
+    if 0.0 in v:
+        return math.nan if math.inf in v else 0.0
+    if math.inf in v:
+        return math.inf
+    return float(mp.exp(mp.fsum(mp.log(mp.mpf(x)) for x in v) / len(v)))
+
+
+def _hmean_slice(v):
+    """n / sum(1 / x) with IEEE semantics: 1/0 = Inf (mean 0), 1/Inf = 0, NaN propagates."""
+    v = [float(x) for x in v]
+    if all(math.isfinite(x) and x != 0 for x in v):
+        s = mp.fsum(1 / mp.mpf(x) for x in v)
+        assert s != 0, "harmmean case with a zero sum of reciprocals"
+        return float(len(v) / s)
+    with np.errstate(all="ignore"):
+        return float(np.float64(len(v)) / np.sum(1.0 / np.asarray(v)))
+
+
+def _slice_reduce(f):
+    def g(a, axis):
+        a = np.asarray(a, dtype=np.float64)
+        if axis is None:
+            return np.asarray([f(a.ravel(order="C"))], dtype=np.float64)
+        if axis >= a.ndim:
+            return a.copy()
+        return np.expand_dims(np.apply_along_axis(f, axis, a), axis)
+    return g
+
+
+LINALG_MEAN_ORACLE = {"geomean": _slice_reduce(_gmean_slice), "harmmean": _slice_reduce(_hmean_slice)}
+
+
+def strip_leading_zeros(c):
+    i = 0
+    while i < len(c) - 1 and c[i] == 0:
+        i += 1
+    return list(c[i:])
+
+
+def polyder(p):
+    if len(p) <= 1:
+        return [0.0]
+    n = len(p) - 1
+    return strip_leading_zeros([float(Fraction(p[i]) * (n - i)) for i in range(n)])
+
+
+def polyder2(a, b):          # d/dx (a * b), the product taken exactly
+    prod = [Fraction(0)] * (len(a) + len(b) - 1)
+    for i, x in enumerate(a):
+        for j, y in enumerate(b):
+            prod[i + j] += Fraction(x) * Fraction(y)
+    return polyder(prod)
+
+
+def _horner(coef, x):        # exact evaluation at the double x
+    r = Fraction(0)
+    for c in coef:
+        r = r * Fraction(x) + Fraction(c)
+    return r
+
+
+def polyeval(coef, xs):
+    return [math.nan if math.isnan(x) else float(_horner(coef, x)) for x in xs]
+
+
+def ppval(breaks, coefs, xs):
+    """MATLAB ppval: piece i holds breaks[i] <= x < breaks[i+1]; x before the first or after the last
+    break extrapolates the end pieces; the local coordinate x - breaks[i] is rounded to double."""
+    out = []
+    pieces = len(breaks) - 1
+    for x in xs:
+        if math.isnan(x):
+            out.append(math.nan)
+            continue
+        i = 0
+        while i < pieces - 1 and x >= breaks[i + 1]:
+            i += 1
+        out.append(float(_horner(coefs[i], float(x) - float(breaks[i]))))
+    return out
+
+
+def expint_real(xs):
+    out = []
+    for x in xs:
+        x = float(x)
+        if math.isnan(x) or x < 0:
+            out.append(math.nan)
+        elif x == 0:
+            out.append(math.inf)
+        elif math.isinf(x):
+            out.append(0.0)
+        else:
+            out.append(float(mp.e1(mp.mpf(x))))
+    return out
+
+
+def expint_complex(re, im):
+    """E1(z), principal branch; on the negative real axis the value above the cut (-i pi), as MATLAB."""
+    v = mp.e1(mp.mpc(float(re), float(im)))
+    return float(mp.re(v)), float(mp.im(v))
+
+
+def spdiags_extract(a, ds):
+    a = np.asarray(a, dtype=np.float64)
+    m, n = a.shape
+    b = np.zeros((min(m, n), len(ds)))
+    for c, k in enumerate(ds):
+        if m >= n:
+            for j in range(n):
+                if 0 <= j - k < m:
+                    b[j, c] = a[j - k, j]
+        else:
+            for i in range(m):
+                if 0 <= i + k < n:
+                    b[i, c] = a[i, i + k]
+    return b
+
+
+def spdiags_all(a):
+    a = np.asarray(a, dtype=np.float64)
+    m, n = a.shape
+    ds = [k for k in range(-(m - 1), n) if np.any(np.diag(a, k) != 0)]
+    return spdiags_extract(a, ds), np.asarray(ds, dtype=np.float64)
+
+
+# LAPACK-backed functions: mpmath at 40 digits on the double inputs, rounded once.
+def mp_matrix(re, im=None):
+    re = np.asarray(re, dtype=np.float64)
+    if im is None:
+        return mp.matrix(re.tolist())
+    im = np.asarray(im, dtype=np.float64)
+    return mp.matrix([[mp.mpc(float(x), float(y)) for x, y in zip(rr, ri)] for rr, ri in zip(re, im)])
+
+
+def mp_to_np(M, cplx=False):
+    """mpmath matrix -> real array, or (real, imag) arrays when cplx."""
+    re = np.array([[float(mp.re(M[i, j])) for j in range(M.cols)] for i in range(M.rows)], dtype=np.float64)
+    re = re.reshape(M.rows, M.cols)
+    if not cplx:
+        for i in range(M.rows):
+            for j in range(M.cols):
+                v = M[i, j]
+                assert abs(mp.im(v)) <= mp.mpf(10) ** -30 * max(1, abs(v)), "complex result"
+        return re
+    im = np.array([[float(mp.im(M[i, j])) for j in range(M.cols)] for i in range(M.rows)], dtype=np.float64)
+    return re, im.reshape(M.rows, M.cols)
+
+
+def svd_values(A, cplx):
+    s = (mp.svd_c if cplx else mp.svd_r)(A, compute_uv=False)
+    return sorted((s[i] for i in range(s.rows)), reverse=True)
+
+
+def pinv(A, cplx):
+    """Moore-Penrose inverse from the SVD, dropping singular values below 1e-30 * s_max (exact rank)."""
+    U, S, V = (mp.svd_c if cplx else mp.svd_r)(A, full_matrices=False, compute_uv=True)
+    smax = max(S[i] for i in range(S.rows)) if S.rows else 0
+    X = mp.zeros(A.cols, A.rows)
+    for k in range(S.rows):
+        if S[k] > mp.mpf(10) ** -30 * smax:
+            for i in range(A.cols):
+                for j in range(A.rows):
+                    X[i, j] += mp.conj(V[k, i]) * mp.conj(U[j, k]) / S[k]
+    return X
+
+
+def lu_partial_pivot(A):
+    """LU with partial pivoting (first maximum on ties, as LAPACK's i?amax): P*A = L*U.
+    Returns (L m x k, U k x n, perm, gap) with k = min(m, n), row perm[i] of A at row i of P*A, and
+    the smallest relative margin by which a chosen pivot beat the next candidate (rounding safety)."""
+    m, n = A.rows, A.cols
+    a = A.copy()
+    perm = list(range(m))
+    k = min(m, n)
+    gap = mp.inf
+    for c in range(k):
+        mags = [abs(a[r, c]) for r in range(c, m)]
+        best = max(mags)
+        p = c + mags.index(best)
+        others = [x for i, x in enumerate(mags) if i != p - c]
+        if best != 0 and others:
+            gap = min(gap, (best - max(others)) / best)
+        if p != c:
+            for j in range(n):
+                a[c, j], a[p, j] = a[p, j], a[c, j]
+            perm[c], perm[p] = perm[p], perm[c]
+        if a[c, c] != 0:
+            for r in range(c + 1, m):
+                a[r, c] = a[r, c] / a[c, c]
+                for j in range(c + 1, n):
+                    a[r, j] -= a[r, c] * a[c, j]
+    L = mp.matrix(m, k)
+    U = mp.matrix(k, n)
+    for i in range(m):
+        for j in range(k):
+            L[i, j] = 1 if i == j else (a[i, j] if i > j else 0)
+    for i in range(k):
+        for j in range(n):
+            U[i, j] = a[i, j] if j >= i else 0
+    return L, U, perm, gap
+
+
+def _by_value(z):
+    return float(mp.re(z)), float(mp.im(z))
+
+
+def eig_values(A):
+    E = mp.eig(A, left=False, right=False)
+    if isinstance(E, tuple):     # mpmath 1.3 returns (E, EL, ER) for a 1 x 1 matrix regardless
+        E = E[0]
+    return sorted(E, key=_by_value)
+
+
+def condeig(A):
+    """(eigenvalue, condition number) pairs sorted by eigenvalue: s = |y| |x| / |y^H x|."""
+    E, EL, ER = mp.eig(A, left=True, right=True)
+    out = []
+    for j, lam in enumerate(E):
+        y = [EL[j, i] for i in range(A.rows)]
+        x = [ER[i, j] for i in range(A.rows)]
+        dot = mp.fsum(y[i] * x[i] for i in range(A.rows))
+        s = mp.sqrt(mp.fsum(abs(v) ** 2 for v in y)) * mp.sqrt(mp.fsum(abs(v) ** 2 for v in x)) / abs(dot)
+        out.append((lam, s))
+    return sorted(out, key=lambda t: _by_value(t[0]))
+
+
+def polyvalm(p, X):          # exact integer Horner: Y = X Y + p_i I
+    X = np.asarray(X, dtype=object)
+    n = X.shape[0]
+    Y = np.zeros((n, n), dtype=object)
+    for c in p:
+        Y = X.dot(Y) + c * np.eye(n, dtype=int).astype(object)
+    return np.asarray(Y, dtype=np.float64)

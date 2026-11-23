@@ -75,11 +75,16 @@ g++ -std=c++17 -D_GNU_SOURCE -DMATSAR_ENABLE_EXPERIMENTAL -O0 \
 | `golden/golden_trig.hpp` | **GENERATED + committed** Trigonometry goldens (domain-aware inputs, int64 subset, binary/broadcast) |
 | `golden/golden_matop.hpp` | **GENERATED + committed** MatrixOperation goldens: exact Python references (rounding, gcd, numden, factorial, nchoosek), mpmath for exp/log/gamma and for `expm` / `logm` / `mpower` |
 | `golden/golden_prob.hpp` | **GENERATED + committed** Probability goldens: exact NumPy for max/min/median/var, mpmath densities (tolerance grows with \|ln pdf\| in deep tails) |
+| `golden/golden_linalg.hpp` | **GENERATED + committed** BLAS-free LinearAlgebra goldens: exact rational references (kron, polynomials, ppval, spdiags), mpmath for geomean / harmmean / Expint (real and complex E1) |
+| `golden/golden_lapack.hpp` | **GENERATED + committed** LAPACK-backed LinearAlgebra goldens, mpmath at 40 digits (never NumPy's LAPACK): singular values, rank, det, inv, pinv, partial-pivoting LU, eigenvalues, condeig; tolerance from the condition number. Complex inputs: real parts in `in`, imaginary in `in2`; complex results as rows [real; imaginary] |
 | `test_mathfunc.cpp` | doctest: Layer 1 (golden replay) + Layer 2 (properties) |
 | `test_trig.cpp` | doctest: golden replay for every `Trigonometry.hpp` function (`test_mathtrig`) |
 | `test_matop.cpp` | doctest: golden replay + hand-derived cases for `MatrixOperation.hpp` (`test_mathmatop`) |
 | `test_prob.cpp` | doctest: golden replay for `Probability.hpp` + statistical checks of every random generator (`test_mathprob`) |
 | `death_prob.cpp` | Probability error cases, one per `argv[1]` (CTest `death_prob_<case>`) |
+| `test_linalg.cpp` | doctest: golden replay for the BLAS-free part of `LinearAlgebra.hpp` (`test_mathlinalg`) |
+| `test_lapack.cpp` | doctest: golden replay + defining-equation checks (A = U S V', A = U T U', Moore-Penrose, residuals) for the LAPACK-backed part (`test_mathlapack`, only with `MATSAR_WITH_BLAS`) |
+| `death_linalg.cpp` | LinearAlgebra error cases, one per `argv[1]` (CTest `death_linalg_<case>`; the LAPACK cases only with BLAS) |
 | `multi_tu_a.cpp`, `multi_tu_b.cpp` | every math header in two translation units of one program (`test_math_multi_tu`, a link-time check) |
 | `death_matop.cpp` | MatrixOperation error cases, one per `argv[1]` (CTest `death_matop_<case>` matches the ValueError text) |
 | `selftest_helpers.cpp` | self-test for the harness's own helpers |
@@ -92,6 +97,10 @@ cmake -G Ninja -B build-exp -DMATSAR_BUILD_EXPERIMENTAL_TESTS=ON -DMATSAR_WITH_B
 cmake --build build-exp
 ctest --test-dir build-exp --output-on-failure
 ```
+
+Without `-DMATSAR_WITH_BLAS=OFF` (BLAS on, the default) the LAPACK-backed `test_mathlapack` and its
+death cases are built too; on Ubuntu that needs `libopenblas-dev liblapacke-dev` (CI job
+`linux-experimental-blas`).
 
 **Fast standalone loop** (no CMake), from the repo root:
 ```bash

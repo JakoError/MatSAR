@@ -171,22 +171,60 @@ if(MATSAR_BUILD_EXPERIMENTAL_TESTS)
     set_tests_properties(death_permute_repeated PROPERTIES
             PASS_REGULAR_EXPRESSION "ValueError: permute: The numbers in dimorder are repeated")
 
-    # LAPACK-backed value tests (eig): only when OpenBLAS (+ LAPACKE) is enabled.
+    # Value tests for the BLAS-free part of LinearAlgebra.hpp (golden_linalg.hpp).
+    add_executable(test_mathlinalg math/test_linalg.cpp)
+    target_include_directories(test_mathlinalg PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}                 # doctest.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/math/include    # approx.hpp/golden.hpp/rng.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/math/golden)    # golden_linalg.hpp
+    add_test(NAME test_mathlinalg COMMAND test_mathlinalg)
+
+    # Death tests for LinearAlgebra: one executable, the case is chosen by argv[1].
+    add_executable(death_linalg math/death_linalg.cpp)
+    set(MATSAR_LINALG_DEATH
+            "trace_nonsquare|ValueError: trace requires the matrix to be square"
+            "kron_3d|ValueError: kron: kron requires"
+            "ppval_pieces|ValueError: ppval: coefs must have one row per piece"
+            "ppval_breaks|ValueError: ppval: at least two breaks")
+    set(MATSAR_LINALG_TARGETS test_mathlinalg death_linalg)
+
+    # LAPACK-backed value tests (svd, det, inv, pinv, lu, eig, schur, ...): only when OpenBLAS
+    # (+ LAPACKE) is enabled.
     if(MATSAR_WITH_BLAS)
-        add_executable(test_mathlinalg math/test_linalg_values.cpp)
-        target_include_directories(test_mathlinalg PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-        add_executable(death_eig_complex_real math/death_eig_complex_real.cpp)
-        foreach(t test_mathlinalg death_eig_complex_real)
-            target_link_libraries(${t} PRIVATE matsar)
-            target_compile_definitions(${t} PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
-            add_test(NAME ${t} COMMAND ${t})
-            if(WIN32 AND DEFINED MATSAR_BLAS_DLL)
-                add_custom_command(TARGET ${t} POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                        "${MATSAR_BLAS_DLL}" "$<TARGET_FILE_DIR:${t}>")
-            endif()
-        endforeach()
-        set_tests_properties(death_eig_complex_real PROPERTIES
-                PASS_REGULAR_EXPRESSION "ValueError: eig: .*complex eigenvalues")
+        add_executable(test_mathlapack math/test_lapack.cpp)
+        target_include_directories(test_mathlapack PRIVATE
+                ${CMAKE_CURRENT_SOURCE_DIR}                 # doctest.h
+                ${CMAKE_CURRENT_SOURCE_DIR}/math/include    # approx.hpp/golden.hpp/rng.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/math/golden)    # golden_lapack.hpp
+        add_test(NAME test_mathlapack COMMAND test_mathlapack)
+        list(APPEND MATSAR_LINALG_TARGETS test_mathlapack)
+        list(APPEND MATSAR_LINALG_DEATH
+                "eig_complex_real|ValueError: eig: .*complex eigenvalues.*eig<complex128>"
+                "condeig_complex_real|ValueError: condeig: .*complex eigenvalues.*condeig<complex128>"
+                "schur_flag|ValueError: schur: .*'real' or 'complex'"
+                "schur_complex_real|ValueError: schur: .*complex eigenvalues.*schur<complex128>"
+                "det_nonsquare|ValueError: det: requires a square matrix"
+                "inv_nonsquare|ValueError: inv: requires a 2-D square matrix"
+                "pinv_3d|ValueError: pinv: requires a 2-D matrix"
+                "lu_3d|ValueError: lu requires a 2D matrix"
+                "svd_1d|ValueError: svd: svd requires Matrix at least 2 dimensions"
+                "polyvalm_nonsquare|ValueError: polyvalm: requires a square matrix")
     endif()
+    foreach(t IN LISTS MATSAR_LINALG_TARGETS)
+        target_link_libraries(${t} PRIVATE matsar)
+        target_compile_definitions(${t} PRIVATE MATSAR_ENABLE_EXPERIMENTAL)
+        if(WIN32 AND MATSAR_WITH_BLAS AND DEFINED MATSAR_BLAS_DLL)
+            add_custom_command(TARGET ${t} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${MATSAR_BLAS_DLL}" "$<TARGET_FILE_DIR:${t}>")
+        endif()
+    endforeach()
+    foreach(case_regex IN LISTS MATSAR_LINALG_DEATH)
+        string(FIND "${case_regex}" "|" bar)
+        string(SUBSTRING "${case_regex}" 0 ${bar} case)
+        math(EXPR msg_start "${bar} + 1")
+        string(SUBSTRING "${case_regex}" ${msg_start} -1 regex)
+        add_test(NAME death_linalg_${case} COMMAND death_linalg ${case})
+        set_tests_properties(death_linalg_${case} PROPERTIES PASS_REGULAR_EXPRESSION "${regex}")
+    endforeach()
 endif()
