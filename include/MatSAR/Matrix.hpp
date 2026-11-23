@@ -53,8 +53,9 @@ using mshape_type = std::vector<msize_type>;
 // clang-format off
 #define LIST_CONSTRUCTOR_MAKER(LIST_n) \
 Matrix(LIST_n list) {\
-    Util::VectorUtil::checkListFix(list);\
+    checkNest(list, "initializer list");\
     this->size = Util::VectorUtil::getFixListSize(list); \
+    if (this->size == 0) return;\
     this->shape = Util::VectorUtil::getDimSize(list);\
     allocate(this->size);\
     Util::VectorUtil::uninitListCopy(list, this->data);\
@@ -71,8 +72,9 @@ LIST_CONSTRUCTOR_MAKER(LIST##8)
 
 #define VEC_CONSTRUCTOR_MAKER(VEC_n) \
 Matrix(VEC_n vec) {\
-    Util::VectorUtil::checkVecFix(vec);\
+    checkNest(vec, "vector");\
     this->size = Util::VectorUtil::getFixVecSize(vec); \
+    if (this->size == 0) return;\
     this->shape = Util::VectorUtil::getVecDimSize(vec);\
     allocate(this->size);\
     Util::VectorUtil::VecCopy(vec, this->data);\
@@ -623,6 +625,15 @@ namespace matsar {
             }
         }
 
+        /// Reject a ragged nested initializer list / vector before its elements are copied:
+        /// rows of different lengths would be copied past the end of the buffer.
+        template<class Nest>
+        static void checkNest(const Nest &nest, const char *kind) {
+            if (!Util::VectorUtil::isRectangular(nest))
+                throw_value_error(string("Matrix: the nested ") + kind +
+                                  " is ragged; every row at one depth must have the same length");
+        }
+
         static auto dataToString(bool p) -> string {
             return p ? "true " : "false";
         }
@@ -1125,8 +1136,9 @@ namespace matsar {
         /// (this is the legacy nested-initializer-list layout). Column-major stored.
         static auto fromColumns(LIST2 list) -> Matrix<dType> {
             Matrix<dType> m;
-            Util::VectorUtil::checkListFix(list);
+            checkNest(list, "initializer list");
             m.size = Util::VectorUtil::getFixListSize(list);
+            if (m.size == 0) return m;
             m.shape = Util::VectorUtil::getDimSize(list);
             m.allocate(m.size);
             Util::VectorUtil::uninitListCopy(list, m.data);
@@ -1136,15 +1148,17 @@ namespace matsar {
         /// Build a matrix from explicit ROWS: each inner list is one row
         /// (NumPy/MATLAB-literal layout). Implemented as fromColumns(list).T().
         static auto fromRows(LIST2 list) -> Matrix<dType> {
-            return fromColumns(list).T();
+            Matrix<dType> m = fromColumns(list);
+            return m.isEmpty() ? m : m.T();
         }
 
         /// vector<vector> overloads of the explicit builders (same semantics as the
         /// initializer-list versions): fromColumns = column-wise, fromRows = transpose.
         static auto fromColumns(VEC2 vec) -> Matrix<dType> {
             Matrix<dType> m;
-            Util::VectorUtil::checkVecFix(vec);
+            checkNest(vec, "vector");
             m.size = Util::VectorUtil::getFixVecSize(vec);
+            if (m.size == 0) return m;
             m.shape = Util::VectorUtil::getVecDimSize(vec);
             m.allocate(m.size);
             Util::VectorUtil::VecCopy(vec, m.data);
@@ -1152,7 +1166,8 @@ namespace matsar {
         }
 
         static auto fromRows(VEC2 vec) -> Matrix<dType> {
-            return fromColumns(vec).T();
+            Matrix<dType> m = fromColumns(vec);
+            return m.isEmpty() ? m : m.T();
         }
 
         /// 2-D nested initializer list. Default = row-wise (fromRows). Define

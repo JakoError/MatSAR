@@ -23,6 +23,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <type_traits>
 
 using std::vector;
 using std::initializer_list;
@@ -44,26 +45,6 @@ using namespace matsar::Util::Exception;
 
 // Hand-laid-out code-generation macros below; keep their exact layout.
 // clang-format off
-#define CHECK_LIST_FIX_MAKER(LIST_n, LIST_n_1) \
-template<class dType>\
-bool checkListFix(LIST_n list_n) {\
-    if(list_n.size() == 0) return true;\
-    size_t size = list_n.begin()->size();\
-    for(const LIST_n_1 &list_n_1:list_n)\
-        if(checkListFix(list_n_1, size))\
-            return false;\
-    return true;\
-}\
-/** Check if the layer corresponds to size and recursively determine the internal */\
-template<class dType>\
-bool checkListFix(LIST_n list_n, size_t size) {\
-    if (size == 0)\
-        return list_n.size() == 0;\
-    if (list_n.size() != size)\
-        return false;\
-    return checkListFix(list_n);\
-}
-
 #define UNINIT_LIST_COPY_MAKER(LIST_n, LIST_n_1) \
 template<class dType>\
 size_t uninitListCopy(LIST_n list, dType *p) {\
@@ -86,15 +67,6 @@ vector<int64> getDimSize(LIST_n list_n) {\
     dim.push_back((int64)list_n.size());\
     return dim;\
 }
-
-#define CHECK_LIST_FIX_MAKER_N \
-    CHECK_LIST_FIX_MAKER(LIST##2, LIST##1)\
-    CHECK_LIST_FIX_MAKER(LIST##3, LIST##2)\
-    CHECK_LIST_FIX_MAKER(LIST##4, LIST##3)\
-    CHECK_LIST_FIX_MAKER(LIST##5, LIST##4)\
-    CHECK_LIST_FIX_MAKER(LIST##6, LIST##5)\
-    CHECK_LIST_FIX_MAKER(LIST##7, LIST##6)\
-    CHECK_LIST_FIX_MAKER(LIST##8, LIST##7)
 
 #define UNINIT_LIST_COPY_MAKER_N \
     UNINIT_LIST_COPY_MAKER(LIST##2, LIST##1)\
@@ -125,32 +97,11 @@ vector<int64> getDimSize(LIST_n list_n) {\
 
 #define LIST_FUN_MAKER_N \
 namespace matsar{namespace Util{namespace VectorUtil {\
-    CHECK_LIST_FIX_MAKER_N\
     UNINIT_LIST_COPY_MAKER_N\
     GET_FIX_LIST_SIZE_MAKER_N\
     GET_DIM_SIZE_MAKER_N \
     }}}
 
-
-#define CHECK_VEC_FIX_MAKER(VEC_n, VEC_n_1) \
-template<class dType>\
-bool checkVecFix(VEC_n vec_n) {\
-    if(vec_n.empty()) return true;\
-    size_t size = vec_n.begin()->size();\
-    for(const VEC_n_1 &vec_n_1:vec_n)\
-        if(checkVecFix(vec_n_1, size))\
-            return false;\
-    return true;\
-}\
-/** Check if the layer corresponds to size and recursively determine the internal */\
-template<class dType>\
-bool checkVecFix(VEC_n vec_n, size_t size) {\
-    if (size == 0)\
-        return vec_n.empty();\
-    if (vec_n.size() != size)\
-        return false;\
-    return checkVecFix(vec_n);\
-}
 
 #define VEC_COPY_MAKER(VEC_n, VEC_n_1) \
 template<class dType>\
@@ -174,15 +125,6 @@ vector<int64> getVecDimSize(VEC_n vec_n) {\
     dim.push_back((int64)vec_n.size());\
     return dim;\
 }
-
-#define CHECK_VEC_FIX_MAKER_N \
-    CHECK_VEC_FIX_MAKER(VEC##2, VEC##1)\
-    CHECK_VEC_FIX_MAKER(VEC##3, VEC##2)\
-    CHECK_VEC_FIX_MAKER(VEC##4, VEC##3)\
-    CHECK_VEC_FIX_MAKER(VEC##5, VEC##4)\
-    CHECK_VEC_FIX_MAKER(VEC##6, VEC##5)\
-    CHECK_VEC_FIX_MAKER(VEC##7, VEC##6)\
-    CHECK_VEC_FIX_MAKER(VEC##8, VEC##7)
 
 #define VEC_COPY_MAKER_N \
     VEC_COPY_MAKER(VEC##2, VEC##1)\
@@ -213,7 +155,6 @@ vector<int64> getVecDimSize(VEC_n vec_n) {\
 
 #define VEC_FUN_MAKER_N \
 namespace matsar{namespace Util{namespace VectorUtil {\
-    CHECK_VEC_FIX_MAKER_N\
     VEC_COPY_MAKER_N\
     GET_FIX_VEC_SIZE_MAKER_N\
     GET_VEC_DIM_SIZE_MAKER_N \
@@ -297,15 +238,39 @@ namespace matsar {
         }
 
         namespace VectorUtil {
-            template<class dType>
-            constexpr auto checkListFix([[maybe_unused]] initializer_list<dType> list1) -> bool {
+            /// Nesting depth of an initializer_list / vector nest; 0 for an element.
+            template<class T>
+            struct NestDepth : std::integral_constant<int, 0> {};
+            template<class T>
+            struct NestDepth<initializer_list<T>> : std::integral_constant<int, 1 + NestDepth<T>::value> {};
+            template<class T, class A>
+            struct NestDepth<vector<T, A>> : std::integral_constant<int, 1 + NestDepth<T>::value> {};
+
+            /// The length of each level along the first elements, outermost first (stops at an empty level).
+            template<class L>
+            void firstLengths(const L &nest, vector<size_t> &lengths) {
+                lengths.push_back(nest.size());
+                if constexpr (NestDepth<typename L::value_type>::value > 0)
+                    if (nest.size() != 0) firstLengths(*nest.begin(), lengths);
+            }
+
+            /// True when this level and every level inside it have the given lengths.
+            template<class L>
+            auto hasLengths(const L &nest, const size_t *lengths) -> bool {
+                if (nest.size() != *lengths) return false;
+                if constexpr (NestDepth<typename L::value_type>::value > 0)
+                    for (const auto &inner: nest)
+                        if (!hasLengths(inner, lengths + 1)) return false;
                 return true;
             }
 
-            /** Check whether this level matches the given size, then recurse into the inner levels. */
-            template<class dType>
-            auto checkListFix(initializer_list<dType> list, size_t size) -> bool {
-                return list.size() == size;
+            /// True when all lists (or vectors) at one depth have the same length: the nest is a
+            /// rectangular block, not ragged rows. Checks every level, not only the outer two.
+            template<class L>
+            auto isRectangular(const L &nest) -> bool {
+                vector<size_t> lengths;
+                firstLengths(nest, lengths);
+                return hasLengths(nest, lengths.data());
             }
 
             template<class dType>
@@ -327,17 +292,6 @@ namespace matsar {
         }
 
         namespace VectorUtil {
-            template<class dType>
-            constexpr auto checkVecFix([[maybe_unused]] vector<dType> vec1) -> bool {
-                return true;
-            }
-
-            /** Check whether this level matches the given size, then recurse into the inner levels. */
-            template<class dType>
-            auto checkVecFix(vector<dType> vec, size_t size) -> bool {
-                return vec.size() == size;
-            }
-
             template<class dType>
             auto VecCopy(vector<dType> vec, dType *p) -> size_t {
                 std::uninitialized_copy_n(vec.begin(), vec.size(), p);

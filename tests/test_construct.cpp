@@ -97,6 +97,20 @@ TEST_CASE("Matrix(shape, pointer) copies the buffer; a null pointer gives zeros"
     CHECK(z(3) == 0);
 }
 
+TEST_CASE("an empty nested vector gives an empty matrix") {
+    Matrix<float64> none(std::vector<std::vector<float64>>{});
+    CHECK(none.getSize() == 0);
+    CHECK(none.getShape() == mshape_type{0});
+    Matrix<float64> rows(std::vector<std::vector<float64>>{{}, {}});
+    CHECK(rows.getSize() == 0);
+    CHECK(rows.getShape() == mshape_type{0});
+    auto cols = Matrix<float64>::fromColumns(std::vector<std::vector<float64>>{});
+    CHECK(cols.getSize() == 0);
+    Matrix<float64> deep(std::vector<std::vector<std::vector<float64>>>{});
+    CHECK(deep.getSize() == 0);
+    CHECK(deep.getShape() == mshape_type{0});
+}
+
 TEST_CASE("fromRows / fromColumns accept vector<vector>") {
     std::vector<std::vector<int64>> vv = {{1, 2, 3}, {4, 5, 6}};
     auto r = Matrix<int64>::fromRows(vv);

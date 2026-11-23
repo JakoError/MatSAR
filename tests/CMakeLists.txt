@@ -31,6 +31,21 @@ target_include_directories(death_invalid_shape PRIVATE ${CMAKE_CURRENT_SOURCE_DI
 add_test(NAME death_invalid_shape COMMAND death_invalid_shape)
 set_tests_properties(death_invalid_shape PROPERTIES PASS_REGULAR_EXPRESSION "(Broadcast|Shape)Exception")
 
+# Death tests: a ragged nested list or vector is rejected, one CTest case per argv[1].
+add_executable(death_ragged death_ragged.cpp)
+target_link_libraries(death_ragged PRIVATE matsar)
+foreach(case_kind IN ITEMS
+        "list_long_row|initializer list" "list_short_row|initializer list" "list_3d|initializer list"
+        "from_rows|initializer list" "from_columns|initializer list"
+        "vec_2d|vector" "vec_3d|vector" "from_rows_vec|vector" "from_columns_vec|vector")
+    string(REPLACE "|" ";" parts "${case_kind}")
+    list(GET parts 0 case)
+    list(GET parts 1 kind)
+    add_test(NAME death_ragged_${case} COMMAND death_ragged ${case})
+    set_tests_properties(death_ragged_${case} PROPERTIES
+            PASS_REGULAR_EXPRESSION "ValueError: Matrix: the nested ${kind} is ragged")
+endforeach()
+
 # BLAS-backed tests (only when OpenBLAS is enabled)
 if(MATSAR_WITH_BLAS)
     set(MATSAR_BLAS_TESTS
