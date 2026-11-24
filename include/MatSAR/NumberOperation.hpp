@@ -94,7 +94,7 @@ namespace matsar {
         return base2dec(strs, 16);
     }
 
-    auto reVal(int num) -> char {
+    inline auto reVal(int num) -> char {
         if (num >= 0 && num <= 9)
             return (char) (num + '0');
         else
@@ -266,16 +266,22 @@ namespace matsar {
         return {std::floor(v.real()), std::floor(v.imag())};
     }
 
+    /// Round half away from zero (MATLAB round). Not std::round: the MinGW-w64 C runtime
+    /// computes floor(x + 0.5), so std::round(0.49999999999999994) == 1 there. Here x - trunc(x)
+    /// is exact for every double, so the tie test is exact; NaN, Inf and -0.0 pass through.
     inline static auto round(const float_max &v) -> float_max {
-        return std::round(v);
+        float_max t = std::trunc(v);
+        if (std::abs(v - t) >= float_max(0.5))
+            t += std::copysign(float_max(1), v);
+        return t;
     }
 
     inline static auto round(const complex64 &v) -> complex64 {
-        return {std::round(v.real()), std::round(v.imag())};
+        return {static_cast<float32>(matsar::round(v.real())), static_cast<float32>(matsar::round(v.imag()))};
     }
 
     static auto round(const complex128 &v) -> complex128 {
-        return {std::round(v.real()), std::round(v.imag())};
+        return {matsar::round(v.real()), matsar::round(v.imag())};
     }
 
     template<typename T>
@@ -294,6 +300,7 @@ namespace matsar {
         return true;
     }
 
+    /// Greatest common divisor, always >= 0 (MATLAB gcd): gcd(4, -6) == 2, gcd(-4, 0) == 4.
     template<typename T>
     auto gcd(T u, T v) -> T {
         while (v != 0) {
@@ -301,12 +308,17 @@ namespace matsar {
             u = v;
             v = r;
         }
-        return u;
+        if constexpr (std::is_signed_v<T>)
+            return u < 0 ? T(-u) : u;
+        else
+            return u;
     }
 
     template<typename T1, typename T2, typename TargetType = decltype(std::declval<T1>() + std::declval<T2>() + std::declval<int64>())>
     static auto numden(T1 n, T2 d) -> vector<TargetType> {
-        static_assert(Util::TypeUtil::isInt<T1>() && Util::TypeUtil::isInt<T1>(), "require integer");
+        static_assert(Util::TypeUtil::isInt<T1>() && Util::TypeUtil::isInt<T2>(), "require integer");
+        if (n == 0 && d == 0)
+            throw_value_error("numden: 0/0 is undefined");
         bool sign = (n < 0 != d < 0);
         n = std::abs(n);
         d = std::abs(d);
@@ -330,7 +342,7 @@ namespace matsar {
         if (i < 0)
             throw_value_error("Factorial cannot be negative");
         if (i != std::round(i))
-            throw ValueError("Factorial requires an integer");
+            throw_value_error("Factorial requires an integer");
         TargetType r = 1;
         while (i > 1)
             r *= i--;
@@ -347,11 +359,15 @@ namespace matsar {
         if (k > n) {
             return NAN;
         }
+        // Multiplicative form: after step i, r == nchoosek(n - k + i, i), an integer, so r stays
+        // exact while it fits the mantissa and never exceeds the result (dividing n! / (n - k)!
+        // only at the end overflowed for large n, e.g. nchoosek(2000, 1999)). k <= n - k keeps
+        // the loop short.
+        if (k > n - k)
+            k = n - k;
         TargetType r = 1;
-        for (RT2 i = 0; i < k; ++i)
-            r *= n - i;
-        for (RT2 j = 2; j <= k; ++j)
-            r /= j;
+        for (RT2 i = 1; i <= k; ++i)
+            r = r * (n - k + i) / i;
         return r;
     }
 

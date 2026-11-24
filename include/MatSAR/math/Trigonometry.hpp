@@ -16,7 +16,7 @@
 // require universal matrix functions
 #ifndef MATSAR_UNIVERSALFUNCTIONS_HPP
 
-#include "UniversalFunctions.hpp"
+#include "../UniversalFunctions.hpp"
 
 #endif //MATSAR_UNIVERSALFUNCTIONS_HPP
 
@@ -42,24 +42,24 @@ namespace matsar {
             return std::asinh(static_cast<decltype(v + 0.)>(v));
         }
 
-        template<typename T>
-        inline auto sin(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sin<T>)) {
-            return matsar::apply_function(m, matsar::Math::Sin<T>);
+        template<typename dType>
+        inline auto sin(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sin<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Sin<dType>);
         }
 
-        template<typename T>
-        inline auto sinh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sinh<T>)) {
-            return matsar::apply_function(m, matsar::Math::Sinh<T>);
+        template<typename dType>
+        inline auto sinh(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sinh<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Sinh<dType>);
         }
 
-        template<typename T>
-        inline auto asin(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asin<T>)) {
-            return matsar::apply_function(m, matsar::Math::Asin<T>);
+        template<typename dType>
+        inline auto asin(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asin<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Asin<dType>);
         }
 
-        template<typename T>
-        inline auto asinh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asinh<T>)) {
-            return matsar::apply_function(m, matsar::Math::Asinh<T>);
+        template<typename dType>
+        inline auto asinh(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asinh<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Asinh<dType>);
         }
     }
 
@@ -84,24 +84,24 @@ namespace matsar {
             return std::acosh(static_cast<decltype(v + 0.)>(v));
         }
 
-        template<typename T>
-        inline auto cos(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Cos<T>)) {
-            return matsar::apply_function(m, matsar::Math::Cos<T>);
+        template<typename dType>
+        inline auto cos(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Cos<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Cos<dType>);
         }
 
-        template<typename T>
-        inline auto cosh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Cosh<T>)) {
-            return matsar::apply_function(m, matsar::Math::Cosh<T>);
+        template<typename dType>
+        inline auto cosh(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Cosh<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Cosh<dType>);
         }
 
-        template<typename T>
-        inline auto acos(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acos<T>)) {
-            return matsar::apply_function(m, matsar::Math::Acos<T>);
+        template<typename dType>
+        inline auto acos(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acos<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Acos<dType>);
         }
 
-        template<typename T>
-        inline auto acosh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acosh<T>)) {
-            return matsar::apply_function(m, matsar::Math::Acosh<T>);
+        template<typename dType>
+        inline auto acosh(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acosh<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Acosh<dType>);
         }
     }
 
@@ -126,24 +126,24 @@ namespace matsar {
             return std::atanh(static_cast<decltype(v + 0.)>(v));
         }
 
-        template<typename T>
-        inline auto tan(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Tan<T>)) {
-            return matsar::apply_function(m, matsar::Math::Tan<T>);
+        template<typename dType>
+        inline auto tan(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Tan<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Tan<dType>);
         }
 
-        template<typename T>
-        inline auto tanh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Tanh<T>)) {
-            return matsar::apply_function(m, matsar::Math::Tanh<T>);
+        template<typename dType>
+        inline auto tanh(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Tanh<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Tanh<dType>);
         }
 
-        template<typename T>
-        inline auto atan(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Atan<T>)) {
-            return matsar::apply_function(m, matsar::Math::Atan<T>);
+        template<typename dType>
+        inline auto atan(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Atan<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Atan<dType>);
         }
 
-        template<typename T>
-        inline auto atanh(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Atanh<T>)) {
-            return matsar::apply_function(m, matsar::Math::Atanh<T>);
+        template<typename dType>
+        inline auto atanh(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Atanh<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Atanh<dType>);
         }
     }
 
@@ -173,24 +173,24 @@ namespace matsar {
             return std::atanh(1. / static_cast<decltype(v + 0.)>(v));
         }
 
-        template<typename T>
-        inline auto cot(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Cot<T>)) {
-            return matsar::apply_function(m, matsar::Math::Cot<T>);
+        template<typename dType>
+        inline auto cot(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Cot<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Cot<dType>);
         }
 
-        template<typename T>
-        inline auto coth(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Coth<T>)) {
-            return matsar::apply_function(m, matsar::Math::Coth<T>);
+        template<typename dType>
+        inline auto coth(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Coth<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Coth<dType>);
         }
 
-        template<typename T>
-        inline auto acot(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acot<T>)) {
-            return matsar::apply_function(m, matsar::Math::Acot<T>);
+        template<typename dType>
+        inline auto acot(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acot<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Acot<dType>);
         }
 
-        template<typename T>
-        inline auto acoth(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acoth<T>)) {
-            return matsar::apply_function(m, matsar::Math::Acoth<T>);
+        template<typename dType>
+        inline auto acoth(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acoth<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Acoth<dType>);
         }
     }
 
@@ -215,24 +215,24 @@ namespace matsar {
             return std::acosh(1. / static_cast<decltype(v + 0.)>(v));
         }
 
-        template<typename T>
-        inline auto sec(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sec<T>)) {
-            return matsar::apply_function(m, matsar::Math::Sec<T>);
+        template<typename dType>
+        inline auto sec(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sec<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Sec<dType>);
         }
 
-        template<typename T>
-        inline auto sech(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sech<T>)) {
-            return matsar::apply_function(m, matsar::Math::Sech<T>);
+        template<typename dType>
+        inline auto sech(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Sech<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Sech<dType>);
         }
 
-        template<typename T>
-        inline auto asec(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asec<T>)) {
-            return matsar::apply_function(m, matsar::Math::Asec<T>);
+        template<typename dType>
+        inline auto asec(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asec<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Asec<dType>);
         }
 
-        template<typename T>
-        inline auto asech(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asech<T>)) {
-            return matsar::apply_function(m, matsar::Math::Asech<T>);
+        template<typename dType>
+        inline auto asech(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Asech<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Asech<dType>);
         }
     }
 
@@ -257,24 +257,24 @@ namespace matsar {
             return std::asinh(1. / static_cast<decltype(v + 0.)>(v));
         }
 
-        template<typename T>
-        inline auto csc(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Csc<T>)) {
-            return matsar::apply_function(m, matsar::Math::Csc<T>);
+        template<typename dType>
+        inline auto csc(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Csc<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Csc<dType>);
         }
 
-        template<typename T>
-        inline auto csch(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Csch<T>)) {
-            return matsar::apply_function(m, matsar::Math::Csch<T>);
+        template<typename dType>
+        inline auto csch(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Csch<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Csch<dType>);
         }
 
-        template<typename T>
-        inline auto acsc(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acsc<T>)) {
-            return matsar::apply_function(m, matsar::Math::Acsc<T>);
+        template<typename dType>
+        inline auto acsc(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acsc<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Acsc<dType>);
         }
 
-        template<typename T>
-        inline auto acsch(const Matrix<T> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acsch<T>)) {
-            return matsar::apply_function(m, matsar::Math::Acsch<T>);
+        template<typename dType>
+        inline auto acsch(const Matrix<dType> &m) -> decltype(matsar::apply_function(m, matsar::Math::Acsch<dType>)) {
+            return matsar::apply_function(m, matsar::Math::Acsch<dType>);
         }
     }
     namespace Math {

@@ -92,3 +92,29 @@ function(matsar_find_blas)
             "MSYS2 'pacman -S mingw-w64-x86_64-openblas', or 'vcpkg install openblas' -- or "
             "configure MatSAR with -DMATSAR_WITH_BLAS=OFF.")
 endfunction()
+
+# Augment MatSAR::blas with LAPACKE (the C interface to LAPACK), used only by the
+# linear-algebra module (include/MatSAR/math/LinearAlgebra.hpp).
+#
+# OpenBLAS bundles LAPACKE on MSYS2/MinGW and vcpkg, so linking libopenblas already
+# resolves LAPACKE_* and ships lapacke.h next to cblas.h -- nothing extra needed there.
+# On Debian/Ubuntu LAPACKE is a separate package (liblapacke-dev), so find and attach
+# it here. Best-effort and NEVER fatal: the core and every other math module need only
+# CBLAS, so a missing LAPACKE just leaves LinearAlgebra unbuildable (a clear header/link
+# error) rather than failing the whole configure.
+function(matsar_find_lapacke)
+    if(NOT TARGET MatSAR::blas)
+        return()
+    endif()
+    find_path(MATSAR_LAPACKE_INCLUDE lapacke.h PATH_SUFFIXES openblas lapack)
+    if(MATSAR_LAPACKE_INCLUDE)
+        target_include_directories(MatSAR::blas INTERFACE ${MATSAR_LAPACKE_INCLUDE})
+    endif()
+    find_library(MATSAR_LAPACKE_LIB NAMES lapacke)
+    if(MATSAR_LAPACKE_LIB)
+        target_link_libraries(MatSAR::blas INTERFACE ${MATSAR_LAPACKE_LIB})
+        set(MATSAR_LAPACKE_SOURCE "${MATSAR_LAPACKE_LIB}" PARENT_SCOPE)
+    else()
+        set(MATSAR_LAPACKE_SOURCE "OpenBLAS-bundled (no separate liblapacke found)" PARENT_SCOPE)
+    endif()
+endfunction()

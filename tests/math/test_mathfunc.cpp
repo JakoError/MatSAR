@@ -5,6 +5,7 @@
 #include "golden.hpp"
 #include "golden_mathfunc.hpp"
 #include <MatSAR/math/MathematicalFunction.hpp>
+#include <MatSAR/math/Probability.hpp>   // mean / var (1-based dim)
 
 using namespace matsar;
 using namespace matsar_test;
@@ -19,6 +20,27 @@ using namespace matsar_test;
     }
 
 TEST_CASE("golden · sum"){REPLAY_REDUCE(sum, sum_golden)} TEST_CASE("golden · prod"){REPLAY_REDUCE(prod, prod_golden)} TEST_CASE("golden · cumsum"){REPLAY_REDUCE(cumsum, cumsum_golden)} TEST_CASE("golden · cumprod"){REPLAY_REDUCE(cumprod, cumprod_golden)}
+
+// mean/var use MatSAR's 1-based `dim`, but the harness stores the 0-based axis (matching
+// sum). Map it back at the call: axis case -> dim = axis + 1; global (AXIS_NONE) -> dim = 0
+// (any dim <= 0 is global). var takes w before dim; use default population variance w=false.
+#define REPLAY_REDUCE_1BASED(FN, ARR) \
+    for (const auto &c: ARR) { \
+        auto m = build<float64>(c.in, c.in_shape); \
+        auto r = (c.axis == AXIS_NONE) ? Math::FN(m, (msize_type) 0) \
+                                       : Math::FN(m, (msize_type) (c.axis + 1)); \
+        check_matrix(c.name, r, c.out, c.out_shape, c.rtol, c.atol); \
+    }
+
+TEST_CASE("golden · mean") { REPLAY_REDUCE_1BASED(mean, mean_golden) }
+TEST_CASE("golden · var") {
+    for (const auto &c: var_golden) {
+        auto m = build<float64>(c.in, c.in_shape);
+        auto r = (c.axis == AXIS_NONE) ? Math::var(m, false, (msize_type) 0)
+                                       : Math::var(m, false, (msize_type) (c.axis + 1));
+        check_matrix(c.name, r, c.out, c.out_shape, c.rtol, c.atol);
+    }
+}
 
 TEST_CASE("golden · sum (int64, exact)") {
     for (const auto &c: sum_golden_int) {

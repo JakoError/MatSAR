@@ -29,9 +29,360 @@ CASES = {
                        lo=-1.5, hi=1.5, seed=1004),
         "rtol": 1e-12, "atol": 1e-13,
     },
+    # mean/var are 1-based `dim` in MatSAR; the stored axis below is the 0-based
+    # equivalent (matching sum), and the C++ replay maps it back (axis+1; dim<=0=global).
+    # The non-square (2,3) axis-0 AND axis-1 plus the 1-D (4,) AXIS_NONE cases are exactly
+    # the inputs that expose the off-by-one / global-vs-axis reduce bug.
+    "mean": {
+        "curated": [dict(shape=(2, 3), axis=0), dict(shape=(2, 3), axis=1),
+                    dict(shape=(4,), axis=0), dict(shape=(4,), axis=AXIS_NONE),
+                    dict(shape=(2, 3), axis=AXIS_NONE)],
+        "random": dict(count=30, shapes=[(4,), (2, 3), (5, 4)], axes=[0, 1, AXIS_NONE],
+                       lo=-10.0, hi=10.0, seed=2001),
+        "rtol": 1e-12, "atol": 1e-13,
+    },
+    "var": {
+        "curated": [dict(shape=(2, 3), axis=0), dict(shape=(2, 3), axis=1),
+                    dict(shape=(4,), axis=0), dict(shape=(4,), axis=AXIS_NONE),
+                    dict(shape=(2, 3), axis=AXIS_NONE)],
+        "random": dict(count=30, shapes=[(4,), (2, 3), (5, 4)], axes=[0, 1, AXIS_NONE],
+                       lo=-10.0, hi=10.0, seed=2002),
+        "rtol": 1e-12, "atol": 1e-13,
+    },
 }
 
 INT_SUBSET = {
     "sum":  [dict(shape=(2, 3), axis=0), dict(shape=(4,), axis=AXIS_NONE)],
     "prod": [dict(shape=(3,), axis=AXIS_NONE)],
 }
+
+
+# ---- Trigonometry (elementwise) -------------------------------------------------
+# points: exact edge/special values (expected computed by NumPy, incl. NaN/Inf).
+# random: |x| ~ U(lo, hi) (times a random sign when signed), restricted to the domain.
+_T = dict(rtol=1e-12, atol=1e-14)
+TRIG_SHAPES = [(4,), (2, 3), (3, 2)]
+TRIG_CASES = {
+    "sin":   dict(points=[0, 0.5, -0.5, 1.5707963267948966, 3.141592653589793, -2.5], random=dict(lo=0, hi=10, signed=True), **_T),
+    "cos":   dict(points=[0, 0.5, -0.5, 3.141592653589793, -2.5, 7], random=dict(lo=0, hi=10, signed=True), **_T),
+    "tan":   dict(points=[0, 0.7853981633974483, -0.7853981633974483, 1.2, -1.2], random=dict(lo=0, hi=1.5, signed=True), **_T),
+    "sinh":  dict(points=[0, 1, -1, 3.5], random=dict(lo=0, hi=5, signed=True), **_T),
+    "cosh":  dict(points=[0, 1, -1, 3.5], random=dict(lo=0, hi=5, signed=True), **_T),
+    "tanh":  dict(points=[0, 1, -1, 20, -20], random=dict(lo=0, hi=5, signed=True), **_T),
+    "asin":  dict(points=[0, 1, -1, 0.5, -0.5, 2], random=dict(lo=0, hi=1, signed=True), **_T),
+    "acos":  dict(points=[0, 1, -1, 0.5, -0.5, 2], random=dict(lo=0, hi=1, signed=True), **_T),
+    "atan":  dict(points=[0, 1, -1, 1e6, -1e6], random=dict(lo=0, hi=50, signed=True), **_T),
+    "asinh": dict(points=[0, 1, -1, 100], random=dict(lo=0, hi=50, signed=True), **_T),
+    "acosh": dict(points=[1, 2, 10, 0.5], random=dict(lo=1, hi=20), **_T),
+    "atanh": dict(points=[0, 0.5, -0.5, 1, -1, 2], random=dict(lo=0, hi=0.99, signed=True), **_T),
+    "cot":   dict(points=[0.7853981633974483, -0.7853981633974483, 1, 2.5, 0], random=dict(lo=0.1, hi=3.0, signed=True), **_T),
+    "coth":  dict(points=[1, -1, 0.5, 0], random=dict(lo=0.1, hi=5, signed=True), **_T),
+    "acot":  dict(points=[1, -1, 0.5, 100, -100], random=dict(lo=0.05, hi=50, signed=True), **_T),
+    "acoth": dict(points=[2, -2, 1.5, 100, 1], random=dict(lo=1.05, hi=50, signed=True), **_T),
+    "sec":   dict(points=[0, 1, -1, 3.141592653589793], random=dict(lo=0, hi=1.4, signed=True), **_T),
+    "sech":  dict(points=[0, 1, -1, 5], random=dict(lo=0, hi=10, signed=True), **_T),
+    "asec":  dict(points=[1, -1, 2, -2, 100, 0.5], random=dict(lo=1, hi=50, signed=True), **_T),
+    "asech": dict(points=[1, 0.5, 0.1, 2], random=dict(lo=0.02, hi=1), **_T),
+    "csc":   dict(points=[1.5707963267948966, -1.5707963267948966, 1, 0.5, 0], random=dict(lo=0.1, hi=3.0, signed=True), **_T),
+    "csch":  dict(points=[1, -1, 0.5, 5, 0], random=dict(lo=0.05, hi=10, signed=True), **_T),
+    "acsc":  dict(points=[1, -1, 2, -2, 100, 0.5], random=dict(lo=1, hi=50, signed=True), **_T),
+    "acsch": dict(points=[1, -1, 0.5, 100], random=dict(lo=0.05, hi=50, signed=True), **_T),
+    "angle": dict(points=[1, 0, -1, 2.5, -2.5], random=dict(lo=0.01, hi=10, signed=True), **_T),
+}
+TRIG_RANDOM_COUNT = 12
+
+# Integer inputs (Matrix<int64>): results are floating point, same values as for doubles.
+TRIG_INT_POINTS = {
+    "sin": [-3, -1, 0, 1, 2, 7], "cos": [-3, -1, 0, 1, 2, 7], "atan": [-5, -1, 0, 1, 3, 40],
+    "asinh": [-5, 0, 1, 9], "tanh": [-2, 0, 1, 3], "acosh": [1, 2, 5, 30],
+}
+
+# Binary cases: (shape_a, shape_b) pairs, same-rank broadcasting only.
+TRIG_BINARY_SHAPES = [((4,), (4,)), ((2, 3), (2, 3)), ((2, 3), (1, 3)), ((2, 3), (2, 1)), ((2, 3), (1, 1))]
+TRIG_BINARY_CASES = {
+    # atan2(Y, X): quadrant edges (no -0.0, whose sign NumPy and MatSAR may treat differently)
+    "atan2": dict(points=([0, 1, -1, 1, -1, 0, 2], [1, 0, 0, -1, -1, -1, 2]),
+                  random=dict(lo_a=-5, hi_a=5, lo_b=-5, hi_b=5, seed=3101), **_T),
+    "pol2cart_x": dict(points=([0, 1.5707963267948966, 3.141592653589793, 0.5], [1, 2, 3, 0]),
+                       random=dict(lo_a=-6.3, hi_a=6.3, lo_b=0, hi_b=10, seed=3102), **_T),
+    "pol2cart_y": dict(points=([0, 1.5707963267948966, 3.141592653589793, 0.5], [1, 2, 3, 0]),
+                       random=dict(lo_a=-6.3, hi_a=6.3, lo_b=0, hi_b=10, seed=3102), **_T),
+}
+
+
+# ---- MatrixOperation ---------------------------------------------------------------
+# Elementwise: like Trigonometry (points + seeded random). Tolerances: exact for the
+# rounding/abs/sqrt family (IEEE-exact operations); a few ulp for libm exp/log; gamma and
+# gammaln are looser (libm tgamma/lgamma are only accurate to several ulp).
+_EXACT = dict(rtol=0.0, atol=0.0)
+_LIBM = dict(rtol=1e-15, atol=0.0)
+_GAMMA = dict(rtol=1e-13, atol=1e-15)
+inf, nan = float("inf"), float("nan")
+MATOP_SHAPES = [(4,), (2, 3), (3, 2)]
+MATOP_RANDOM_COUNT = 8
+_ROUNDING_POINTS = [0, 0.5, -0.5, 1.5, -1.5, 2.5, -2.5, 0.49999999999999994, -0.49999999999999994,
+                    2.0000000000000004, -2.7, 2.7, 4503599627370495.5, 1e16, inf, -inf, nan]
+MATOP_CASES = {
+    "abs":   dict(points=[0, 1.5, -1.5, -7, -1e300, 5e-324, -inf, nan], random=dict(lo=0, hi=100, signed=True), **_EXACT),
+    "ceil":  dict(points=_ROUNDING_POINTS, random=dict(lo=0, hi=100, signed=True), **_EXACT),
+    "floor": dict(points=_ROUNDING_POINTS, random=dict(lo=0, hi=100, signed=True), **_EXACT),
+    "fix":   dict(points=_ROUNDING_POINTS, random=dict(lo=0, hi=100, signed=True), **_EXACT),
+    "round": dict(points=_ROUNDING_POINTS, random=dict(lo=0, hi=100, signed=True), **_EXACT),
+    "sqrt":  dict(points=[0, 1, 2, 4, 1e-300, 1e300, -1, inf, nan], random=dict(lo=0, hi=1000), **_EXACT),
+    "exp":   dict(points=[0, 1, -1, 1e-10, 709.7, 710, -700, -800, inf, -inf, nan], random=dict(lo=0, hi=50, signed=True), **_LIBM),
+    "exp2":  dict(points=[0, 1, -1, 10, 0.5, 3.3, -20, 1023, 1024, -inf, nan], random=dict(lo=0, hi=60, signed=True), **_LIBM),
+    "log":   dict(points=[1, 2.718281828459045, 0.5, 1e-300, 1e300, 0, -1, inf, nan], random=dict(lo=-3, hi=3, log10=True), **_LIBM),
+    "ln":    dict(points=[1, 10, 0.25, 0, -2], random=dict(lo=-3, hi=3, log10=True), **_LIBM),
+    "log2":  dict(points=[1, 2, 8, 1024, 0.5, 3, 1e-300, 0, -1, inf], random=dict(lo=-3, hi=3, log10=True), **_LIBM),
+    "log10": dict(points=[1, 10, 100, 1e-5, 2, 1e300, 0, -1, inf], random=dict(lo=-3, hi=3, log10=True), **_LIBM),
+    "gamma": dict(points=[1, 2, 3, 5, 0.5, -0.5, -1.5, 10, 20, 170.5, 172, 0, 1e-10], random=dict(lo=0.05, hi=40), **_GAMMA),
+    "gammaln": dict(points=[1, 2, 0.5, 3, 10, 100, 1e5, 1e-10, 0], random=dict(lo=0.05, hi=1000), **_GAMMA),
+}
+# Matrix<int64> input. abs keeps the integer type; the others return floating point.
+MATOP_INT_POINTS = {
+    "abs": [-5, 0, 7, -123456789], "ceil": [-7, 0, 7], "floor": [-7, 0, 7], "fix": [-7, 0, 7],
+    "round": [-7, 0, 7], "sqrt": [0, 1, 2, 9, 16, 1000000], "log": [1, 2, 10, 1000],
+    "exp": [0, 1, -3, 20], "gamma": [1, 2, 5, 10, 20],
+}
+
+# round(x, n): n digits after the point (n < 0: before it). Each case uses one n.
+ROUND_N_POINTS = {
+    1: [0.3, 0.1 + 0.2, 1.25, -1.25, 0.05, 2.675, 1e15 + 0.125, 1e-20, -0.04, inf, nan],
+    2: [2.675, 1.005, 0.125, -0.125, 123.456, 9.995],
+    3: [1.0005, 2.0004, -3.14159, 5e-4],
+    -1: [15, -15, 14.9, 25, 1234.5],
+    -2: [1250, -1250, 1249, 1234.5678, 50, -49],
+}
+ROUND_N_RANDOM = dict(ns=[1, 2, 3, -1, -2], lo=-1000, hi=1000, seed=3201)
+# Matrix<int64> input: before the fix, an integer input was truncated before rounding.
+ROUND_N_INT_POINTS = {-1: [15, -15, 14, 25, 0], -2: [1250, -1250, 1249, 1251, 50, -50, 999999], 2: [7, -7]}
+
+MATOP_INT_CASES = {
+    "isPrime": list(range(-3, 60)) + [7919, 7921, 104729, 1000003, 999999937, 2147483647, 4294967297,
+                                      999999999989],
+    "factorial": [0, 1, 2, 3, 5, 10, 18, 20, 22],
+}
+# Factorial of a float64 integer-valued input; above 22! the product loop rounds, so a
+# small relative tolerance (171! overflows to Inf).
+FACTORIAL_LARGE = dict(points=[23, 25, 50, 100, 150, 170, 171], rtol=1e-14, atol=0.0)
+
+# Binary integer functions: points (a, b) + seeded random with same-rank broadcasting.
+MATOP_BINARY_SHAPES = [((4,), (4,)), ((2, 3), (2, 3)), ((2, 3), (1, 3)), ((2, 3), (2, 1)), ((2, 3), (1, 1))]
+MATOP_BINARY_CASES = {
+    "gcd": dict(points=([12, 4, -4, 4, -4, 0, 0, 7, 17, 270, -270, 1071, -5],
+                        [18, -6, 6, 0, 0, 5, 0, 13, 51, 192, -192, 462, -5]),
+                random=dict(lo=-1000, hi=1000, nonzero_b=False, seed=3301), **_EXACT),
+    "numden": dict(points=([1, 2, -2, 2, -2, 0, 0, 6, 100, -100, 7, 5],
+                           [2, 4, 4, -4, -4, 5, -5, 9, 75, -75, 1, 1]),
+                   random=dict(lo=-200, hi=200, nonzero_b=True, seed=3302), **_EXACT),
+}
+NCHOOSEK_POINTS = {
+    # exactly representable results; NaN for k > n, negative or non-integer arguments
+    "exact": dict(points=([5, 10, 0, 5, 5, 20, 50, 2000, 3, -1, 2.5, 5],
+                          [2, 3, 0, 0, 5, 10, 25, 1, 5, 2, 1, -1]), rtol=0.0, atol=0.0),
+    # large n: results that need rounding (or a product that overflows a naive loop)
+    "large": dict(points=([60, 1000, 2000, 1030, 200, 1500],
+                          [30, 500, 1999, 1000, 100, 1497]), rtol=1e-13, atol=0.0),
+}
+
+# Matrix functions. Normwise tolerance: |got - want| <= tol * (|want| + max|want|).
+EXPM_CURATED = {
+    "zeros3": [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+    "diag": [[1, 0, 0], [0, 2, 0], [0, 0, -3]],
+    "nilpotent": [[0, 1], [0, 0]],
+    "jordan": [[1, 1], [0, 1]],
+    "rotation": [[0, -1.0471975511965976], [1.0471975511965976, 0]],
+    "scalar": [[2.5]],
+    "moler_van_loan": [[-49, 24], [-64, 31]],
+    "upper3": [[1, 2, 3], [0, 4, 5], [0, 0, 6]],
+    # just below each Pade degree threshold theta_m (1-norm == spectral radius: the largest
+    # truncation error a degree must absorb), and 2 * theta_13 (one squaring)
+    "edge_pade3": [[0.0149, 0], [0, -0.0149]],
+    "edge_pade5": [[0.2539, 0], [0, -0.2539]],
+    "edge_pade7": [[0.9504, 0], [0, -0.9504]],
+    "edge_pade9": [[2.0978, 0], [0, -2.0978]],
+    "edge_pade13": [[5.3719, 0], [0, -5.3719]],
+    "edge_scaled": [[10.7438, 0], [0, -10.7438]],
+}
+EXPM_RANDOM = dict(norms=[0.01, 0.1, 0.5, 0.9, 2, 5, 10, 30], sizes=[2, 3, 4, 5], seed=3401)
+LOGM_CURATED = {
+    "identity": [[1, 0], [0, 1]],
+    "diag": [[2.718281828459045, 0, 0], [0, 7.38905609893065, 0], [0, 0, 1]],
+    "jordan": [[1, 1], [0, 1]],
+    "complex_pair": [[1, -1], [1, 1]],          # eigenvalues 1 +- i: the logarithm is real
+    "scalar": [[10]],
+    "spd": [[4, 1], [1, 3]],
+    "upper": [[2, 1], [0, 3]],
+    "wide_spectrum": [[1000, 1], [0, 0.001]],
+}
+LOGM_RANDOM = dict(norms=[0.1, 1, 2], sizes=[2, 3, 4], spd_sizes=[2, 3, 5], seed=3402)
+MATFUN_TOL = {"expm": 1e-13, "logm": 1e-13, "mpower_int": 1e-13, "mpower_frac": 1e-13, "mpower_base": 1e-13}
+MPOWER_P = [0, 1, 2, 3, 7, -1, -2, 0.5, 1.5, -0.5, 1 / 3]
+MPOWER_BASES = [2, 0.5, 10, 2.718281828459045]
+MPOWER_RANDOM = dict(sizes=[2, 3, 4], seed=3403)
+
+
+# ---- Probability -------------------------------------------------------------------
+# Reductions (dim is MatSAR's 1-based dim; stored 0-based like mean/var, -1 = global).
+PROB_REDUCE_SHAPES = [(5,), (3, 4), (4, 3), (2, 6)]
+PROB_REDUCE_RANDOM = dict(count=10, lo=-50, hi=50, seed=3501)
+PROB_REDUCE_CURATED = [   # (name, rows, axis); NaN placement: first, middle, last, all
+    ("nan_first", [[float("nan"), 1, 2], [3, float("nan"), 4]], 1),
+    ("nan_mid", [[1, float("nan"), 2], [5, 0, float("nan")]], 1),
+    ("nan_col", [[float("nan"), 1], [float("nan"), 2]], 0),
+    ("nan_all", [[float("nan"), float("nan")]], None),
+    ("nan_global", [[1, float("nan"), -4], [7, 2, float("nan")]], None),
+]
+PROB_REDUCE_TOL = {"max": (0.0, 0.0), "min": (0.0, 0.0), "median": (0.0, 0.0), "var_sample": (1e-12, 1e-13)}
+
+# Densities: each case is (params, x points); random x per case from PROB_PDF_RANDOM.
+_PDF = dict(rtol=1e-13, atol=1e-300)
+_X_EDGE = [float("nan"), float("inf"), -float("inf")]
+PROB_PDF_CASES = {
+    "normpdf": dict(cases=[
+        ((0, 1), [0, -0.0, 1, -1, 2.5, 5, -8, 10]), ((2, 0.5), [2, 1.5, 3, 0, 4.2]),
+        ((-3, 10), [-3, 0, 20, -40]), ((0, -1), [0, 1]), ((0, 0), [0, 1])],
+        random=dict(span=6), **_PDF),
+    "binopdf": dict(cases=[
+        ((10, 0.3), [0, 1, 3, 7, 10, -1, 11, 2.5]), ((1, 0.5), [0, 1]), ((0, 0.5), [0, 1]),
+        ((20, 0), [0, 1, 20]), ((20, 1), [0, 19, 20]), ((100, 0.07), [0, 7, 30, 100]),
+        ((1000, 0.5), [500, 450, 0, 1000]), ((2000, 0.5), [1000, 900, 1100]), ((5000, 0.001), [0, 5, 20]),
+        ((1000000, 3e-7), [0, 1, 2, 999999, 1000000]),   # tiny p: 1 - p loses digits (x = 0 branch)
+        ((3.5, 0.5), [1]), ((-1, 0.5), [0]), ((10, 1.5), [1])],
+        random=dict(integer=True), **_PDF),
+    "poisspdf": dict(cases=[
+        ((0, ), [0, 1, 2]), ((0.5, ), [0, 1, 4]), ((4, ), [0, 1, 4, 10, 2.5, -1]),
+        ((30, ), [0, 30, 60]), ((200, ), [150, 170, 171, 200, 250]), ((1000, ), [900, 1000, 1100]),
+        ((-1, ), [0, 1])],
+        random=dict(integer=True), **_PDF),
+    "chi2pdf": dict(cases=[
+        ((1, ), [0, 0.1, 1, 2, 5, -1]), ((2, ), [0, 0.5, 2, 10]), ((3, ), [0, 1, 3, 8]),
+        ((10, ), [0.5, 10, 30]), ((0.5, ), [0, 0.01, 1]), ((100, ), [50, 100, 150]),
+        ((400, ), [350, 400, 450]), ((1000, ), [1000, 900]), ((0, ), [1]), ((-1, ), [1])],
+        random=dict(span=3), **_PDF),
+    "exppdf": dict(cases=[
+        ((1, ), [0, 0.5, 1, 10, 100, -1]), ((0.5, ), [0, 0.25, 3]), ((10, ), [0, 5, 100]),
+        ((0, ), [1]), ((-2, ), [1])], random=dict(span=8), **_PDF),
+    "raylpdf": dict(cases=[((1, ), [0, 0.5, 1, 3, -1]), ((2.5, ), [0, 1, 2.5, 10]), ((0, ), [1])],
+                    random=dict(span=4), **_PDF),
+    "weibpdf": dict(cases=[
+        ((1, 1), [0, 0.1, 1, 2, 5, -1]), ((2, 0.5), [0, 0.1, 1, 8]), ((1.5, 3), [0, 0.5, 1.5, 3]),
+        ((1, 0), [1]), ((0, 1), [1])], random=dict(span=3), **_PDF),
+    "unifpdf": dict(cases=[((0, 1), [0, 0.5, 1, -0.1, 1.1]), ((-2, 3), [-2, 0, 3, 3.5]), ((1, 1), [1]),
+                           ((2, 1), [1.5])], random=dict(span=1.5), rtol=0.0, atol=0.0),
+}
+PROB_PDF_RANDOM = dict(count=6, seed=3601)
+PROB_PDF_LOG_RTOL = 2e-15   # per unit of max |ln pdf| in a case, on top of rtol
+
+
+# ---- LinearAlgebra -----------------------------------------------------------------
+# geomean / harmmean: dim is MatSAR's 1-based dim, stored 0-based (-1 = global); axis 2 on a
+# 2-D input is dim 3, beyond the dimensions, which returns the input.
+LINALG_MEAN_SHAPES = [(5,), (3, 4), (4, 3)]
+LINALG_MEAN_RANDOM = dict(count=6, lo=-1.0, hi=2.0, seed=3701)   # log10 of the values
+LINALG_MEAN_CURATED = {   # (name, rows, axis)
+    "geomean": [
+        ("huge", [[1e300, 1e300, 1e300, 1e300]], 1),   # a plain product overflows
+        ("tiny", [[1e-300, 1e-300, 1e-300]], 1),       # ... or underflows
+        ("mixed_scale", [[1e200, 1e-200, 4]], None),
+        ("zero", [[0, 2, 8], [1, 2, 4]], 1),
+        ("negative", [[-1, -4], [2, 8]], 1),           # no real geometric mean: NaN
+        ("nan", [[float("nan"), 1], [2, 3]], 0),
+        ("inf", [[float("inf"), 1], [2, 3]], 0),
+        ("zero_inf", [[0, float("inf")], [1, 4]], 1),
+        ("beyond", [[1, 2], [3, 4]], 2),
+    ],
+    "harmmean": [
+        ("columns", [[1, 2], [4, 8]], 0),
+        ("rows", [[1, 2], [4, 8]], 1),
+        ("huge", [[1e300, 1e300, 1e300]], 1),
+        ("zero", [[0, 2, 8], [1, 2, 4]], 1),           # 1/0 = Inf, so the mean is 0
+        ("negative", [[-1, -4], [2, 8]], 1),
+        ("nan", [[float("nan"), 1], [2, 3]], 0),
+        ("inf", [[float("inf"), 2], [2, 3]], 0),
+        ("beyond", [[1, 2], [3, 4]], 2),
+    ],
+}
+LINALG_MEAN_TOL = dict(rtol=1e-14, atol=0.0)
+
+LINALG_KRON_SHAPES = [((2, 2), (2, 2)), ((1, 3), (2, 1)), ((2, 3), (3, 2)), ((3, 1), (1, 4)), ((1, 1), (2, 3))]
+LINALG_KRON_RANDOM = dict(lo=-9, hi=9, seed=3702)
+
+# Polynomials are MATLAB-ordered (highest power first). polyder drops leading zeros as MATLAB does.
+POLYDER_POINTS = [[3, 2, 1], [5], [], [0, 0, 3, 2, 1], [1, 0, 0, 0], [0, 0], [2, -1], [0.5, -0.25, 3, 7]]
+POLYDER2_POINTS = [([1, 1], [1, -1]), ([1, 2, 3], [4, 5]), ([0, 1], [1, 0]), ([5], [3]), ([2], [1, 0, -1]),
+                   ([1, 0, 0], [1, 0, 0, 0])]
+POLY_RANDOM = dict(count=4, max_degree=5, lo=-9, hi=9, seed=3703)
+POLYEVAL_POINTS = [([1, 2, 3], [0, 1, 2, -1.5, 1000, float("nan")]), ([], [1, 2]), ([7], [0, 5]),
+                   ([1, 0, 0, 0, -1], [1, -1, 2, 0.5])]
+POLYEVAL_RANDOM = dict(count=4, max_degree=6, seed=3704)          # positive: no cancellation
+# ppval: (breaks, coefs with one row per piece as in MATLAB, query points)
+PPVAL_CASES = {
+    "linear": ([0, 1, 2], [[1, 0], [2, 1]], [-1, 0, 0.5, 1, 1.5, 2, 3, float("nan")]),
+    "one_piece": ([0, 2], [[1, -1, 2]], [-1, 0, 1, 2, 5]),
+    "cubic": ([-1, 0, 0.5, 2], [[1, 0, -2, 1], [0.5, 1, 0, -1], [-1, 2, 3, 0.25]],
+              [-2, -1, -0.5, 0, 0.25, 0.5, 1, 2, 2.5]),
+    "constant": ([1, 3, 4], [[5], [-2]], [0, 1, 2.9, 3, 4, 10]),
+}
+PPVAL_RANDOM = dict(count=3, pieces=4, order=4, seed=3705)
+
+# Expint (MATLAB expint = E1). A real result is NaN for x < 0, where E1 is complex.
+EXPINT_REAL_POINTS = [1e-300, 1e-10, 1e-5, 1e-3, 0.1, 0.5, 1, 1.5, 2, 5, 10, 20, 50, 100, 700, 750,
+                      0, float("inf"), float("nan"), -0.5, -1, -float("inf")]
+EXPINT_REAL_RANDOM = dict(count=12, lo=-3.0, hi=2.5, seed=3706)   # log10 of x
+EXPINT_COMPLEX_POINTS = [(-1, 0), (-0.5, 0), (-10, 0), (-50, 0), (-700, 0), (1, 0), (1e-8, 0), (0.25, 0),
+                         (1, 1), (0, 1), (0, -1), (-1, 1), (-1, -1), (-10, 1), (-10, 0.01), (-10, -0.01),
+                         (-3, 4), (0, 10), (30, 30), (-30, 5), (-30, 30), (0.001, 0.001), (5, -2), (100, 1),
+                         (-0.1, 1e-10), (2, 1e-12)]
+EXPINT_COMPLEX_RANDOM = dict(count=24, radius=40.0, seed=3707)
+EXPINT_TOL = 1e-13            # real: relative; complex: |got - want| <= tol * |want|
+
+# spdiags (MATLAB): B holds the diagonals as columns, placed by MATLAB's rule for m >= n / m < n.
+SPDIAGS_CURATED = {
+    "matlab_doc": [[11, 0, 13, 0], [0, 22, 0, 24], [0, 0, 33, 0], [41, 0, 0, 44], [0, 52, 0, 0],
+                   [0, 0, 63, 0], [0, 0, 0, 74]],
+    "tall": [[1, 2, 0], [0, 3, 4], [5, 0, 6], [0, 7, 0]],
+    "wide": [[1, 2, 0, 0, 3], [0, 4, 5, 0, 0], [6, 0, 7, 8, 0]],
+    "square": [[1, 0, 2, 0], [0, 3, 0, 0], [4, 0, 5, 6], [0, 0, 0, 7]],
+    "zeros": [[0, 0, 0], [0, 0, 0]],
+    "one": [[9]],
+    "row": [[0, 1, 0, 2]],
+    "column": [[0], [1], [0], [2]],
+}
+SPDIAGS_RANDOM = dict(shapes=[(4, 3), (3, 5), (4, 4), (2, 6), (6, 2)], density=0.4, seed=3708)
+SPDIAGS_EXTRACT = {   # (matrix name, diagonals): unsorted, repeated and out-of-range diagonals
+    "tall": [1, -1, 0, 5, -7, 1], "wide": [-2, 3, 0, 4], "square": [0, 2, -2, -3, 3], "row": [0, 1, 3, -1],
+    "column": [0, -1, -3, 1],
+}
+
+# LAPACK-backed: references are mpmath at 40 digits, rounded once (never NumPy's LAPACK, whose
+# last bits depend on the platform BLAS). Random inputs are kept well-conditioned (cond_max);
+# tolerances are normwise: |got - want| <= tol * |want| + tol * max|want|.
+LAPACK_TOL_FLOOR = 1e-13
+LAPACK_TOL_COND = 50      # tol = max(floor, 50 * eps * cond)
+CONDEIG_RTOL = 1e-10
+LAPACK_COND_MAX = 1e3
+LAPACK_SQUARE_SIZES = [1, 2, 3, 4, 5, 6]
+LAPACK_RECT_SHAPES = [(3, 2), (2, 3), (5, 3), (3, 5), (4, 1), (1, 4), (6, 4)]
+LAPACK_RANDOM = dict(seed=3801)
+LAPACK_CURATED_SQUARE = {
+    "odd_swap": [[4, 3], [6, 3]],               # det -6: one row swap
+    "permutation": [[0, 1, 0], [0, 0, 1], [1, 0, 0]],
+    "singular": [[1, 2], [2, 4]],
+    "hilbert4": [[1.0 / (i + j + 1) for j in range(4)] for i in range(4)],
+    "triangular": [[2, 1, 0], [0, 3, 1], [0, 0, 4]],
+    "rotation": [[0, -1], [1, 0]],
+}
+RANK_CASES = [  # (shape, rank): integer products of random factors
+    ((3, 3), 3), ((3, 3), 2), ((3, 3), 1), ((4, 6), 2), ((6, 4), 3), ((5, 5), 4), ((2, 2), 0), ((1, 5), 1)]
+RANK_TOL_CASES = [([[1, 0, 0], [0, 1e-3, 0], [0, 0, 1e-8]], 1e-5, 2), ([[1, 0], [0, 1e-3]], 1e-2, 1),
+                  ([[3, 0], [0, 2]], 2.5, 1), ([[3, 0], [0, 2]], 0.5, 2)]
+EIG_CURATED = {
+    "triangular": [[2, 1], [0, 3]],
+    "rotation": [[1, 2], [-2, 1]],              # 1 +- 2i
+    "symmetric": [[2, -1, 0], [-1, 2, -1], [0, -1, 2]],
+    "companion": [[0, 0, 6], [1, 0, -11], [0, 1, 6]],   # roots 1, 2, 3
+    "block": [[1, 2, 0], [-2, 1, 0], [0, 0, 3]],
+}
+POLYVALM_CASES = [([1, 2, 3], [[1, 2], [3, 4]]), ([2], [[5, 6], [7, 8]]), ([1, 0, 0, -1], [[0, 1], [1, 0]]),
+                  ([1, -6, 11, -6], [[2, 1, 0], [0, 3, 1], [0, 0, 1]]), ([1, 1], [[4]])]

@@ -70,9 +70,23 @@ g++ -std=c++17 -D_GNU_SOURCE -DMATSAR_ENABLE_EXPERIMENTAL -O0 \
 | `gen/cases.py` | **the case spec you edit** (curated + seeded-random per function) |
 | `gen/oracle.py` | tag → the NumPy reference call |
 | `gen/generate.py` | emits the golden header (deterministic) |
-| `gen/requirements.txt` | pinned `numpy==2.1.1` |
+| `gen/requirements.txt` | pinned `numpy==2.1.1` + `mpmath==1.3.0` (Trigonometry / MatrixOperation / Probability references: correctly rounded, platform-independent) |
 | `golden/golden_mathfunc.hpp` | **GENERATED + committed** golden vectors — do not hand-edit |
+| `golden/golden_trig.hpp` | **GENERATED + committed** Trigonometry goldens (domain-aware inputs, int64 subset, binary/broadcast) |
+| `golden/golden_matop.hpp` | **GENERATED + committed** MatrixOperation goldens: exact Python references (rounding, gcd, numden, factorial, nchoosek), mpmath for exp/log/gamma and for `expm` / `logm` / `mpower` |
+| `golden/golden_prob.hpp` | **GENERATED + committed** Probability goldens: exact NumPy for max/min/median/var, mpmath densities (tolerance grows with \|ln pdf\| in deep tails) |
+| `golden/golden_linalg.hpp` | **GENERATED + committed** BLAS-free LinearAlgebra goldens: exact rational references (kron, polynomials, ppval, spdiags), mpmath for geomean / harmmean / Expint (real and complex E1) |
+| `golden/golden_lapack.hpp` | **GENERATED + committed** LAPACK-backed LinearAlgebra goldens, mpmath at 40 digits (never NumPy's LAPACK): singular values, rank, det, inv, pinv, partial-pivoting LU, eigenvalues, condeig; tolerance from the condition number. Complex inputs: real parts in `in`, imaginary in `in2`; complex results as rows [real; imaginary] |
 | `test_mathfunc.cpp` | doctest: Layer 1 (golden replay) + Layer 2 (properties) |
+| `test_trig.cpp` | doctest: golden replay for every `Trigonometry.hpp` function (`test_mathtrig`) |
+| `test_matop.cpp` | doctest: golden replay + hand-derived cases for `MatrixOperation.hpp` (`test_mathmatop`) |
+| `test_prob.cpp` | doctest: golden replay for `Probability.hpp` + statistical checks of every random generator (`test_mathprob`) |
+| `death_prob.cpp` | Probability error cases, one per `argv[1]` (CTest `death_prob_<case>`) |
+| `test_linalg.cpp` | doctest: golden replay for the BLAS-free part of `LinearAlgebra.hpp` (`test_mathlinalg`) |
+| `test_lapack.cpp` | doctest: golden replay + defining-equation checks (A = U S V', A = U T U', Moore-Penrose, residuals) for the LAPACK-backed part (`test_mathlapack`, only with `MATSAR_WITH_BLAS`) |
+| `death_linalg.cpp` | LinearAlgebra error cases, one per `argv[1]` (CTest `death_linalg_<case>`; the LAPACK cases only with BLAS) |
+| `multi_tu_a.cpp`, `multi_tu_b.cpp` | every math header in two translation units of one program (`test_math_multi_tu`, a link-time check) |
+| `death_matop.cpp` | MatrixOperation error cases, one per `argv[1]` (CTest `death_matop_<case>` matches the ValueError text) |
 | `selftest_helpers.cpp` | self-test for the harness's own helpers |
 
 ## Run it
@@ -83,6 +97,10 @@ cmake -G Ninja -B build-exp -DMATSAR_BUILD_EXPERIMENTAL_TESTS=ON -DMATSAR_WITH_B
 cmake --build build-exp
 ctest --test-dir build-exp --output-on-failure
 ```
+
+Without `-DMATSAR_WITH_BLAS=OFF` (BLAS on, the default) the LAPACK-backed `test_mathlapack` and its
+death cases are built too; on Ubuntu that needs `libopenblas-dev liblapacke-dev` (CI job
+`linux-experimental-blas`).
 
 **Fast standalone loop** (no CMake), from the repo root:
 ```bash
@@ -125,6 +143,12 @@ Round-trip properties (e.g. `asin(sin x) ≈ x`) are natural Layer-2 checks for 
 The golden header is committed. **If you edit `cases.py` you must regenerate and commit the header** —
 CI's `golden-regen-guard` job fails when `generate.py`'s output differs from what's committed
 (byte-stable, pinned numpy). Python is needed only to regenerate, never to build or run the tests.
+
+Byte-stable across machines means every float a golden depends on -- inputs and tolerances too -- must
+come from IEEE basic operations (`+ - * /`, `sqrt`), exact `Fraction` arithmetic, or mpmath rounded once
+(`generate.py`: `_pow10`, `_cos`, `_hypot`, `mp.qr`, ...). NumPy's `**` / `exp` / `log` / trig / `hypot` and
+its BLAS products (`@`, `np.linalg`) can differ in the last bit between machines and NumPy builds. Check a
+change on a second platform (e.g. WSL with `pip install --target <dir> -r gen/requirements.txt`).
 
 ## Numerical notes
 Tolerances live per-function in `cases.py` (`rtol`/`atol`); integer cases use exact `0/0`. `approx_eq`

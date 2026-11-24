@@ -5,6 +5,8 @@
 
 #include <MatSAR/Matrix.hpp>
 #include <MatSAR/MatrixCreation.hpp>
+#include <complex>
+#include <type_traits>
 
 using namespace matsar;
 
@@ -40,4 +42,20 @@ TEST_CASE("scalar * matrix and matrix * scalar") {
     CHECK(l(1, 1) == 12);                                  // 4*3
     CHECK(r(1, 1) == 12);
     CHECK(l(1, 0) == 9);                                   // 3*3  (a(1,0)==3 row-wise)
+}
+
+// Element-wise ^ with a scalar keeps the element type std::pow gives; it was forced to
+// Matrix<real_max>, which did not compile for complex elements.
+TEST_CASE("element-wise ^ with a scalar keeps a complex element type") {
+    Matrix<complex128> z = {complex128(0, 1), complex128(1, 1)};
+    auto sq = z ^ 2.0;
+    static_assert(std::is_same_v<std::decay_t<decltype(sq(0))>, complex128>);
+    CHECK(std::abs(sq(0) - complex128(-1, 0)) < 1e-15);  // i^2
+    CHECK(std::abs(sq(1) - complex128(0, 2)) < 1e-15);   // (1+i)^2 = 2i
+    auto e = 2.0 ^ z;
+    static_assert(std::is_same_v<std::decay_t<decltype(e(0))>, complex128>);
+    CHECK(std::abs(e(0) - std::pow(2.0, complex128(0, 1))) < 1e-15);
+    auto ri = Matrix<int64>{1, 2, 3} ^ 2;  // integer base: floating-point result, as before
+    static_assert(std::is_same_v<std::decay_t<decltype(ri(0))>, float64>);
+    CHECK(ri(2) == 9.0);
 }

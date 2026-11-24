@@ -145,12 +145,12 @@ namespace matsar {
     auto arange_cal_size(const T &start, const T &stop, const T &step) -> msize_type = delete;
 
     template<>
-    auto arange_cal_size<float64>(const float64 &start, const float64 &stop, const float64 &step) -> msize_type {
+    inline auto arange_cal_size<float64>(const float64 &start, const float64 &stop, const float64 &step) -> msize_type {
         return static_cast<msize_type>(std::ceil((stop - start) / step));
     }
 
     template<>
-    auto arange_cal_size<int64>(const int64 &start, const int64 &stop, const int64 &step) -> msize_type {
+    inline auto arange_cal_size<int64>(const int64 &start, const int64 &stop, const int64 &step) -> msize_type {
         if ((stop - start) % step != 0) {
             return static_cast<msize_type>((stop - start) / step + 1);
         } else {
@@ -193,7 +193,7 @@ namespace matsar {
     auto flip(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
         msize_type dim_idx = dim - 1;
         if (dim_idx >= m.getDims())
-            return {m};
+            return m;
         if (dim_idx < 0) {
             Matrix<dType> r(m.getShape(), 0., m.getData());
             auto riter_m = m.getDataEnd() - 1;
@@ -264,7 +264,7 @@ namespace matsar {
         k = k % 4;
         k = k < 0 ? k + 4 : k;
         if (k == 0)
-            return {m};
+            return m;
         else if (k == 1)
             return flip(m.T(), 1);
         else if (k == 2)

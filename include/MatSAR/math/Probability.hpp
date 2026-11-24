@@ -7,6 +7,14 @@
 #ifndef MATSAR_PROBABILITY_HPP
 #define MATSAR_PROBABILITY_HPP
 
+#include <random>
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <numeric>
+#include <tuple>
+#include <vector>
+
 //#ifndef _USE_MATH_DEFINES
 //#define _USE_MATH_DEFINES
 //#endif //_USE_MATH_DEFINES
@@ -23,122 +31,131 @@
 
 #endif //MATSAR_MATRIXOPERATION_HPP
 
-#ifndef MATSAR_LINEARALGEBRA_HPP
+#ifndef MATSAR_MATHEMATICALFUNCTION_HPP
 
-#include "LinearAlgebra.hpp"
+#include "MathematicalFunction.hpp"
 
-#endif //MATSAR_LINEARALGEBRA_HPP
+#endif //MATSAR_MATHEMATICALFUNCTION_HPP
 
-#include <random>
-#include <algorithm>
+#ifndef MATSAR_SORTSEARCHCOUNT_HPP
+
+#include "SortSearchCount.hpp"
+
+#endif //MATSAR_SORTSEARCHCOUNT_HPP
 
 namespace matsar {
-///矩阵概率计算函数
+///Matrix probability computation functions
     namespace Math {
+        namespace ProbDetail {
+            template<typename T>
+            auto is_nan(const T &v) -> bool {
+                if constexpr (std::is_floating_point_v<T>)
+                    return std::isnan(v);
+                else
+                    return false;
+            }
+
+            /// the "best" element along dim (max: greater, min: less). NaN is skipped, as in MATLAB;
+            /// a slice holding only NaN gives NaN.
+            template<typename dType, typename Better>
+            auto extreme(const Matrix<dType> &m, msize_type dim, Better better) -> Matrix<dType> {
+                static_assert(!complex_type<dType>::value, "max / min: complex matrices are not supported");
+                auto take = [&better](const dType &best, const dType &v) {
+                    return is_nan(best) || (!is_nan(v) && better(v, best));
+                };
+                if (m.isEmpty())
+                    return {};
+                auto dim_idx = dim - 1;
+                if (dim_idx >= m.getDims())
+                    return m;
+                if (dim_idx < 0) {
+                    dType best = m.getData()[0];
+                    for (msize_type i = 1; i < m.getSize(); ++i)
+                        if (take(best, m.getData()[i]))
+                            best = m.getData()[i];
+                    return Matrix<dType>(mshape_type{1}, best);
+                }
+                auto shape = m.getShape();
+                auto step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
+                auto unit_size = step_size * shape[dim_idx];
+                auto step_num = shape[dim_idx];
+                auto unit_num = m.getSize() / unit_size;
+
+                auto r_shape = m.getShape();
+                r_shape[dim_idx] = 1;
+                Matrix<dType> r(r_shape, dType(0));
+
+                auto iter_r = r.getData(), iter_m = m.getData();
+                for (msize_type i = 0; i < unit_num; ++i) {
+                    for (msize_type j = 0; j < step_size; ++j) {
+                        *iter_r = *(iter_m + j);
+                        for (msize_type k = 1; k < step_num; ++k) {
+                            const auto &item = *(iter_m + j + step_size * k);
+                            if (take(*iter_r, item))
+                                *iter_r = item;
+                        }
+                        iter_r++;
+                    }
+                    iter_m += unit_size;
+                }
+                return r;
+            }
+        }
+
         /**
-         * 返回矩阵对应维度最大值
-         * @param m 支持所有Calculable矩阵
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
-         * @return 矩阵对应维度最大值
+         * Return the maximum along the given dimension of the matrix (NaN is skipped, as in MATLAB)
+         * @param m a real-valued matrix
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
+         * @return the maximum along the given dimension of the matrix
          */
         template<Calculable dType>
         auto max(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
-            auto dim_idx = dim - 1;
-            if (dim_idx >= m.getDims())
-                return {m};
-            if (dim_idx < 0)
-                return {m.max()};
-            auto shape = m.getShape();
-            auto step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
-            auto unit_size = step_size * shape[dim_idx];
-            auto step_num = shape[dim_idx];
-            auto unit_num = m.getSize() / unit_size;
-
-            auto r_shape = m.getShape();
-            r_shape[dim_idx] = 1;
-            Matrix<dType> r(r_shape, 0., m.getData());
-
-            auto iter_r = r.getData(), iter_m = m.getData();
-            for (msize_type i = 0; i < unit_num; ++i) {
-                for (msize_type j = 0; j < step_size; ++j) {
-                    *iter_r = *(iter_m + j);
-                    for (msize_type k = 1; k < step_num; ++k) {
-                        auto &item = *(iter_m + j + step_size * k);
-                        if (item > *iter_r)
-                            *iter_r = item;
-                    }
-                    iter_r++;
-                }
-                iter_m += unit_size;
-            }
-            return r;
+            return ProbDetail::extreme(m, dim, [](const dType &a, const dType &b) { return a > b; });
         }
 
         /**
-         * 返回矩阵对应维度最小值
-         * @param m 支持所有Calculable矩阵
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
-         * @return 矩阵对应维度最小值
+         * Return the minimum along the given dimension of the matrix (NaN is skipped, as in MATLAB)
+         * @param m a real-valued matrix
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
+         * @return the minimum along the given dimension of the matrix
          */
         template<Calculable dType>
         auto min(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<dType> {
-            auto dim_idx = dim - 1;
-            if (dim_idx >= m.getDims())
-                return {m};
-            if (dim_idx < 0)
-                return {m.min()};
-            auto shape = m.getShape();
-            auto step_size = matsar::Util::VectorUtil::mul(shape, 0, dim_idx);
-            auto unit_size = step_size * shape[dim_idx];
-            auto step_num = shape[dim_idx];
-            auto unit_num = m.getSize() / unit_size;
-
-            auto r_shape = m.getShape();
-            r_shape[dim_idx] = 1;
-            Matrix<dType> r(r_shape, 0., m.getData());
-
-            auto iter_r = r.getData(), iter_m = m.getData();
-            for (msize_type i = 0; i < unit_num; ++i) {
-                for (msize_type j = 0; j < step_size; ++j) {
-                    *iter_r = *(iter_m + j);
-                    for (msize_type k = 1; k < step_num; ++k) {
-                        auto &item = *(iter_m + j + step_size * k);
-                        if (item < *iter_r)
-                            *iter_r = item;
-                    }
-                    iter_r++;
-                }
-                iter_m += unit_size;
-            }
-            return r;
+            return ProbDetail::extreme(m, dim, [](const dType &a, const dType &b) { return a < b; });
         }
 
         /**
-         * @related range函数等价于调用min和max函数
+         * @related the range function is equivalent to calling the min and max functions
          */
         template<Calculable dType>
-        auto range(const Matrix<dType> &m, msize_type dim = 1) -> tuple<Matrix<dType>, Matrix<dType>> {
+        inline auto range(const Matrix<dType> &m, msize_type dim = 1) -> tuple<Matrix<dType>, Matrix<dType>> {
             return {min(m, dim), max(m, dim)};
         }
 
         /**
-         * 返回矩阵对应维度中位数
-         * @param m 支持所有Calculable矩阵
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
-         * @return 矩阵对应维度中位数
+         * Return the median along the given dimension of the matrix
+         * @param m supports all Calculable matrices
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
+         * @return the median along the given dimension of the matrix
          */
-        template<Calculable TargetType, Calculable dType>
-        auto median(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<TargetType> {
+        template<typename TargetType = void, Calculable dType>
+        inline auto median(const Matrix<dType> &m, msize_type dim = 1)
+                -> Matrix<resolve_t<TargetType, real_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, real_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "median: output type must be Calculable");
+            if (m.isEmpty())
+                return {};
             auto dim_idx = dim - 1;
             if (dim_idx >= m.getDims())
-                return {m};
+                return Matrix<Out>(m);
             if (dim_idx < 0) {
                 auto sort_m = m.sort();
                 auto iter = sort_m.getData() + sort_m.getSize() / 2;
                 if (sort_m.getSize() % 2 == 0) {
-                    return {(*(iter - 1) + *iter) / 2.};
+                    return {(real_promote_t<dType>(*(iter - 1)) + real_promote_t<dType>(*iter)) /
+                            real_promote_t<dType>(2)};
                 } else {
-                    return {*iter / 1.};
+                    return {real_promote_t<dType>(*iter) / real_promote_t<dType>(1)};
                 }
             }
             auto shape = m.getShape();
@@ -147,10 +164,10 @@ namespace matsar {
             auto step_num = shape[dim_idx];
             auto unit_num = m.getSize() / unit_size;
 
-            auto sort_m = matsar::Math::sort(m, dim);
+            auto sort_m = matsar::Math::sort(m, dim_idx);   // sort takes the 0-based axis
             auto r_shape = m.getShape();
             r_shape[dim_idx] = 1;
-            Matrix<TargetType> r(r_shape, 0., m.getData());
+            Matrix<Out> r(r_shape, 0., m.getData());
 
             auto iter_r = r.getData();
             auto iter_m = sort_m.getData();
@@ -159,7 +176,9 @@ namespace matsar {
                 iter_m += pick;
                 for (msize_type i = 0; i < unit_num; ++i) {
                     for (msize_type j = 0; j < step_size; ++j) {
-                        *(iter_r++) = (*(iter_m + j) + *(iter_m + j + step_size)) / 2.;
+                        *(iter_r++) = (real_promote_t<dType>(*(iter_m + j)) +
+                                       real_promote_t<dType>(*(iter_m + j + step_size))) /
+                                      real_promote_t<dType>(2);
                     }
                     iter_m += unit_size;
                 }
@@ -176,387 +195,481 @@ namespace matsar {
             return r;
         }
 
-        template<IntType IT>
-        auto median(const Matrix<IT> &m, msize_type dim = 1) -> Matrix<real_max> {
-            return median<real_max, IT>(m, dim);
-        }
-
-        template<FloatType FT>
-        auto median(const Matrix<FT> &m, msize_type dim = 1) -> Matrix<FT> {
-            return median<FT, FT>(m, dim);
-        }
-
-        template<ComplexType CT>
-        auto median(const Matrix<CT> &m, msize_type dim = 1) -> Matrix<CT> {
-            return median<CT, CT>(m, dim);
-        }
-
         /**
-         * mean求n个数的平均值
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
+         * mean computes the mean of n values
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, return the matrix itself
          */
-        template<Calculable TargetType, Calculable dType>
-        auto mean(const Matrix<dType> &m, msize_type dim = 1) -> Matrix<TargetType> {
+        template<typename TargetType = void, Calculable dType>
+        inline auto mean(const Matrix<dType> &m, msize_type dim = 1)
+                -> Matrix<resolve_t<TargetType, real_promote_t<dType>>> {
+            using Out = resolve_t<TargetType, real_promote_t<dType>>;
+            static_assert(calculable_type<Out>::value, "mean: output type must be Calculable");
             auto dim_idx = dim - 1;
             if (dim_idx >= m.getDims())
-                return {m};
-            if (dim_idx < 0)
-                return sum<TargetType, dType>(m / float_max(m.getSize()), dim);
-            return sum<TargetType, dType>(m / float_max(m.getShape()[dim_idx]), dim);
-        }
-
-        template<RealType RT>
-        auto mean(const Matrix<RT> &m, msize_type dim = 1) -> Matrix<real_max> {
-            return mean<real_max, RT>(m, dim);
-        }
-
-        template<ComplexType CT>
-        auto mean(const Matrix<CT> &m, msize_type dim = 1) -> Matrix<real_max> {
-            return mean<real_max, CT>(m, dim);
+                return Matrix<Out>(m);
+            // Divide in-place (operator/=) rather than via the free Matrix operator/,
+            // which widens the result to arith_promote_t<Out> (float32 -> float64,
+            // complex64 -> complex128) for ANY scalar divisor; that wider value is then
+            // narrowed back to Out on return, routing through the type-loss-warning
+            // constructor and spewing a spurious TypeLossException to stderr even though
+            // the numeric result is correct. Staying in Out precision throughout avoids
+            // the widen->narrow round trip -- but operator/= independently re-checks
+            // typeHigher<Other, Out> on the DIVISOR's own type, so the divisor must not
+            // be wrapped in float_max (== float64): float64 tests higher than Out when
+            // Out is float32, which would re-trigger the very same warning. The raw
+            // integer count (msize_type) is never higher-level than any real/complex
+            // Out, so divide by it directly -- the same technique var's inner mean below
+            // already relies on (`mean_m /= n`).
+            // dim is 1-based (like median/max/min); sum's axis parameter is 0-based
+            // and uses the `none` sentinel -- not a numeric value -- for a true global
+            // reduce. Convert here: global (dim <= 0) -> sum(m, none) / getSize();
+            // axis -> sum(m, dim_idx) / axis length.
+            if (dim_idx < 0) {
+                auto acc = sum<Out>(m, none);
+                acc /= m.getSize();
+                return acc;
+            }
+            auto acc = sum<Out>(m, dim_idx);
+            acc /= m.getShape()[dim_idx];
+            return acc;
         }
     }
     namespace Math {
         /**
-         * @param dim 为负或0时进行全局求值，在维度范围内返回沿着该维度的求值，超过维度长度时范围返回矩阵本身
+         * variance, as MATLAB var: w = false normalizes by N, w = true by N - 1 (the sample
+         * variance); a slice of one value is normalized by N either way, so its variance is 0.
+         * @param dim when negative or 0, evaluate globally; within the dimension range, return the evaluation along that dimension; when it exceeds the number of dimensions, every element is a slice of one value: 0, or NaN for NaN / Inf
          */
-        template<Calculable TargetType, Calculable dType>
-        auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1) -> Matrix<TargetType> {
+        template<typename TargetType = void, Calculable dType>
+        inline auto var(const Matrix<dType> &m, bool w = false, msize_type dim = 1)
+                -> Matrix<resolve_t<TargetType, magnitude_t<dType>>> {
+            using Out = resolve_t<TargetType, magnitude_t<dType>>;
+            static_assert(calculable_type<Out>::value, "var: output type must be Calculable");
             msize_type dim_idx = dim - 1;
             if (m.isEmpty()) return {};
-            if (dim_idx >= m.getDims()) return {m};
-            auto n = m.getSize();
-            auto denom = w ? n - 1 : n;
-            return {sum<TargetType, dType>(abs(m - sum<TargetType, dType>(m, dim) / n) ^ 2, dim) / denom};
-        }
-
-        template<RealType RT>
-        auto var(const Matrix<RT> &m, bool w = false, msize_type dim = 1) -> Matrix<real_max> {
-            return var<real_max, RT>(m, w, dim);
-        }
-
-        template<ComplexType CT>
-        auto var(const Matrix<CT> &m, bool w = false, msize_type dim = 1) -> Matrix<complex_max> {
-            return var<complex_max, CT>(m, w, dim);
+            if (dim_idx >= m.getDims()) {   // one-value slices: x - mean(x) is 0, or NaN for NaN / Inf
+                Matrix<Out> r(m.getShape(), Out(0));
+                const dType *src = m.getData();
+                Out *dst = r.getData();
+                for (msize_type k = 0; k < m.getSize(); ++k) {
+                    bool finite;
+                    if constexpr (complex_type<dType>::value)
+                        finite = std::isfinite(double(src[k].real())) && std::isfinite(double(src[k].imag()));
+                    else
+                        finite = std::isfinite(double(src[k]));
+                    if (!finite)
+                        dst[k] = Out(std::numeric_limits<double>::quiet_NaN());
+                }
+                return r;
+            }
+            // dim is 1-based (like median/max/min); sum's axis parameter is 0-based and
+            // uses the `none` sentinel -- not a numeric value -- for a true global reduce.
+            // Both of var's sum calls (the inner mean AND the outer squared-magnitude sum)
+            // must therefore pass `dim_idx` for an axis reduce and `none` for a global one,
+            // and the element count `n` is the axis length for an axis reduce vs the whole
+            // size for a global one.
+            //
+            // Divide in-place (operator/=) rather than via the free Matrix operator/,
+            // which widens complex64 -> complex128 for ANY scalar divisor (arith_promote_t
+            // unconditionally promotes complex<float> to complex<double>). That widening
+            // would leave m (complex64) minus a complex128 mean with no valid operator-
+            // overload (Matrix operator- has no mixed-precision-complex overload). Staying
+            // in real_promote_t<dType> precision throughout keeps the subtraction homogeneous.
+            // The outer sum uses the same in-place-division technique: dividing via the free
+            // operator/ would widen Out (e.g. complex64 -> complex128) then narrow back on
+            // return, triggering a spurious TypeLossException.
+            if (dim_idx < 0) {
+                auto n = m.getSize();
+                auto denom = w && n > 1 ? n - 1 : n;   // MATLAB: one value is normalized by N
+                auto mean_m = sum<real_promote_t<dType>>(m, none);
+                mean_m /= n;
+                auto acc = sum<Out>(abs(m - mean_m) ^ 2, none);
+                acc /= denom;
+                // Return unbraced (like mean): Matrix{acc} routes through the
+                // brace constructor, which squeezes trailing singleton dims
+                // ({2,1} -> {2}) and would break the keepdims axis shape.
+                return acc;
+            }
+            auto n = m.getShape()[dim_idx];
+            auto denom = w && n > 1 ? n - 1 : n;
+            auto mean_m = sum<real_promote_t<dType>>(m, dim_idx);
+            mean_m /= n;
+            auto acc = sum<Out>(abs(m - mean_m) ^ 2, dim_idx);
+            acc /= denom;
+            return acc;
         }
     }
-    ///分布函数
+    ///Distribution functions
+    ///Conventions (MATLAB / SciPy): a NaN argument gives NaN; an invalid parameter gives NaN;
+    ///x outside the support gives 0 (for the discrete distributions also a non-integer x).
+    ///Matrix arguments broadcast against each other like Matrix arithmetic.
     namespace Math {
-//        static const float_max PI = static_cast<float_max>(3.14159265358979323846);
+        namespace ProbDetail {
+            inline auto is_integer(float64 v) -> bool { return std::isfinite(v) && v == std::floor(v); }
+
+            /// the common shape of broadcasting arguments (trailing singleton dims appended, as Matrix does)
+            inline auto broadcast_shape(const char *name, std::initializer_list<mshape_type> shapes) -> mshape_type {
+                size_t dims = 0;
+                for (const auto &s: shapes)
+                    dims = std::max(dims, s.size());
+                mshape_type out(dims, 1);
+                for (auto s: shapes) {
+                    s.resize(dims, 1);
+                    for (size_t i = 0; i < dims; ++i) {
+                        if (s[i] == out[i] || s[i] == 1)
+                            continue;
+                        if (out[i] == 1)
+                            out[i] = s[i];
+                        else
+                            throw_shape_exception(std::string(name) + ": the arguments cannot be broadcast to one shape");
+                    }
+                }
+                return out;
+            }
+
+            template<typename F, typename... Ms>
+            auto map_expanded(F f, const mshape_type &shape, const Ms &...ms) -> Matrix<float64> {
+                Matrix<float64> r(shape, 0.);
+                for (msize_type i = 0; i < r.getSize(); ++i)
+                    r.getData()[i] = f(ms.getData()[i]...);
+                return r;
+            }
+
+            /// f applied element by element to broadcast Matrix<float64> arguments
+            template<typename F, typename... Ms>
+            auto map(const char *name, F f, const Ms &...ms) -> Matrix<float64> {
+                const auto shape = broadcast_shape(name, {ms.getShape()...});
+                auto expand = [&shape](const Matrix<float64> &m) { return m.getShape() == shape ? m : m.broadcast(shape); };
+                return map_expanded(f, shape, expand(ms)...);
+            }
+
+            // Binomial, Poisson and gamma densities by C. Loader's saddle-point expansion ("Fast and
+            // accurate computation of binomial probabilities", 2000; also R's dbinom / dpois): the
+            // density is exp(-(Stirling-series errors) - (deviance terms)), sums of small terms with no
+            // large cancellation, so it stays accurate for any n where n! / p^x would over- or underflow.
+
+            /// log(n!) - log(sqrt(2 pi n) (n / e)^n), n > 0
+            inline auto stirlerr(float64 n) -> float64 {
+                if (n <= 15)
+                    return std::lgamma(n + 1) - (n + 0.5) * std::log(n) + n - 0.5 * std::log(2 * PI);
+                const float64 nn = n * n;
+                const float64 s0 = 1. / 12, s1 = 1. / 360, s2 = 1. / 1260, s3 = 1. / 1680, s4 = 1. / 1188;
+                if (n > 500)
+                    return (s0 - s1 / nn) / n;
+                if (n > 80)
+                    return (s0 - (s1 - s2 / nn) / nn) / n;
+                if (n > 35)
+                    return (s0 - (s1 - (s2 - s3 / nn) / nn) / nn) / n;
+                return (s0 - (s1 - (s2 - (s3 - s4 / nn) / nn) / nn) / nn) / n;
+            }
+
+            /// the deviance term x log(x / np) + np - x, by its series when x is close to np
+            inline auto bd0(float64 x, float64 np) -> float64 {
+                if (std::abs(x - np) < 0.1 * (x + np)) {
+                    float64 v = (x - np) / (x + np);
+                    float64 s = (x - np) * v;
+                    float64 ej = 2 * x * v;
+                    v *= v;
+                    for (int j = 1; j < 1000; ++j) {
+                        ej *= v;
+                        const float64 s1 = s + ej / (2 * j + 1);
+                        if (s1 == s)
+                            return s1;
+                        s = s1;
+                    }
+                }
+                return x * std::log(x / np) + np - x;
+            }
+
+            /// binomial probability of x successes in n trials; integers 0 <= x <= n, 0 <= p <= 1
+            inline auto dbinom(float64 x, float64 n, float64 p) -> float64 {
+                const float64 q = 1 - p;
+                if (p == 0)
+                    return x == 0 ? 1 : 0;
+                if (q == 0)
+                    return x == n ? 1 : 0;
+                if (x == 0) {
+                    if (n == 0)
+                        return 1;
+                    return std::exp(p < 0.1 ? -bd0(n, n * q) - n * p : n * std::log(q));
+                }
+                if (x == n)
+                    return std::exp(q < 0.1 ? -bd0(n, n * p) - n * q : n * std::log(p));
+                const float64 lc = stirlerr(n) - stirlerr(x) - stirlerr(n - x) - bd0(x, n * p) - bd0(n - x, n * q);
+                const float64 lf = std::log(2 * PI) + std::log(x) + std::log1p(-x / n);
+                return std::exp(lc - 0.5 * lf);
+            }
+
+            /// Poisson density at x >= 0 (any real x: also the gamma density kernel), lambda >= 0
+            inline auto dpois(float64 x, float64 lambda) -> float64 {
+                if (lambda == 0)
+                    return x == 0 ? 1 : 0;
+                if (!std::isfinite(lambda))
+                    return 0;
+                if (x == 0)
+                    return std::exp(-lambda);
+                if (x <= lambda * std::numeric_limits<float64>::min())
+                    return std::exp(-lambda);
+                if (lambda < x * std::numeric_limits<float64>::min())
+                    return std::exp(-lambda + x * std::log(lambda) - std::lgamma(x + 1));
+                return std::exp(-stirlerr(x) - bd0(x, lambda)) / std::sqrt(2 * PI * x);
+            }
+
+            /// gamma density, x > 0 finite, shape > 0, scale > 0
+            inline auto dgamma(float64 x, float64 shape, float64 scale) -> float64 {
+                if (shape < 1)
+                    return dpois(shape, x / scale) * shape / x;
+                return dpois(shape - 1, x / scale) / scale;
+            }
+        }
 
         /**
-         * 将矩阵内的所有元素经过正态分布映射
-         * @param m 要求为实数矩阵
-         * @param mu 正态分布的均值
-         * @param sigma 正态分布的方差
-         * @return 浮点矩阵：矩阵元素正态分布映射
+         * Normal density, element by element
+         * @param m must be a real-valued matrix
+         * @param mu the mean of the normal distribution
+         * @param sigma the standard deviation, > 0 (otherwise NaN)
+         * @return floating-point matrix: the density at each element
          */
         template<RealType RT>
         auto normpdf(const Matrix<RT> &m, float_max mu = 0., float_max sigma = 1.) -> Matrix<real_max> {
             Matrix<real_max> r(m);
-            auto stat1 = sigma * std::sqrt(2 * PI);
+            const auto norm = sigma * std::sqrt(2 * PI);
             for (auto &i: r) {
-                auto stat2 = (i - mu) / sigma;
-                i = std::exp(-stat2 * stat2 / 2.) / stat1;
+                if (!(sigma > 0)) {
+                    i = NAN;
+                    continue;
+                }
+                auto z = (i - mu) / sigma;
+                i = std::exp(-z * z / 2.) / norm;
             }
             return r;
         }
 
         /**
-         * 将矩阵内的所有元素经过正态分布映射
-         * @param m 要求矩阵为实数矩阵
-         * @param mu矩阵 正态分布的均值，会对mu矩阵进行broadcast操作
-         * @param sigma矩阵 正态分布的方差，会对sigma矩阵进行broadcast操作
-         * @return 浮点矩阵：矩阵元素正态分布映射
+         * Normal density with parameter matrices (broadcast against m)
          */
         template<RealType RT>
-        auto normpdf(const Matrix<RT> &m, Matrix<float_max> mu, Matrix<float_max> sigma) -> Matrix<real_max> {
-            mu = mu.broadcast(m.getShape());
-            sigma = sigma.broadcast(m.getShape());
-            Matrix<real_max> r(m);
-            auto stat1 = std::sqrt(2 * PI);
-            for (auto iter = r.begin(), iter_mu = mu.begin(), iter_sigma = sigma.begin();
-                 iter != r.end(); ++iter, ++iter_mu, ++iter_sigma) {
-                auto stat2 = (*iter - *iter_mu) / *iter_sigma;
-                *iter = std::exp(-stat2 * stat2 / 2.) / (stat1 * *iter_sigma);
-            }
-            return r;
+        auto normpdf(const Matrix<RT> &m, const Matrix<float_max> &mu, const Matrix<float_max> &sigma)
+                -> Matrix<real_max> {
+            return ProbDetail::map("normpdf", [](float64 x, float64 mu_, float64 sigma_) -> float64 {
+                if (!(sigma_ > 0))
+                    return NAN;
+                auto z = (x - mu_) / sigma_;
+                return std::exp(-z * z / 2.) / (sigma_ * std::sqrt(2 * PI));
+            }, Matrix<float64>(m), mu, sigma);
         }
 
         /**
-         * 生成正态分布的随机矩阵
-         * @param mu 正态分布的均值
-         * @param sigma 正态分布的方差
-         * @param shape 目标矩阵的shape
-         * @return 浮点矩阵：正态分布的随机矩阵
+         * Random matrix from the normal distribution
+         * @param sigma the standard deviation: 0 gives mu exactly, < 0 (or NaN) gives NaN
          */
-        auto normrnd(float_max mu = 0., float_max sigma = 1., const mshape_type &shape = {1}) -> Matrix<real_max> {
+        inline auto normrnd(float_max mu = 0., float_max sigma = 1., const mshape_type &shape = {1}) -> Matrix<real_max> {
+            if (!(sigma >= 0) || std::isnan(mu))
+                return Matrix<real_max>(shape, NAN);
+            if (sigma == 0)
+                return Matrix<real_max>(shape, mu);
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            normal_distribution <float_max> normal(mu, sigma);
+            normal_distribution<float_max> normal(mu, sigma);
             for (auto &i: r)
                 i = normal(gen);
             return r;
         }
 
         /**
-         * 生成正态分布的随机矩阵
-         * @param mu矩阵 正态分布的均值，会对mu矩阵进行broadcast操作
-         * @param sigma矩阵 正态分布的方差，会对sigma矩阵进行broadcast操作
-         * @param shape 目标矩阵的shape
-         * @return 浮点矩阵：正态分布的随机矩阵
+         * Random matrix from the normal distribution, one draw per element of mu and sigma
+         * @param shape the result shape; mu and sigma must have it (empty: the shape of mu)
          */
-        auto normrnd(const Matrix<float_max> &mu, const Matrix<float_max> &sigma,
-                     const mshape_type &shape = {1}) -> Matrix<real_max> {
+        inline auto normrnd(const Matrix<float_max> &mu, const Matrix<float_max> &sigma,
+                            mshape_type shape = {}) -> Matrix<real_max> {
+            if (shape.empty())
+                shape = mu.getShape();
             if (mu.getShape() != shape || sigma.getShape() != shape)
-                throw_shape_exception("mu矩阵或sigma矩阵大小与指定shape不同");
+                throw_shape_exception("normrnd: mu and sigma must have the requested shape");
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            for (auto iter = r.begin(), iter_mu = mu.begin(), iter_sigma = sigma.begin();
-                 iter != r.end(); ++iter, ++iter_mu, ++iter_sigma) {
-                normal_distribution <float_max> normal(*iter_mu, *iter_sigma);
-                *iter = normal(gen);
+            for (msize_type i = 0; i < r.getSize(); ++i) {
+                const auto m = mu.getData()[i], s = sigma.getData()[i];
+                if (!(s >= 0) || std::isnan(m))
+                    r.getData()[i] = NAN;
+                else if (s == 0)
+                    r.getData()[i] = m;
+                else
+                    r.getData()[i] = normal_distribution<float_max>(m, s)(gen);
             }
             return r;
         }
 
         /**
-         * 正态分布的均值和方差
-         * @return 浮点矩阵tuple {mu,sigma*sigma}
+         * The mean and variance of the normal distribution: {mu, sigma^2}; NaN for sigma < 0
          */
         template<RealType RT1, RealType RT2>
         auto normstat(RT1 mu, RT2 sigma) -> tuple<real_max, real_max> {
-            return {mu, mul(sigma, sigma)};
+            if (sigma < 0)
+                return {NAN, NAN};
+            return {real_max(mu), real_max(sigma) * real_max(sigma)};
         }
 
         /**
-         * 正态分布的均值和方差
-         * @return 浮点矩阵tuple {mu,sigma*sigma}
+         * The mean and variance of the normal distribution, for broadcast parameter matrices
          */
         template<RealType RT1, RealType RT2>
         auto normstat(const Matrix<RT1> &mu, const Matrix<RT2> &sigma) -> tuple<Matrix<real_max>, Matrix<real_max>> {
-            Matrix<real_max> b_mu(mu);
-            Matrix<real_max> b_sigma(sigma);
-            Matrix<real_max>::broadcast(mu, sigma);
-            return {b_mu, mul(b_sigma, b_sigma)};
+            Matrix<float64> m(mu), s(sigma);
+            return {ProbDetail::map("normstat", [](float64 m_, float64 s_) { return std::get<0>(normstat(m_, s_)); }, m, s),
+                    ProbDetail::map("normstat", [](float64 m_, float64 s_) { return std::get<1>(normstat(m_, s_)); }, m, s)};
         }
     }
     namespace Math {
         /**
-         * 将矩阵内的所有元素经过二项分布映射
-         * @param m 要求为实数矩阵，若浮点四舍五入
-         * @param n 二项分布的实验次数
-         * @param p 二项分布的发生概率
-         * @return 浮点矩阵：矩阵元素二项分布映射
+         * Binomial probability of x successes in n trials with success probability p
+         * (0 for x outside 0..n or not an integer; NaN unless n is a non-negative integer and
+         * 0 <= p <= 1).
+         */
+        inline auto binopdf(float64 x, float64 n, float64 p) -> float64 {
+            if (std::isnan(x) || !ProbDetail::is_integer(n) || n < 0 || !(p >= 0 && p <= 1))
+                return NAN;
+            if (!ProbDetail::is_integer(x) || x < 0 || x > n)
+                return 0;
+            return ProbDetail::dbinom(x, n, p);
+        }
+
+        /**
+         * Binomial probability of each element of m
+         * @param m real-valued matrix of success counts
          */
         template<RealType RT>
         auto binopdf(const Matrix<RT> &m, float64 n, float64 p) -> Matrix<float64> {
-            Matrix<float64> r(m.getShape(), 0.);
-            auto iter_m = m.getData();
-            for (auto &i: r) {
-                if (*iter_m >= 0 || *iter_m <= n)
-                    i = nchoosek<float64>(n, *iter_m) * pow(p, *iter_m) * pow(1 - p, n - *iter_m);
-                iter_m++;
-            }
+            Matrix<float64> r(m);
+            for (auto &i: r)
+                i = binopdf(i, n, p);
             return r;
         }
 
         /**
-         * 将矩阵内的所有元素经过二项分布映射
-         * @param m 要求为实数矩阵，若浮点四舍五入
-         * @param n matrix 二项分布的实验次数
-         * @param p matrix 二项分布的发生概率
-         * @return 浮点矩阵：矩阵元素二项分布映射
+         * Binomial probability with parameter matrices (broadcast against m)
          */
         template<RealType RT>
-        auto binopdf(const Matrix<RT> &m, Matrix<float64> n, Matrix<float64> p) -> Matrix<float64> {
-            n = n.broadcast(m.getShape());
-            p = p.broadcast(m.getShape());
+        auto binopdf(const Matrix<RT> &m, const Matrix<float64> &n, const Matrix<float64> &p) -> Matrix<float64> {
+            return ProbDetail::map("binopdf", [](float64 x, float64 n_, float64 p_) { return binopdf(x, n_, p_); },
+                                   Matrix<float64>(m), n, p);
+        }
 
-            Matrix<float64> r(m.getShape(), 0.);
-            auto iter_m = m.getData();
-            auto iter_n = n.getData();
-            auto iter_p = p.getData();
-            for (auto &i: r) {
-                if (*iter_m >= 0 || *iter_m <= n)
-                    i = nchoosek<float64>(*iter_n, *iter_m) * pow(*iter_p, *iter_m) *
-                        pow(1 - *iter_p, *iter_n - *iter_m);
-                iter_m++;
-                iter_n++;
-                iter_p++;
+        namespace ProbDetail {
+            inline auto binornd_one(float64 n, float64 p, std::mt19937 &gen) -> float64 {
+                if (!is_integer(n) || n < 0 || !(p >= 0 && p <= 1))
+                    return NAN;
+                return static_cast<float64>(std::binomial_distribution<int64>(static_cast<int64>(n), p)(gen));
             }
-            return r;
         }
 
         /**
-         * 生成二项分布的随机矩阵
-         * @param mu 二项分布的均值
-         * @param sigma 二项分布的方差
-         * @param shape 目标矩阵的shape
-         * @return 浮点矩阵：二项分布的随机矩阵
+         * Random matrix from the binomial distribution (NaN for invalid n or p)
          */
-        auto binornd(float64 n = 1, float64 p = 0.5, const mshape_type &shape = {1}) -> Matrix<real_max> {
-            if (std::round(n) != n || p < 0 || p > 1)
-                return Matrix<real_max>(shape, NAN);
+        inline auto binornd(float64 n = 1, float64 p = 0.5, const mshape_type &shape = {1}) -> Matrix<real_max> {
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::binomial_distribution<> bino(static_cast<int>(n), p);
             for (auto &i: r)
-                i = bino(gen);
+                i = ProbDetail::binornd_one(n, p, gen);
             return r;
         }
 
         /**
-         * 生成多个二项分布的随机矩阵
-         * @param mu矩阵 二项分布的均值
-         * @param sigma矩阵 二项分布的方差
-         * @return 浮点矩阵：二项分布的随机矩阵
+         * Random matrix from the binomial distribution, one draw per element of n and p
+         * (same shapes; NaN for invalid elements)
          */
-        auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p) -> Matrix<real_max> {
+        inline auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p) -> Matrix<real_max> {
             if (n.getShape() != p.getShape())
-                throw_shape_exception("n矩阵和p矩阵大小不同");
+                throw_shape_exception("binornd: n and p have different sizes");
             Matrix<real_max> r(n.getShape(), 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            for (auto iter = r.begin(), iter_n = n.begin(), iter_p = p.begin();
-                 iter != r.end(); ++iter, ++iter_n, ++iter_p) {
-                if (std::round(*iter_n) != *iter_n || *iter_p < 0 || *iter_p > 1)
-                    *iter = NAN;
-                else {
-                    std::binomial_distribution<> bino(static_cast<int>(*iter_n), *iter_p);
-                    *iter = bino(gen);
-                }
-            }
+            for (msize_type i = 0; i < r.getSize(); ++i)
+                r.getData()[i] = ProbDetail::binornd_one(n.getData()[i], p.getData()[i], gen);
             return r;
         }
 
         /**
-         * 生成多个二项分布的随机矩阵
-         * @param mu矩阵 二项分布的均值
-         * @param sigma矩阵 二项分布的方差
-         * @param shape 目标矩阵的大小
-         * @return 浮点矩阵：二项分布的随机矩阵
+         * As binornd(n, p), with the result shape stated (n and p must have it)
          */
-        auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p,
-                     const mshape_type &shape = {1}) -> Matrix<real_max> {
+        inline auto binornd(const Matrix<float_max> &n, const Matrix<float_max> &p,
+                            const mshape_type &shape) -> Matrix<real_max> {
             if (n.getShape() != shape || p.getShape() != shape)
-                throw_shape_exception("n矩阵或p矩阵与指定矩阵形状大小不同");
-            Matrix<real_max> r(shape, 0.);
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            for (auto iter = r.begin(), iter_n = n.begin(), iter_p = p.begin();
-                 iter != r.end(); ++iter, ++iter_n, ++iter_p) {
-                if (std::round(*iter_n) != *iter_n || *iter_p < 0 || *iter_p > 1)
-                    *iter = NAN;
-                else {
-                    std::binomial_distribution<> bino(static_cast<int>(*iter_n), *iter_p);
-                    *iter = bino(gen);
-                }
-            }
-            return r;
+                throw_shape_exception("binornd: n and p must have the requested shape");
+            return binornd(n, p);
         }
 
         /**
-         * 二项分布的均值和方差
-         * @return 浮点矩阵tuple {n*p,n*p*(1-p)}
+         * The mean and variance of the binomial distribution: {n p, n p (1 - p)}; NaN for invalid n or p
          */
         template<RealType RT1, RealType RT2>
         auto binostat(RT1 n, RT2 p) -> tuple<real_max, real_max> {
-            //check n/p legal
-            if ((isFloat<RT1>() && std::round(n) != n) || p < 0 || p > 1)
+            if (!ProbDetail::is_integer(n) || n < 0 || !(p >= 0 && p <= 1))
                 return {NAN, NAN};
-            auto mu = n * p;
-            return {mu, mu * (1 - p)};
+            auto mu = real_max(n) * real_max(p);
+            return {mu, mu * (1 - real_max(p))};
         }
 
         /**
-         * 二项分布的均值和方差
-         * @return 浮点矩阵tuple {mu,sigma*sigma}
+         * The mean and variance of the binomial distribution, for broadcast parameter matrices
          */
         template<RealType RT1, RealType RT2>
         auto binostat(const Matrix<RT1> &n, const Matrix<RT2> &p) -> tuple<Matrix<real_max>, Matrix<real_max>> {
-            auto mu = mul(n, p);
-            return {mu, mul(mu, 1 - p)};
+            Matrix<float64> n_(n), p_(p);
+            return {ProbDetail::map("binostat", [](float64 a, float64 b) { return std::get<0>(binostat(a, b)); }, n_, p_),
+                    ProbDetail::map("binostat", [](float64 a, float64 b) { return std::get<1>(binostat(a, b)); }, n_, p_)};
         }
     }
     namespace Math {
-        //连续均匀分布
+        //Continuous uniform distribution
         /**
-         * 求连续均匀分布函数值
-         * @param x 函数传入x值，x值需在[a,b]内
-         * @param a 连续均匀函数左边界值，默认为标准分布0
-         * @param b 连续均匀函数右边界值，默认为标准分布1
+         * Density of the continuous uniform distribution on [a, b]: 1 / (b - a) inside, 0 outside,
+         * NaN unless a < b
          */
-        auto unifpdf(float64 x, float64 a = 0, float64 b = 1) -> float64 {
-            if (x < a || x > b)
-                return 0;
-            return 1 / (b - a);
+        inline auto unifpdf(float64 x, float64 a = 0, float64 b = 1) -> float64 {
+            if (std::isnan(x) || !(a < b))
+                return NAN;
+            return (x < a || x > b) ? 0 : 1 / (b - a);
         }
 
         /**
-         * 求连续均匀分布函数值
-         * @param x 函数传入x值，x值需在[a,b]内
-         * @param a 连续均匀函数左边界值，默认为标准分布0
-         * @param b 连续均匀函数右边界值，默认为标准分布1
+         * Uniform density with matrix arguments (broadcast against each other)
          */
-        auto unifpdf(const Matrix<float64> &x, const Matrix<float64> &a = {0},
-                     const Matrix<float64> &b = {1}) -> Matrix<float64> {
-            bool x_single = x.isSingle();
-            bool a_single = a.isSingle();
-            bool b_single = b.isSingle();
-            if (a.getShape() != b.getShape() || (x.getShape() != a.getShape() && !a_single))
-                throw_shape_exception("unifpdf: a,b两矩阵大小应该相同，并且等于x矩阵大小");
-            mshape_type shape;
-            if (!x.isSingle())
-                shape = x.getShape();
-            else
-                shape = a.getShape();
-            Matrix<float64> r(shape, 0.);
-            auto iter_x = x.begin();
-            auto iter_a = a.begin();
-            auto iter_b = b.begin();
-            for (auto &i: r) {
-                i = unifpdf(*iter_x, *iter_a, *iter_b);
-                if (!x_single)
-                    iter_x++;
-                if (!a_single)
-                    iter_a++;
-                if (!b_single)
-                    iter_b++;
-            }
-            return r;
+        inline auto unifpdf(const Matrix<float64> &x, const Matrix<float64> &a = {0},
+                            const Matrix<float64> &b = {1}) -> Matrix<float64> {
+            return ProbDetail::map("unifpdf", [](float64 x_, float64 a_, float64 b_) { return unifpdf(x_, a_, b_); },
+                                   x, a, b);
         }
 
         /**
-        * 求连续均匀分布期望与方差
-        * @param a 连续均匀函数左边界值，默认为标准分布0
-        * @param b 连续均匀函数右边界值，默认为标准分布1
+        * The mean and variance of the continuous uniform distribution: {(a + b) / 2, (b - a)^2 / 12};
+        * NaN unless a < b
         */
-        auto unifstat(float64 a, float64 b) -> tuple<float64, float64> {
-            return {(a + b) / 2, pow((a - b), 2) / 12};
+        inline auto unifstat(float64 a, float64 b) -> tuple<float64, float64> {
+            if (!(a < b))
+                return {NAN, NAN};
+            return {(a + b) / 2, (b - a) * (b - a) / 12};
         }
 
         /**
-        * 求连续均匀分布期望与方差
-        * @param a 连续均匀函数左边界值，默认为标准分布0
-        * @param b 连续均匀函数右边界值，默认为标准分布1
+        * The mean and variance of the continuous uniform distribution, for broadcast matrices
         */
-        auto unifstat(const Matrix<float64> &a, const Matrix<float64> &b) -> tuple<Matrix<float64>, Matrix<float64>> {
-            if (a.getShape() != b.getShape())
-                throw_shape_exception("unifstat: a b两矩阵应该有相同的大小");
-            return {(a + b) / 2, ((a - b) ^ 2) / 12};
+        inline auto unifstat(const Matrix<float64> &a, const Matrix<float64> &b) -> tuple<Matrix<float64>, Matrix<float64>> {
+            return {ProbDetail::map("unifstat", [](float64 a_, float64 b_) { return std::get<0>(unifstat(a_, b_)); }, a, b),
+                    ProbDetail::map("unifstat", [](float64 a_, float64 b_) { return std::get<1>(unifstat(a_, b_)); }, a, b)};
         }
     }
 
     namespace Math {
         /**
-         * 生成(0,1)均匀分布的随机矩阵
-         * @param shape 目标矩阵维度
-         * @return 浮点矩阵：(0,1)均匀分布的随机矩阵
+         * Generate a random matrix from the (0,1) uniform distribution
+         * @param shape the dimensions of the target matrix
+         * @return floating-point matrix: a random matrix from the (0,1) uniform distribution
          */
-        auto rand(const mshape_type &shape) -> Matrix<real_max> {
+        inline auto rand(const mshape_type &shape) -> Matrix<real_max> {
             Matrix<real_max> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
@@ -567,25 +680,25 @@ namespace matsar {
         }
 
         /**
-         * 生成(0，1)均匀分布矩阵
-         * @param n 表示生成n*n的矩阵
-         * @return 浮点矩阵：(0,1)均匀分布的随机矩阵
+         * Generate a matrix from the (0,1) uniform distribution
+         * @param n indicates that an n*n matrix is generated
+         * @return floating-point matrix: a random matrix from the (0,1) uniform distribution
          */
-        auto rand(msize_type n) -> Matrix<real_max> {
+        inline auto rand(msize_type n) -> Matrix<real_max> {
             return rand({n, n});
         }
 
         /**
-         * 生成[imin，imax]均匀分布矩阵
-         * @param imin 表示均匀分布最小值
-         * @param imax 表示均匀分布最大值
-         * @param shape 目标矩阵shape
-         * @return 整数矩阵：[imin，imax]均匀分布的随机矩阵
+         * Generate a matrix from the [imin,imax] uniform distribution
+         * @param imin the minimum value of the uniform distribution
+         * @param imax the maximum value of the uniform distribution
+         * @param shape the shape of the target matrix
+         * @return integer matrix: a random matrix from the [imin,imax] uniform distribution
          */
-        auto randi(int64 imin, int64 imax, const mshape_type &shape) -> Matrix<int64> {
+        inline auto randi(int64 imin, int64 imax, const mshape_type &shape) -> Matrix<int64> {
             if (imin > imax)
-                throw_value_error("randi中要求整数均匀分布最小值应该小于等于最大值");
-            Matrix<int64> r(shape, 0.);
+                throw_value_error("randi requires the minimum of the integer uniform distribution to be less than or equal to the maximum");
+            Matrix<int64> r(shape, int64(0));
             std::random_device rd;
             std::mt19937 gen(rd());
             std::uniform_int_distribution<int64> uniform(imin, imax);
@@ -595,364 +708,248 @@ namespace matsar {
         }
 
         /**
-         * 生成[1，imax]均匀分布矩阵
-         * @param imax 表示均匀分布最小值
-         * @param shape 目标矩阵shape
-         * @return 整数矩阵：[1，imax]均匀分布矩阵
+         * Generate a matrix from the [1,imax] uniform distribution
+         * @param imax the maximum value of the uniform distribution
+         * @param shape the shape of the target matrix
+         * @return integer matrix: a matrix from the [1,imax] uniform distribution
          */
-        auto randi(int64 imax, const mshape_type &shape) -> Matrix<int64> {
+        inline auto randi(int64 imax, const mshape_type &shape) -> Matrix<int64> {
             return randi(1, imax, shape);
         }
 
         /**
-         * 生成[imin，imax]均匀分布矩阵
-         * @param imin 表示均匀分布最小值
-         * @param imax 表示均匀分布最大值
-         * @param n 表示生成n*n的矩阵
-         * @return 整数矩阵：[imin，imax]均匀分布的随机矩阵
+         * Generate a matrix from the [imin,imax] uniform distribution
+         * @param n indicates that an n*n matrix is generated
          */
-        auto randi(int64 imin, int64 imax, msize_type n) -> Matrix<int64> {
+        inline auto randi(int64 imin, int64 imax, msize_type n) -> Matrix<int64> {
             return randi(imin, imax, {n, n});
         }
 
         /**
-         * 生成[1，imax]均匀分布矩阵
-         * @param imax 表示均匀分布最大值
-         * @param n 表示生成n*n的矩阵
-         * @return 整数矩阵：[1，imax]均匀分布矩阵
+         * Generate a matrix from the [1,imax] uniform distribution
+         * @param n indicates that an n*n matrix is generated
          */
-        auto randi(int64 imax, msize_type n) -> Matrix<int64> {
+        inline auto randi(int64 imax, msize_type n) -> Matrix<int64> {
             return randi(1, imax, {n, n});
         }
 
         /**
-         * 生成标准正态分布矩阵
-         * @param shape 目标矩阵shape
-         * @return 浮点矩阵：标准正态分布矩阵
+         * Generate a standard normal distribution matrix
+         * @param shape the shape of the target matrix
          */
-        auto randn(const mshape_type &shape) -> Matrix<real_max> {
-            return rand(shape);
+        inline auto randn(const mshape_type &shape) -> Matrix<real_max> {
+            Matrix<real_max> r(shape, 0.);
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::normal_distribution<real_max> normal(0, 1);
+            for (auto &i: r)
+                i = normal(gen);
+            return r;
         }
 
         /**
-         * 生成标准正态分布矩阵
-         * @param n 表示生成n*n的矩阵
-         * @return 浮点矩阵：标准正态分布矩阵
+         * Generate a standard normal distribution matrix
+         * @param n indicates that an n*n matrix is generated
          */
-        auto randn(int64 n) -> Matrix<real_max> {
+        inline auto randn(int64 n) -> Matrix<real_max> {
             return randn({n, n});
         }
 
-        template<Calculable T>
-        class val_idx {
-        public:
-            T val = 0;
-            size_t idx = 0;
-
-            val_idx() = default;
-
-            val_idx(T val, size_t idx) : val(val), idx(idx) {}
-
-            ~val_idx() = default;
-        };
-
         /**
-         * 生成整数的随机排列
-         * @param n 采样间隔中的整数数量
-         * @return 整数行数组
-         * @hint 使用偏移量算法
-         */
-        template<IntType IT>
-        auto randperm(IT n) -> Matrix<IT> {
-            if (n < 0) throw_value_error("randperm: n 应该为正数");
-            unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
-            auto rand_seq = rand(mshape_type{n});
-            for (IT i = 0; i < n; ++i) {
-                val_idx_seq.get()[i].val = rand_seq(i);
-                val_idx_seq.get()[i].idx = i + 1;
-            }
-            std::sort(&val_idx_seq.get()[0], &val_idx_seq.get()[n],
-                      [](val_idx<real_max> v1, val_idx<real_max> v2) { return v1.val < v2.val; });
-            Matrix<IT> r({n}, 0.);
-            for (IT i = 0; i < n; ++i)
-                r(i) = val_idx_seq.get()[i].idx;
-            return r;
-        }
-
-        /**
-         * 生成整数的随机排列
-         * @param n 采样间隔中的整数数量
-         * @param k 所选整数的数量
-         * @return 整数行数组
+         * k distinct integers drawn at random from 1..n, in random order (a partial Fisher-Yates
+         * shuffle: every ordered selection is equally likely)
          */
         template<IntType IT>
         auto randperm(IT n, IT k) -> Matrix<IT> {
-            if (n < 0) throw_value_error("randperm: n 应该为正数");
-            if (k < 0 || k > n) throw_value_error("randperm: k值应该大于等于0或小于等于n");
-            unique_ptr<val_idx<real_max>> val_idx_seq(new val_idx<real_max>[n]);
-            auto rand_seq = rand(mshape_type{n});
-            for (IT i = 0; i < n; ++i) {
-                val_idx_seq.get()[i].val = rand_seq(i);
-                val_idx_seq.get()[i].idx = i + 1;
+            if (n < 0) throw_value_error("randperm: n must be non-negative");
+            if (k < 0 || k > n) throw_value_error("randperm: k must be between 0 and n");
+            std::vector<IT> values(static_cast<size_t>(n));
+            std::iota(values.begin(), values.end(), IT(1));
+            std::random_device rd;
+            std::mt19937_64 gen(rd());
+            for (int64 i = 0; i < static_cast<int64>(k); ++i) {
+                std::uniform_int_distribution<int64> pick(i, static_cast<int64>(n) - 1);
+                std::swap(values[static_cast<size_t>(i)], values[static_cast<size_t>(pick(gen))]);
             }
-            std::sort(&val_idx_seq.get()[0], &val_idx_seq.get()[n],
-                      [](val_idx<real_max> v1, val_idx<real_max> v2) { return v1.val < v2.val; });
-            Matrix<IT> r({k}, 0.);
-            for (IT i = 0; i < k; ++i)
-                r(i) = val_idx_seq.get()[i].idx;
+            Matrix<IT> r(mshape_type{static_cast<msize_type>(k)}, IT(0));
+            for (msize_type i = 0; i < r.getSize(); ++i)
+                r(i) = values[static_cast<size_t>(i)];
             return r;
+        }
+
+        /**
+         * A random permutation of the integers 1..n
+         */
+        template<IntType IT>
+        auto randperm(IT n) -> Matrix<IT> {
+            return randperm(n, n);
         }
     }
 
     namespace Math {
-//        //卡方分布
-//        /**
-//         * 求卡方分布函数值
-//         * @param x
-//         * @param nu
-//         */
-//        auto chi2cdf(float64 x, float64 nu) {
-//            std::chi_squared_distribution<float64> chi2(nu);
-//
-//        }
         /**
-         * 求卡方分布函数值
-         * @param x 函数传入x值
-         * @param nu 卡方分布自由度
-         * @hint std::tgamma function
+         * Density of the chi-squared distribution with nu degrees of freedom (nu > 0, otherwise
+         * NaN), as the gamma density with shape nu / 2 and scale 2
          */
-        auto chi2pdf(float64 x, float64 nu) -> float64 {
-            if (x < 0) return 0;
-            if (nu < 0) return NAN;
-            auto v2 = nu / 2;
-            return std::pow(x, v2 - 1) * std::exp(-x / 2) / std::exp2(v2) / std::tgamma(v2);
+        inline auto chi2pdf(float64 x, float64 nu) -> float64 {
+            if (std::isnan(x) || !(nu > 0))
+                return NAN;
+            if (x < 0 || std::isinf(x))
+                return 0;
+            if (x == 0)
+                return nu < 2 ? INFINITY : (nu == 2 ? 0.5 : 0);
+            return ProbDetail::dgamma(x, nu / 2, 2);
         }
 
         /**
-         * 求卡方分布函数值
-         * @param x 函数传入x值
-         * @param nu 卡方分布自由度
-         * @hint 可使用matlab中find排除法优化算法
+         * Chi-squared density with matrix arguments (broadcast against each other)
          */
-        auto chi2pdf(const Matrix<float64> &x, const Matrix<float64> &nu) -> Matrix<float64> {
-            if (x.getShape() != nu.getShape() && !x.isSingle() && !nu.isSingle())
-                throw_shape_exception("poisspdf: x 与 nu 维度不同");
-            mshape_type shape = nu.isSingle() ? x.getShape() : nu.getShape();
-            Matrix<float64> r(shape, 0.);
-            auto iter_x = x.begin();
-            auto iter_nu = nu.begin();
-            for (auto &i: r) {
-                i = chi2pdf(*iter_x, *iter_nu);
-                if (!x.isSingle())
-                    iter_x++;
-                if (!nu.isSingle())
-                    iter_nu++;
-            }
-            return r;
+        inline auto chi2pdf(const Matrix<float64> &x, const Matrix<float64> &nu) -> Matrix<float64> {
+            return ProbDetail::map("chi2pdf", [](float64 x_, float64 nu_) { return chi2pdf(x_, nu_); }, x, nu);
         }
     }
     namespace Math {
-        //指数分布
+        //Exponential distribution
         /**
-         * 求指数分布函数值
-         * @param x 函数传入x值
-         * @param mu 指数分布平均值
+         * Density of the exponential distribution with mean mu (> 0, otherwise NaN); 0 for x < 0
          */
-        auto exppdf(float64 x, float64 mu = 1) -> float64 {
-            return 1 / mu * std::exp(-x / mu);
+        inline auto exppdf(float64 x, float64 mu = 1) -> float64 {
+            if (std::isnan(x) || !(mu > 0))
+                return NAN;
+            if (x < 0)
+                return 0;
+            return std::exp(-x / mu) / mu;
         }
 
         /**
-         * 求指数分布函数值
-         * @param x 函数传入x值
-         * @param mu 指数分布平均值
+         * Exponential density with matrix arguments (broadcast against each other)
          */
-        auto exppdf(const Matrix<float64> &x, const Matrix<float64> &mu = {1}) -> Matrix<float64> {
-            return 1 / mu * exp(-x / mu);
+        inline auto exppdf(const Matrix<float64> &x, const Matrix<float64> &mu = {1}) -> Matrix<float64> {
+            return ProbDetail::map("exppdf", [](float64 x_, float64 mu_) { return exppdf(x_, mu_); }, x, mu);
         }
 
         /**
-         * 生成指数分布随机矩阵
-         * @param mu 指数分布平均值
-         * @param shape 目标矩阵的大小
+         * Random matrix from the exponential distribution with mean mu (0 gives zeros; < 0 or NaN gives NaN)
          */
-        auto exprnd(float64 mu, const mshape_type &shape = {1}) -> Matrix<float64> {
+        inline auto exprnd(float64 mu, const mshape_type &shape = {1}) -> Matrix<float64> {
+            if (!(mu >= 0))
+                return Matrix<float64>(shape, NAN);
+            if (mu == 0)
+                return Matrix<float64>(shape, 0.);
             Matrix<float64> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::exponential_distribution<float64> exp_dis(mu);
+            std::exponential_distribution<float64> exp_dis(1 / mu);   // std takes the rate, 1/mean
             for (auto &i: r)
                 i = exp_dis(gen);
             return r;
         }
 
         /**
-         * 指数分布的均值和方差
-         * @return 浮点矩阵tuple {mu,mu*mu}
+         * The mean and variance of the exponential distribution: {mu, mu^2}; NaN for mu < 0
          */
         template<RealType RT>
         auto expstat(const RT &mu) -> tuple<real_max, real_max> {
             real_max tmp = mu;
+            if (tmp < 0)
+                return {NAN, NAN};
             return {tmp, tmp * tmp};
         }
 
         /**
-         * 指数分布的均值和方差
-         * @return 浮点矩阵tuple {mu,mu*mu}
+         * The mean and variance of the exponential distribution, element by element
          */
         template<RealType RT>
         auto expstat(const Matrix<RT> &mu) -> tuple<Matrix<real_max>, Matrix<real_max>> {
-            Matrix<real_max> tmp(mu);
-            return {tmp, tmp ^ 2};
+            Matrix<float64> m(mu);
+            return {ProbDetail::map("expstat", [](float64 v) { return std::get<0>(expstat(v)); }, m),
+                    ProbDetail::map("expstat", [](float64 v) { return std::get<1>(expstat(v)); }, m)};
         }
     }
 
     namespace Math {
-        //泊松分布
+        //Poisson distribution
         /**
-         * 求泊松分布函数值
-         * @param x 函数传入x值，需要整数值，非整数值泊松分布为0
-         * @param lambda 指数分布lambda值，速率参数，为正数
+         * Poisson probability of x events at rate lambda (>= 0, otherwise NaN); 0 for x < 0 or
+         * not an integer
          */
-        auto poisspdf(float64 x, float64 lambda) -> float64 {
-            if (x < 0 || x != std::round(x))
-                return 0;
-            if (lambda < 0)
+        inline auto poisspdf(float_max x, float_max lambda) -> float_max {
+            if (std::isnan(x) || !(lambda >= 0))
                 return NAN;
-            return pow(lambda, x) / factorial<float64>(x) * std::exp(-lambda);
+            if (!ProbDetail::is_integer(x) || x < 0)
+                return 0;
+            return ProbDetail::dpois(x, lambda);
         }
 
         /**
-         * 求泊松分布函数值
-         * @param x 函数传入x值，需要整数值，非整数值泊松分布为0
-         * @param lambda 指数分布lambda值，速率参数，为正数
+         * Poisson probability with matrix arguments (broadcast against each other)
          */
-        auto poisspdf(const Matrix<float64> &x, const Matrix<float64> &lambda) -> Matrix<float64> {
-            if (x.getShape() != lambda.getShape() && !x.isSingle() && !lambda.isSingle())
-                throw_shape_exception("poisspdf: x 与 lambda 维度不同");
-            mshape_type shape;
-            if (!x.isSingle())
-                shape = x.getShape();
-            else
-                shape = lambda.getShape();
-            Matrix<float64> r(shape, 0.);
-            auto iter_x = x.begin();
-            auto iter_lambda = lambda.begin();
-            for (auto &i: r) {
-                i = poisspdf(*iter_x, *iter_lambda);
-                if (!x.isSingle())
-                    iter_x++;
-                if (!lambda.isSingle())
-                    iter_lambda++;
-            }
-            return r;
+        inline auto poisspdf(const Matrix<float64> &x, const Matrix<float64> &lambda) -> Matrix<float64> {
+            return ProbDetail::map("poisspdf", [](float64 x_, float64 l_) { return poisspdf(x_, l_); }, x, lambda);
         }
 
         /**
-         * 生成泊松分布随机矩阵
-         * @param lambda 指数分布lambda值，速率参数，为正数
-         * @param shape 目标矩阵的大小
+         * Random matrix from the Poisson distribution (lambda 0 gives zeros; < 0 or NaN gives NaN)
          */
-        auto poissrnd(float64 lambda, const mshape_type &shape = {1}) -> Matrix<float64> {
+        inline auto poissrnd(float64 lambda, const mshape_type &shape = {1}) -> Matrix<float64> {
+            if (!(lambda >= 0))
+                return Matrix<float64>(shape, NAN);
+            if (lambda == 0)
+                return Matrix<float64>(shape, 0.);
             Matrix<float64> r(shape, 0.);
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::poisson_distribution<> poisson(lambda);
+            std::poisson_distribution<int64> poisson(lambda);
             for (auto &i: r)
-                i = poisson(gen);
+                i = static_cast<float64>(poisson(gen));
             return r;
         }
     }
     namespace Math {
-        //瑞利分布
+        //Rayleigh distribution
         /**
-         * 求瑞利分布函数值
-         * @param x 函数传入x值，需要非负值，负值泊松分布为0
-         * @param b 瑞利分布比例值
+         * Density of the Rayleigh distribution with scale b (> 0, otherwise NaN); 0 for x < 0
          */
-        auto raylpdf(float64 x, float64 b) -> float64 {
-            if (x < 0) return 0;
-            if (b <= 0) return NAN;
+        inline auto raylpdf(float64 x, float64 b) -> float64 {
+            if (std::isnan(x) || !(b > 0))
+                return NAN;
+            if (x < 0 || std::isinf(x))
+                return 0;
             auto b2 = b * b;
             return x / b2 * std::exp(-x * x / 2 / b2);
         }
 
         /**
-         * 求瑞利分布函数值
-         * @param x 函数传入x值，需要非负值，负值泊松分布为0
-         * @param b 瑞利分布比例值
+         * Rayleigh density with matrix arguments (broadcast against each other)
          */
-        auto raylpdf(const Matrix<float64> &x, const Matrix<float64> &b) -> Matrix<float64> {
-            bool x_single = x.isSingle();
-            bool b_single = b.isSingle();
-            if (x.getShape() != b.getShape() && !x_single && !b_single)
-                throw_shape_exception("raylpdf: x 与 b 大小不同");
-            mshape_type shape;
-            if (!x_single)
-                shape = x.getShape();
-            else
-                shape = b.getShape();
-            Matrix<float64> r(shape, 0.);
-            auto iter_x = x.begin();
-            auto iter_b = b.begin();
-            for (auto &i: r) {
-                i = raylpdf(*iter_x, *iter_b);
-                if (!x_single)
-                    iter_x++;
-                if (!b_single)
-                    iter_b++;
-            }
-            return r;
+        inline auto raylpdf(const Matrix<float64> &x, const Matrix<float64> &b) -> Matrix<float64> {
+            return ProbDetail::map("raylpdf", [](float64 x_, float64 b_) { return raylpdf(x_, b_); }, x, b);
         }
     }
     namespace Math {
-        //韦伯分布
+        //Weibull distribution
         /**
-         * 求韦伯分布函数值
-         * @param x 函数传入x值，需要非负值，负值韦伯分布为0
-         * @param lambda 韦伯分布比例参数
-         * @param k 韦伯分布形状参数
+         * Density of the Weibull distribution with scale lambda and shape k (both > 0, otherwise
+         * NaN): k / lambda (x / lambda)^(k - 1) exp(-(x / lambda)^k); 0 for x < 0. At x = 0 it is
+         * Inf for k < 1 and 1 / lambda for k = 1 (the exponent is taken separately: the old
+         * exp(-(t^(k-1)) * t) was exp(-Inf * 0) = NaN there).
          */
-        auto weibpdf(float64 x, float64 lambda, float64 k) -> float64 {
-            if (x < 0) return 0;
-            if (lambda <= 0 || k <= 0) return NAN;
-            auto lambda_re = 1 / lambda;
-            auto x_lambda_re = x * lambda_re;
-            auto stat1 = std::pow(x_lambda_re, k - 1);
-            return k * lambda_re * stat1 * std::exp(-stat1 * x_lambda_re);
+        inline auto weibpdf(float64 x, float64 lambda, float64 k) -> float64 {
+            if (std::isnan(x) || !(lambda > 0) || !(k > 0))
+                return NAN;
+            if (x < 0 || std::isinf(x))
+                return 0;
+            const auto t = x / lambda;
+            return k / lambda * std::pow(t, k - 1) * std::exp(-std::pow(t, k));
         }
 
         /**
-         * 求韦伯分布函数值
-         * @param x 函数传入x值，需要非负值，负值韦伯分布为0
-         * @param lambda 韦伯分布比例参数
-         * @param k 韦伯分布形状参数
+         * Weibull density with matrix arguments (broadcast against each other)
          */
-        auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda,const Matrix<float64> &k) -> Matrix<float64> {
-            bool x_single = x.isSingle();
-            bool lambda_single = lambda.isSingle();
-            bool k_single = k.isSingle();
-            if (lambda.getShape() != k.getShape() || (!lambda_single && x.getShape() != lambda.getShape()))
-                throw_shape_exception("weibpdf: lambda k 两矩阵应该有相同的大小，并且与x大小匹配");
-            mshape_type shape;
-            if (!x_single)
-                shape = x.getShape();
-            else
-                shape = lambda.getShape();
-            Matrix<float64> r(shape, 0.);
-            auto iter_x = x.begin();
-            auto iter_lambda = lambda.begin();
-            auto iter_k = k.begin();
-            for (auto &i: r) {
-                i = weibpdf(*iter_x, *iter_lambda,*iter_k);
-                if (!x_single)
-                    iter_x++;
-                if (!lambda_single)
-                    iter_lambda++;
-                if (!k_single)
-                    iter_k++;
-            }
-            return r;
+        inline auto weibpdf(const Matrix<float64> &x, const Matrix<float64> &lambda, const Matrix<float64> &k)
+                -> Matrix<float64> {
+            return ProbDetail::map("weibpdf", [](float64 x_, float64 l_, float64 k_) { return weibpdf(x_, l_, k_); },
+                                   x, lambda, k);
         }
     }
 }

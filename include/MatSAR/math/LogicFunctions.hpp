@@ -31,7 +31,7 @@ namespace matsar {
                                 __attribute__((unused)) const msize_type &k = 1,
                                 __attribute__((unused)) void *work = nullptr) {
                     *dst_iter = true;
-                    for (msize_type i = 0; i < n; ++i) {
+                    for (msize_type i = 0; i < n; ++i, ++src_iter) {
                         if (!*src_iter) {
                             *dst_iter = false;
                             break;
@@ -48,7 +48,7 @@ namespace matsar {
                                 __attribute__((unused)) const msize_type &k = 1,
                                 __attribute__((unused)) void *work = nullptr) {
                     *dst_iter = false;
-                    for (msize_type i = 0; i < n; ++i) {
+                    for (msize_type i = 0; i < n; ++i, ++src_iter) {
                         if (*src_iter) {
                             *dst_iter = true;
                             break;
@@ -65,7 +65,7 @@ namespace matsar {
                                 __attribute__((unused)) const msize_type &k = 1,
                                 __attribute__((unused)) void *work = nullptr) {
                     *dst_iter = true;
-                    for (msize_type i = 0; i < n; ++i) {
+                    for (msize_type i = 0; i < n; ++i, ++src_iter) {
                         if (*src_iter == 0) {
                             *dst_iter = false;
                             break;
@@ -82,7 +82,7 @@ namespace matsar {
                                 __attribute__((unused)) const msize_type &k = 1,
                                 __attribute__((unused)) void *work = nullptr) {
                     *dst_iter = false;
-                    for (msize_type i = 0; i < n; ++i) {
+                    for (msize_type i = 0; i < n; ++i, ++src_iter) {
                         if (*src_iter != 0) {
                             *dst_iter = true;
                             break;
@@ -110,7 +110,7 @@ namespace matsar {
             }
 
             // optimized
-            auto do_global_all(const Matrix<bool> &m) -> Matrix<bool> {
+            inline auto do_global_all(const Matrix<bool> &m) -> Matrix<bool> {
 //                    bool r = true;
 //                    for (const auto &i: m) {
 //                        if (!i) {
@@ -132,7 +132,7 @@ namespace matsar {
             }
 
             // optimized
-            auto do_all(const Matrix<bool> &m, const msize_type &dim_idx) -> Matrix<bool> {
+            inline auto do_all(const Matrix<bool> &m, const msize_type &dim_idx) -> Matrix<bool> {
 //                    return apply_function_dim_reduce(m, [](const bool &r, const bool &i) { return r && i; }, dim_idx, true);
                 return apply_tfunction_dim_n_k<bool, bool, bool, Internal::ALL_BOOL>(m, dim_idx, m.getShape()[dim_idx],
                                                                                  1, 0);
@@ -153,7 +153,7 @@ namespace matsar {
             }
 
             // optimized
-            auto do_global_any(const Matrix<bool> &m) -> Matrix<bool> {
+            inline auto do_global_any(const Matrix<bool> &m) -> Matrix<bool> {
 //                    bool r = false;
 //                    for (const auto &i: m) {
 //                        if (i) {
@@ -172,7 +172,7 @@ namespace matsar {
                                                                                   1, 0);
             }
 
-            auto do_any(const Matrix<bool> &m, const msize_type &dim_idx) -> Matrix<bool> {
+            inline auto do_any(const Matrix<bool> &m, const msize_type &dim_idx) -> Matrix<bool> {
 //                    return apply_function_dim_reduce(m, [](const bool &r, const bool &i) { return r || i; }, dim_idx, false);
                 return apply_tfunction_dim_n_k<bool, bool, bool, Internal::ANY_BOOL>(m, dim_idx, m.getShape()[dim_idx],
                                                                                  1, 0);

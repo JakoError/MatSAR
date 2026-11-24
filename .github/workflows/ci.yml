@@ -104,9 +104,26 @@ jobs:
       - name: Configure
         run: cmake -G Ninja -B build -DMATSAR_BUILD_EXPERIMENTAL_TESTS=ON -DMATSAR_WITH_BLAS=OFF
       - name: Build
-        run: cmake --build build --target test_mathfunc selftest_helpers
+        run: cmake --build build
       - name: Test
-        run: ctest --test-dir build -R "test_mathfunc|selftest_helpers" --output-on-failure
+        # Every experimental math test (BLAS-free here), its death tests, and the core suite.
+        run: ctest --test-dir build --output-on-failure
+
+  # The LAPACK-backed math tests (LinearAlgebra: svd, lu, det, inv, pinv, eig, schur, ...)
+  # need LAPACKE, a separate package on Ubuntu.
+  linux-experimental-blas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y ninja-build libopenblas-dev liblapacke-dev
+      - name: Configure
+        run: cmake -G Ninja -B build -DMATSAR_BUILD_EXPERIMENTAL_TESTS=ON
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        # Every experimental math test including the LAPACK-backed ones, and the core suite.
+        run: ctest --test-dir build --output-on-failure
 
   windows-mingw-experimental:
     runs-on: windows-latest
@@ -126,9 +143,10 @@ jobs:
       - name: Configure
         run: cmake -G Ninja -B build -DMATSAR_BUILD_EXPERIMENTAL_TESTS=ON -DMATSAR_WITH_BLAS=OFF
       - name: Build
-        run: cmake --build build --target test_mathfunc selftest_helpers
+        run: cmake --build build
       - name: Test
-        run: ctest --test-dir build -R "test_mathfunc|selftest_helpers" --output-on-failure
+        # Every experimental math test (BLAS-free here), its death tests, and the core suite.
+        run: ctest --test-dir build --output-on-failure
 
   golden-regen-guard:
     runs-on: ubuntu-latest
@@ -136,10 +154,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          # A version with a numpy 2.1.1 wheel ('3.x' became 3.15 and built numpy from source).
+          python-version: '3.12'
       - name: Install pinned numpy
         run: pip install -r tests/math/gen/requirements.txt
       - name: Regenerate goldens
         run: python tests/math/gen/generate.py
       - name: Fail if goldens drifted
-        run: git diff --exit-code tests/math/golden/golden_mathfunc.hpp
+        # Covers every generated header; --porcelain also catches a header that is missing or uncommitted.
+        run: |
+          git status --porcelain tests/math/golden
+          test -z "$(git status --porcelain tests/math/golden)"

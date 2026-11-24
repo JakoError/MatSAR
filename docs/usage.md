@@ -34,6 +34,20 @@ A **flat** list is a 1-D vector of shape `{N}`:
 Matrix<int64> v = {10, 20, 30};   // shape {3};  v(2) == 30
 ```
 
+Each pair of braces is one dimension, so rows of one element make a column and a
+doubly braced value is a 1x1 matrix:
+
+```cpp
+Matrix<float64> c = {{1.0}, {2.0}, {3.0}};   // 3x1 column
+Matrix<float64> s = {{2.0}};                 // 1x1
+```
+
+Every row must have the same length: a ragged literal such as `{{1, 2}, {3}}` is a
+`ValueError`. Elements may mix literal types (`{{1, 0.5}, {0, 2}}`), but must
+convert without changing kind: a floating literal cannot fill an integer matrix,
+nor a complex one a real matrix. Literals with three or more levels of braces keep
+the legacy order, in which the innermost braces run along the first dimension.
+
 ### Explicit row/column builders
 
 When you want the layout to be unambiguous (and independent of the legacy flag

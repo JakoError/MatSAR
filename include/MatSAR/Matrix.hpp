@@ -51,28 +51,11 @@ using mshape_type = std::vector<msize_type>;
 
 // Hand-laid-out code-generation macros below; keep their exact layout.
 // clang-format off
-#define LIST_CONSTRUCTOR_MAKER(LIST_n) \
-Matrix(LIST_n list) {\
-    Util::VectorUtil::checkListFix(list);\
-    this->size = Util::VectorUtil::getFixListSize(list); \
-    this->shape = Util::VectorUtil::getDimSize(list);\
-    allocate(this->size);\
-    Util::VectorUtil::uninitListCopy(list, this->data);\
-}
-
-#define LIST_CONSTRUCTOR_MAKER_N \
-LIST_CONSTRUCTOR_MAKER(LIST##3)\
-LIST_CONSTRUCTOR_MAKER(LIST##4)\
-LIST_CONSTRUCTOR_MAKER(LIST##5)\
-LIST_CONSTRUCTOR_MAKER(LIST##6)\
-LIST_CONSTRUCTOR_MAKER(LIST##7)\
-LIST_CONSTRUCTOR_MAKER(LIST##8)
-
-
 #define VEC_CONSTRUCTOR_MAKER(VEC_n) \
 Matrix(VEC_n vec) {\
-    Util::VectorUtil::checkVecFix(vec);\
+    checkNest(vec, "vector");\
     this->size = Util::VectorUtil::getFixVecSize(vec); \
+    if (this->size == 0) return;\
     this->shape = Util::VectorUtil::getVecDimSize(vec);\
     allocate(this->size);\
     Util::VectorUtil::VecCopy(vec, this->data);\
@@ -105,6 +88,63 @@ namespace matsar {
         left = right;
         right = tmp;
     }
+
+    /// True when a U can be an element of a Matrix<dType> literal: an arithmetic or complex
+    /// value that converts to dType without changing kind (a floating value cannot become an
+    /// integer, nor a complex value a real one).
+    template<typename U, typename dType>
+    inline constexpr bool is_literal_element_v =
+            std::is_same_v<U, dType> ||
+            ((std::is_arithmetic_v<U> || complex_type<U>::value) && std::is_convertible_v<U, dType> &&
+             !(std::is_floating_point_v<U> && std::is_integral_v<dType>) &&
+             !(complex_type<U>::value && !complex_type<dType>::value));
+
+    /// True when IL is std::initializer_list<...> nested any number of times around dType.
+    template<typename IL, typename dType>
+    struct is_nested_list_of : std::false_type {};
+    template<typename dType>
+    struct is_nested_list_of<std::initializer_list<dType>, dType> : std::true_type {};
+    template<typename T, typename dType>
+    struct is_nested_list_of<std::initializer_list<T>, dType> : is_nested_list_of<T, dType> {};
+
+    /// One level of a braced Matrix literal: a single element, or a braced list of levels.
+    /// Matrix's literal constructor takes a list of these, so each pair of braces is one
+    /// dimension: {{1.0}, {2.0}} is a 2x1 column and {{2.0}} a 1x1 matrix, never the 1-D
+    /// {1.0, 2.0} or {2.0}. (With one initializer_list overload per depth, inner braces
+    /// holding one element could also initialize a scalar, so such literals were ambiguous.)
+    template<typename dType>
+    class NestedList {
+    public:
+        /// An element.
+        template<typename U, std::enable_if_t<is_literal_element_v<U, dType>, int> = 0>
+        NestedList(const U &value) : value_(static_cast<dType>(value)), leaf_(true) {}
+
+        /// A braced list: one more dimension.
+        NestedList(std::initializer_list<NestedList> items) : items_(items) {}
+
+        /// The same tree for an initializer_list object (for example a function parameter).
+        template<typename T>
+        static auto from(const T &x) -> NestedList {
+            if constexpr (is_nested_list_of<T, dType>::value) {
+                NestedList list(std::initializer_list<NestedList>{});   // braces would nest it once more
+                list.items_.reserve(x.size());
+                for (const auto &item: x)
+                    list.items_.push_back(from(item));
+                return list;
+            } else {
+                return NestedList(x);
+            }
+        }
+
+        [[nodiscard]] auto isLeaf() const -> bool { return leaf_; }
+        [[nodiscard]] auto value() const -> const dType & { return value_; }
+        [[nodiscard]] auto items() const -> const std::vector<NestedList> & { return items_; }
+
+    private:
+        std::vector<NestedList> items_;
+        dType value_{};
+        bool leaf_ = false;
+    };
 
     /// Internal, element-type-erased base for Matrix: shape/broadcast math and the
     /// low-level kernels. The `///NO CHECK!` helpers are unchecked and not part of
@@ -623,6 +663,84 @@ namespace matsar {
             }
         }
 
+        /// Reject a ragged nested initializer list / vector before its elements are copied:
+        /// rows of different lengths would be copied past the end of the buffer.
+        template<class Nest>
+        static void checkNest(const Nest &nest, const char *kind) {
+            if (!Util::VectorUtil::isRectangular(nest))
+                throw_value_error(string("Matrix: the nested ") + kind +
+                                  " is ragged; every row at one depth must have the same length");
+        }
+
+        enum class NestFit {
+            ok,
+            ragged,
+            mixed,
+        };
+
+        /// Whether `items`, the levels at depth k of a braced literal, have the lengths `dims`
+        /// (outermost first) and hold elements exactly at the innermost depth.
+        template<class Items>
+        static auto nestFit(const Items &items, const shape_type &dims, size_t k) -> NestFit {
+            if ((size_type) items.size() != dims[k]) return NestFit::ragged;
+            const bool innermost = k + 1 == dims.size();
+            for (const auto &item: items) {
+                if (item.isLeaf() != innermost) return NestFit::mixed;
+                if (!innermost) {
+                    const NestFit fit = nestFit(item.items(), dims, k + 1);
+                    if (fit != NestFit::ok) return fit;
+                }
+            }
+            return NestFit::ok;
+        }
+
+        /// Copy the elements of a validated literal; `strides[k]` is the storage step of depth k.
+        template<class Items>
+        void fillNested(const Items &items, const shape_type &strides, size_t k, size_type at) {
+            for (const auto &item: items) {
+                if (item.isLeaf())
+                    uninitialized_fill_n(data + at, 1, item.value());
+                else
+                    fillNested(item.items(), strides, k + 1, at);
+                at += strides[k];
+            }
+        }
+
+        /// Build from a braced literal; `top` holds the levels inside the outermost braces.
+        template<class Items>
+        void buildNested(const Items &top) {
+            shape_type dims{(size_type) top.size()};   // the length at each depth, outermost first
+            for (auto node = top.size() ? &*top.begin() : nullptr; node && !node->isLeaf();
+                 node = node->items().empty() ? nullptr : &node->items().front())
+                dims.push_back((size_type) node->items().size());
+            const NestFit fit = nestFit(top, dims, 0);
+            if (fit == NestFit::ragged)
+                throw_value_error("Matrix: the nested initializer list is ragged; every row at one depth must have the "
+                                  "same length");
+            if (fit == NestFit::mixed)
+                throw_value_error("Matrix: the nested initializer list mixes elements and lists at one depth");
+            const size_type n = Util::VectorUtil::mul(dims);
+            if (n == 0) return;
+#ifdef MATSAR_LEGACY_COLUMN_INITIALIZER_LIST
+            const bool row_wise = false;
+#else
+            const bool row_wise = dims.size() == 2;   // 2-D: element (i, j) is literal[i][j]
+#endif
+            // Otherwise the legacy order: the shape is dims reversed and the elements are stored
+            // in the order they are written, so the innermost braces run along the first dimension.
+            shape_type strides(dims.size());
+            size_type step = 1;
+            for (size_t j = 0; j < dims.size(); ++j) {
+                const size_t k = row_wise ? j : dims.size() - 1 - j;   // depths from the fastest one
+                strides[k] = step;
+                step *= dims[k];
+            }
+            this->shape = row_wise ? dims : shape_type(dims.rbegin(), dims.rend());
+            this->size = n;
+            allocate(n);
+            fillNested(top, strides, 0, 0);
+        }
+
         static auto dataToString(bool p) -> string {
             return p ? "true " : "false";
         }
@@ -754,7 +872,7 @@ namespace matsar {
             dType ans = 0;
             for (size_type j = 0; j < shape[0]; ++j) {
                 auto num = getEle(src, i, j);
-                if (num == 0) continue;
+                if (num == dType(0)) continue;
                 if ((i + j) % 2 == 0)
                     ans += num * remove_row_col(src, i, j).det();
                 else
@@ -1060,8 +1178,10 @@ namespace matsar {
 
         template<typename T>
         Matrix(const initializer_list<Matrix<T>> &ms, size_type dim = 1) {
-            if (typeHigher<T, dType>())
-                throw_type_loss_exception<T, dType>(false);
+            if constexpr (!std::is_same_v<T, dType>) {
+                if (typeHigher<T, dType>())
+                    throw_type_loss_exception<T, dType>(false);
+            }
             vector<Matrix<dType>> mv(ms.begin(), ms.end());
             this->operator=(cat(dim, mv));
         };
@@ -1093,7 +1213,10 @@ namespace matsar {
             }
         };
 
-        Matrix(const shape_type &m_shape, dType *v) {
+        /// Copy `size` elements from a buffer (a null pointer gives zeros). A template so that a
+        /// literal 0, which is also a null pointer constant, picks the value constructor above.
+        template<typename P, std::enable_if_t<std::is_same_v<P, dType>, int> = 0>
+        Matrix(const shape_type &m_shape, P *v) {
             Base::checkShape(m_shape);
             this->shape = Util::VectorUtil::abs(m_shape);
             this->size = Util::VectorUtil::mul(this->shape);
@@ -1109,19 +1232,30 @@ namespace matsar {
         };
 
         ///LIST GENERATOR
-        Matrix(LIST1 list) {
-            allocate(list.size());
-            uninitialized_copy(list.begin(), list.end(), this->data);
-            this->size = list.size();
-            this->shape = {this->size};
+        /// A braced literal. Each pair of braces is one dimension: {1.0, 2.0} has shape {2},
+        /// {{1.0, 2.0}} is 1x2 and {{1.0}, {2.0}} is 2x1. A 2-D literal is read row-wise, as in
+        /// NumPy and MATLAB (column-wise if MATSAR_LEGACY_COLUMN_INITIALIZER_LIST is defined, a
+        /// temporary migration aid -- prefer fromRows()/fromColumns()). Deeper literals keep the
+        /// legacy order, where the innermost braces run along the first dimension. Ragged rows,
+        /// or elements and lists side by side, are a ValueError.
+        Matrix(std::initializer_list<NestedList<dType>> list) {
+            buildNested(list);
+        }
+
+        /// An initializer_list object rather than a braced literal (for example a parameter of
+        /// type std::initializer_list<std::initializer_list<T>>); read exactly like the literal.
+        template<class IL, std::enable_if_t<is_nested_list_of<IL, dType>::value, int> = 0>
+        Matrix(const IL &list) {
+            buildNested(NestedList<dType>::from(list).items());
         }
 
         /// Build a matrix from explicit COLUMNS: each inner list is one column
         /// (this is the legacy nested-initializer-list layout). Column-major stored.
         static auto fromColumns(LIST2 list) -> Matrix<dType> {
             Matrix<dType> m;
-            Util::VectorUtil::checkListFix(list);
+            checkNest(list, "initializer list");
             m.size = Util::VectorUtil::getFixListSize(list);
+            if (m.size == 0) return m;
             m.shape = Util::VectorUtil::getDimSize(list);
             m.allocate(m.size);
             Util::VectorUtil::uninitListCopy(list, m.data);
@@ -1138,8 +1272,9 @@ namespace matsar {
         /// initializer-list versions): fromColumns = column-wise, fromRows = transpose.
         static auto fromColumns(VEC2 vec) -> Matrix<dType> {
             Matrix<dType> m;
-            Util::VectorUtil::checkVecFix(vec);
+            checkNest(vec, "vector");
             m.size = Util::VectorUtil::getFixVecSize(vec);
+            if (m.size == 0) return m;
             m.shape = Util::VectorUtil::getVecDimSize(vec);
             m.allocate(m.size);
             Util::VectorUtil::VecCopy(vec, m.data);
@@ -1149,19 +1284,6 @@ namespace matsar {
         static auto fromRows(VEC2 vec) -> Matrix<dType> {
             return fromColumns(vec).T();
         }
-
-        /// 2-D nested initializer list. Default = row-wise (fromRows). Define
-        /// MATSAR_LEGACY_COLUMN_INITIALIZER_LIST for legacy column-wise layout
-        /// (temporary migration aid -- prefer fromRows()/fromColumns()).
-        Matrix(LIST2 list) {
-#ifdef MATSAR_LEGACY_COLUMN_INITIALIZER_LIST
-            *this = fromColumns(list);
-#else
-            *this = fromRows(list);
-#endif
-        }
-
-        LIST_CONSTRUCTOR_MAKER_N
 
         Matrix(VEC1 vec) {
             allocate(vec.size());
@@ -1189,7 +1311,7 @@ namespace matsar {
         }
 
         [[nodiscard]] auto broadcast(shape_type target_shape) const -> Matrix<dType> {
-            if (shape == target_shape) return {*this};
+            if (shape == target_shape) return *this;   // a copy: `{*this}` would concatenate (cat squeezes a trailing 1)
             Matrix<dType> sqz = squeezeHigh();
             Matrix<dType> r(target_shape, 0.);
             if (sqz.getDims() > target_shape.size())
@@ -1445,6 +1567,14 @@ namespace matsar {
             return data[pos];
         }
 
+        virtual auto operator()(initializer_list<size_type> plist) -> dType & {
+            return (*this)(shape_type(plist));
+        }
+
+        virtual auto operator()(initializer_list<size_type> plist) const -> dType {
+            return (*this)(shape_type(plist));
+        }
+
         /**
          * @param svec Select some values from multiple dimensions.
          * If there is only one value and it is shape[dim] or -shape[dim], select all values.
@@ -1500,7 +1630,7 @@ namespace matsar {
         }
 
         virtual auto operator+() const -> Matrix<dType> {
-            return {*this};
+            return *this;
         }
 
         virtual auto operator-() const -> Matrix<dType> {
@@ -1706,7 +1836,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator<(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator<(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1723,7 +1853,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator<(const Other &v) -> Matrix<bool> {
+        auto operator<(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::Less(data, v, size, r.getData());
             return r;
@@ -1731,7 +1861,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator<=(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator<=(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1748,7 +1878,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator<=(const Other &v) -> Matrix<bool> {
+        auto operator<=(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::LessEqual(data, v, size, r.getData());
             return r;
@@ -1756,7 +1886,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator>(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator>(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1773,7 +1903,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator>(const Other &v) -> Matrix<bool> {
+        auto operator>(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::Great(data, v, size, r.getData());
             return r;
@@ -1781,7 +1911,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator>=(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator>=(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1798,7 +1928,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator>=(const Other &v) -> Matrix<bool> {
+        auto operator>=(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::GreatEqual(data, v, size, r.getData());
             return r;
@@ -1806,7 +1936,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator==(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator==(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1823,7 +1953,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator==(const Other &v) -> Matrix<bool> {
+        auto operator==(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::Equal(data, v, size, r.getData());
             return r;
@@ -1831,7 +1961,7 @@ namespace matsar {
 
         ///BroadCast Needed!
         template<typename Other>
-        auto operator!=(const Matrix<Other> &right) -> Matrix<bool> {
+        auto operator!=(const Matrix<Other> &right) const -> Matrix<bool> {
             if (shape != right.getShape()) {
                 auto b_left = *this;
                 auto b_right = right;
@@ -1848,7 +1978,7 @@ namespace matsar {
 
         ///auto broadcast
         template<typename Other>
-        auto operator!=(const Other &v) -> Matrix<bool> {
+        auto operator!=(const Other &v) const -> Matrix<bool> {
             Matrix<bool> r(shape, false);
             Base::NotEqual(data, v, size, r.getData());
             return r;
@@ -1871,7 +2001,7 @@ namespace matsar {
         ///Auto predict shape
         [[nodiscard]] auto reshape(mshape_type new_shape) const -> Matrix<dType> {
             if (new_shape == shape)
-                return {*this};
+                return *this;
             shapePredict(size, new_shape);
             if (Util::VectorUtil::mul(new_shape) != size)
                 throw_value_error("reshape new shape must have the same size of matrix shape:" +
@@ -1890,7 +2020,7 @@ namespace matsar {
 
         [[nodiscard]] auto squeeze() const -> Matrix<dType> {
             if (shape.size() <= 2)
-                return {*this};
+                return *this;
             return {squeezeShape(shape), data};
         }
 
@@ -1902,15 +2032,18 @@ namespace matsar {
             return {squeezeShapeHigh(shape), data};
         }
 
-        /// Transpose: swaps the first two axes (applied to each 2-D page for N-D).
+        /// Transpose: swaps the first two axes (applied to each 2-D page for N-D). A 1-D {n}
+        /// matrix is an n x 1 column (as for m(i, j)), so its transpose is the 1 x n row.
         [[nodiscard]] auto T() const -> Matrix<dType> {
-            auto t_shape = shape;
+            if (isEmpty()) return *this;
+            const shape_type s = newAxis(shape, 2);   // at least two axes: {n} -> {n, 1}
+            auto t_shape = s;
             swap(t_shape[0], t_shape[1]);
             Matrix<dType> t(t_shape, 0.);
             size_type unit_size = t_shape[0] * t_shape[1];
             dType *iter = data, *iter_t = t.getData();
             for (size_type i = 0; i < size / unit_size; ++i) {
-                Base::T(iter, iter_t, shape[0], shape[1]);
+                Base::T(iter, iter_t, s[0], s[1]);
                 iter += unit_size;
                 iter_t += unit_size;
             }
@@ -1962,18 +2095,22 @@ namespace matsar {
         }
 
         /**
-         * Only symmetric two-dimensional matrices are diag
+         * Only square two-dimensional matrices are diag: every element off the main diagonal is
+         * zero. Trailing singleton dimensions are ignored (a 1x1 or 3x3x1 matrix is 2-D here),
+         * and an empty matrix is diagonal, as it is square (see isSquare).
          */
         [[nodiscard]] auto isDiag() const -> bool {
-            auto m = squeezeHigh();
-            // diag bind with 2d
-            if (!m.is2D(true))
+            if (isEmpty())
+                return true;
+            auto s = squeezeShapeHigh(shape);
+            if (s.size() > 2)
                 return false;
-            if (m.shape[0] != m.shape[1])
+            size_type n = s[0];
+            if ((s.size() == 2 ? s[1] : 1) != n)
                 return false;
-            for (size_type i = 0; i < shape[0]; ++i) {
-                for (size_type j = 0; j < shape[1]; ++j) {
-                    if (i != j && m.getEle(i, j) != 0)
+            for (size_type j = 0; j < n; ++j) {   // column-major storage: (i, j) is data[i + j * n]
+                for (size_type i = 0; i < n; ++i) {
+                    if (i != j && data[i + j * n] != dType(0))
                         return false;
                 }
             }
@@ -2167,6 +2304,20 @@ namespace matsar {
     }
 }
 namespace matsar {
+    // Arithmetic result-type promotion for the operators below: integers/float widen to
+    // double (as the old "x + 0." idiom did), and complex<float> widens to complex<double>.
+    // Needed because std::complex<float> + double is ill-formed C++, so a plain "x + 0."
+    // could not deduce a result type for complex<float>.
+    // Function-form (never defined -- used only inside decltype) so a non-promotable T
+    // (e.g. a Matrix passed to the scalar operator*) fails via SFINAE in the immediate
+    // context rather than as a hard error inside a class-template member.
+    template<typename T>
+    auto arith_promote_fn(T) -> decltype(std::declval<T>() + 0.);
+    template<typename U>
+    auto arith_promote_fn(std::complex<U>) -> std::complex<decltype(std::declval<U>() + 0.)>;
+    template<typename T>
+    using arith_promote_t = decltype(arith_promote_fn(std::declval<T>()));
+
     template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() * std::declval<rT>())>
     auto mul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
@@ -2174,21 +2325,21 @@ namespace matsar {
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() * std::declval<arith_promote_t<rT>>())>
     auto operator*(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
-        tmp *= TargetType{right + 0.};
+        tmp *= static_cast<TargetType>(right);
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() * std::declval<arith_promote_t<rT>>())>
     auto operator*(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(right);
-        tmp *= TargetType{left + 0.};
+        tmp *= static_cast<TargetType>(left);
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() * std::declval<arith_promote_t<rT>>())>
     auto operator*(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp *= right;   // element-wise with broadcasting; matrix product is mmul()/operator%
@@ -2204,7 +2355,7 @@ namespace matsar {
      * Note: `operator*` between two matrices is ELEMENT-wise (see operator+), not
      * this matrix product.
      */
-    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() * std::declval<arith_promote_t<rT>>())>
     auto mmul(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         auto b_left = Matrix<TargetType>(left);
         auto b_right = Matrix<TargetType>(right);
@@ -2218,7 +2369,7 @@ namespace matsar {
     }
 
     /// Alias for mmul(): the BLAS-backed matrix product.
-    template<typename lT, typename rT, typename TargetType = decltype((std::declval<lT>() + 0.) * (std::declval<rT>() + 0.))>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() * std::declval<arith_promote_t<rT>>())>
     auto operator%(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         return mmul<lT, rT, TargetType>(left, right);
     }
@@ -2228,7 +2379,7 @@ namespace matsar {
      * Vector Dot Product
      * Vector horizontal input, one row represents a vector X or Y
      */
-    template<typename dType, typename TargetType = decltype(std::declval<dType>() + std::declval<real_max>())>
+    template<typename dType, typename TargetType = arith_promote_t<dType>>
     auto dot(Matrix<dType> A, Matrix<dType> B) -> Matrix<TargetType> {
         A = A.squeeze();
         B = B.squeeze();
@@ -2323,21 +2474,21 @@ namespace matsar {
     }
 }
 namespace matsar {
-    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() / std::declval<rT>() + std::declval<real_max>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() / std::declval<arith_promote_t<rT>>())>
     auto operator/(const Matrix<lT> &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp /= right;
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() / std::declval<rT>() + std::declval<real_max>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() / std::declval<arith_promote_t<rT>>())>
     auto operator/(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(left);
         tmp /= right;
         return tmp;
     }
 
-    template<typename lT, typename rT, typename TargetType = decltype(std::declval<lT>() / std::declval<rT>() + std::declval<real_max>())>
+    template<typename lT, typename rT, typename TargetType = decltype(std::declval<arith_promote_t<lT>>() / std::declval<arith_promote_t<rT>>())>
     auto operator/(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> tmp(right.getShape(), static_cast<TargetType>(left));
         tmp /= right;
@@ -2434,15 +2585,17 @@ namespace matsar {
         }
     }
 
+    // Element type: what std::pow gives (as for Matrix ^ Matrix). It was forced to Matrix<real_max>,
+    // which did not compile for complex elements.
     template<typename lT, typename rT, typename TargetType = decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
-    auto operator^(const Matrix<lT> &left, const rT &right) -> Matrix<real_max> {
+    auto operator^(const Matrix<lT> &left, const rT &right) -> Matrix<TargetType> {
         Matrix<TargetType> r(left.getShape(), 0.);
         MatrixBase::Pow(left.getData(), right, r.getSize(), r.getData());
         return r;
     }
 
     template<typename lT, typename rT, typename TargetType = decltype(std::pow(std::declval<lT>(), std::declval<rT>()))>
-    auto operator^(const lT &left, const Matrix<rT> &right) -> Matrix<real_max> {
+    auto operator^(const lT &left, const Matrix<rT> &right) -> Matrix<TargetType> {
         Matrix<TargetType> r(right.getShape(), 0.);
         MatrixBase::Pow(left, right.getData(), r.getSize(), r.getData());
         return r;
